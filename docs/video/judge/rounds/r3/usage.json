@@ -1,0 +1,38 @@
+{
+ "a-social": {
+  "tokens": 5099770,
+  "output_tokens": 36472,
+  "cost_usd": 2.817,
+  "session_wall_min": 10.1
+ },
+ "c-event": {
+  "tokens": 3013289,
+  "output_tokens": 24935,
+  "cost_usd": 2.141,
+  "session_wall_min": 7.3
+ },
+ "e-data": {
+  "tokens": 6714481,
+  "output_tokens": 41157,
+  "cost_usd": 3.11,
+  "session_wall_min": 21.6
+ },
+ "h-ident": {
+  "tokens": 4176423,
+  "output_tokens": 27359,
+  "cost_usd": 2.472,
+  "session_wall_min": 7.8
+ },
+ "i-explainer": {
+  "tokens": 6582462,
+  "output_tokens": 42283,
+  "cost_usd": 3.15,
+  "session_wall_min": 11.8
+ },
+ "k-sports": {
+  "tokens": 4401797,
+  "output_tokens": 30819,
+  "cost_usd": 2.72,
+  "session_wall_min": 8.4
+ }
+}

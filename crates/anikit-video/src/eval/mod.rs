@@ -14,6 +14,7 @@ pub(crate) mod shader;
 pub(crate) mod fx;
 pub(crate) mod graphic;
 mod audio_react;
+mod inputs;
 pub mod expr;
 pub mod theme;
 
@@ -511,6 +512,15 @@ thread_local! {
     static TAGS: std::cell::RefCell<Option<Vec<OpTag>>> = const { std::cell::RefCell::new(None) };
 }
 
+/// Run `f` with layer tagging off: for ops emitted into a side list (shader
+/// channels, transition scenes), whose ranges don't index the frame's list.
+pub(crate) fn untagged<R>(f: impl FnOnce() -> R) -> R {
+    let saved = TAGS.with(|tg| tg.borrow_mut().take());
+    let r = f();
+    TAGS.with(|tg| *tg.borrow_mut() = saved);
+    r
+}
+
 /// Timing summary of one scene.
 #[derive(Clone, Debug, serde::Serialize)]
 pub struct SceneInfo {
@@ -556,6 +566,9 @@ pub struct Evaluator {
     pub shutter_explicit: bool,
     /// Named sub-compositions (top-level `compositions`), in dependency order.
     pub(crate) comps: Vec<(String, Arc<Evaluator>)>,
+    /// Key over the contents of every file the spec names (fonts, LUTs, images,
+    /// shader sources, models, nested specs): part of every render-cache key.
+    pub inputs_key: u64,
 }
 
 /// A gradient stroke segment: path, start and end points, start and end colours.
@@ -754,7 +767,12 @@ impl Evaluator {
         let saved_tags = TAGS.with(|tg| std::mem::replace(&mut *tg.borrow_mut(), tags));
         let saved_shader = shader::begin_frame();
         self.eval_frame(t, out);
-        let tags = TAGS.with(|tg| std::mem::replace(&mut *tg.borrow_mut(), saved_tags));
+        let mut tags = TAGS.with(|tg| std::mem::replace(&mut *tg.borrow_mut(), saved_tags));
+        // A parent can drop ops after its children were tagged (an empty matte):
+        // only ranges that still fit the list are kept.
+        if let Some(v) = &mut tags {
+            v.retain(|t| t.ops.start < t.ops.end && t.ops.end <= out.ops.len());
+        }
         COMP_SCALE.with(|c| *c.borrow_mut() = saved_comp);
         shader::end_frame(saved_shader);
         tags
@@ -1032,8 +1050,10 @@ impl Evaluator {
             TransKind::Cut => self.emit_scene(b, t, &id, false, out),
             TransKind::Shader => {
                 let (mut fa, mut fb) = (Vec::new(), Vec::new());
-                self.emit_scene(a, t, &id, false, &mut fa);
-                self.emit_scene(b, t, &id, false, &mut fb);
+                untagged(|| {
+                    self.emit_scene(a, t, &id, false, &mut fa);
+                    self.emit_scene(b, t, &id, false, &mut fb);
+                });
                 match &tr.shader {
                     Some(sc) => self.emit_shader_transition(&sc.0, (fa, a.bg_color), (fb, b.bg_color), t, e, out),
                     None => out.extend(fb),

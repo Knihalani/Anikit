@@ -549,6 +549,7 @@ impl Evaluator {
             encode_crf,
             groove: c.groove.and_then(|m| m.ok()),
             shutter_explicit: matches!(spec.motion_blur, Some(spec::MotionBlur::On(true)) | Some(spec::MotionBlur::Shutter { .. })),
+            inputs_key: serde_json::to_value(spec).map(|v| super::inputs::inputs_key(&v, &opts.base_dir)).unwrap_or(0),
         };
         (Some(ev), c.d)
     }

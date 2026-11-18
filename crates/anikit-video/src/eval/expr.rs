@@ -55,12 +55,20 @@ enum Ins {
     /// `c ? a : b` (both sides are evaluated; no side effects).
     Select,
     Call(u8, u8),
+    /// `[…][i]` / `at(table, i)`: entry `floor(i)` of a constant table (clamped).
+    Index(u16),
+    /// `steps(times, values, x)`: the value of the last time ≤ x (hold).
+    Steps(u16, u16),
+    /// `interp(times, values, x)`: piecewise-linear through (time, value) pairs, clamped.
+    Interp(u16, u16),
 }
 
 /// A compiled expression.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Expr {
     code: Vec<Ins>,
+    /// Constant arrays from `[a, b, c]` literals.
+    tables: Vec<Vec<f64>>,
     /// Whether it depends on time (`t`, `T`, `gt`, `p`, `frame`, music).
     pub dynamic: bool,
     /// Whether it reads the music (`beat`, `bar`, `level`, `bpm`).
@@ -136,6 +144,7 @@ struct P<'a> {
     h: f64,
     /// Allow the pattern-field variables.
     field: bool,
+    tables: Vec<Vec<f64>>,
 }
 
 impl P<'_> {
@@ -271,8 +280,59 @@ impl P<'_> {
         }
         Ok(())
     }
+    /// `[a, b, c]`: a constant array (each entry may be arithmetic or use units; no variables).
+    fn table(&mut self) -> Result<u16, String> {
+        if !self.eat(b'[') {
+            return Err("expected an array like [0, 1.5, 3]".into());
+        }
+        let saved = std::mem::take(&mut self.out);
+        let mut vals = Vec::new();
+        if !self.eat(b']') {
+            loop {
+                self.expr()?;
+                let code = std::mem::take(&mut self.out);
+                if code.iter().any(|i| matches!(i, Ins::Var(_))) {
+                    self.out = saved;
+                    return Err("array entries must be numbers (they can use $i, units and arithmetic, but not t, i or other variables)".into());
+                }
+                let e = Expr { code, tables: self.tables.clone(), dynamic: false, music: false, level: false, vel: false };
+                vals.push(e.eval(&Vars::default()));
+                if self.eat(b',') {
+                    continue;
+                }
+                if self.eat(b']') {
+                    break;
+                }
+                self.out = saved;
+                return Err("expected ',' or ']' in an array".into());
+            }
+        }
+        self.out = saved;
+        if vals.is_empty() {
+            return Err("an array needs at least one value".into());
+        }
+        if self.tables.len() >= u16::MAX as usize {
+            return Err("too many arrays".into());
+        }
+        self.tables.push(vals);
+        Ok((self.tables.len() - 1) as u16)
+    }
+
     fn atom(&mut self) -> Result<(), String> {
         let c = self.peek().ok_or("unexpected end of expression")?;
+        if c == b'[' {
+            // `[a, b, c][i]`
+            let k = self.table()?;
+            if !self.eat(b'[') {
+                return Err("an array is used by indexing it: [10, 20, 30][i] (or at(), steps(), interp())".into());
+            }
+            self.expr()?;
+            if !self.eat(b']') {
+                return Err("missing ']' after the index".into());
+            }
+            self.out.push(Ins::Index(k));
+            return Ok(());
+        }
         if c == b'(' {
             self.i += 1;
             self.expr()?;
@@ -338,6 +398,31 @@ impl P<'_> {
                 self.i += 1;
             }
             let name = std::str::from_utf8(&self.s[st..self.i]).unwrap();
+            if matches!(name, "at" | "steps" | "interp") && self.eat(b'(') {
+                let a = self.table()?;
+                let sep = |p: &mut Self| if p.eat(b',') { Ok(()) } else { Err(format!("{name}() takes arrays then a value, e.g. {name}([…], {}x)", if name == "at" { "" } else { "[…], " })) };
+                sep(self)?;
+                let b = if name == "at" { None } else { let b = self.table()?; sep(self)?; Some(b) };
+                self.expr()?;
+                if !self.eat(b')') {
+                    return Err(format!("missing ')' in {name}()"));
+                }
+                if let Some(b) = b {
+                    let (la, lb) = (self.tables[a as usize].len(), self.tables[b as usize].len());
+                    if la != lb {
+                        return Err(format!("{name}(): {la} times but {lb} values; give one value per time"));
+                    }
+                    if self.tables[a as usize].windows(2).any(|w| w[1] < w[0]) {
+                        return Err(format!("{name}(): the times must go up"));
+                    }
+                }
+                self.out.push(match (name, b) {
+                    ("steps", Some(b)) => Ins::Steps(a, b),
+                    ("interp", Some(b)) => Ins::Interp(a, b),
+                    _ => Ins::Index(a),
+                });
+                return Ok(());
+            }
             if self.eat(b'(') {
                 let mut argc = 0u8;
                 if !self.eat(b')') {
@@ -418,7 +503,7 @@ impl Expr {
     }
 
     fn compile_inner(src: &str, pct_ref: f64, w: f64, h: f64, field: bool) -> Result<Expr, String> {
-        let mut p = P { s: src.as_bytes(), i: 0, out: Vec::new(), pct_ref, w, h, field };
+        let mut p = P { s: src.as_bytes(), i: 0, out: Vec::new(), pct_ref, w, h, field, tables: Vec::new() };
         p.expr()?;
         p.ws();
         if p.i != p.s.len() {
@@ -430,7 +515,7 @@ impl Expr {
         for ins in &p.out {
             d += match ins {
                 Ins::Const(_) | Ins::Var(_) => 1,
-                Ins::Neg | Ins::Not => 0,
+                Ins::Neg | Ins::Not | Ins::Index(_) | Ins::Steps(..) | Ins::Interp(..) => 0,
                 Ins::Select => -2,
                 Ins::Call(_, n) => 1 - *n as i32,
                 _ => -1,
@@ -445,7 +530,7 @@ impl Expr {
         let level = p.out.iter().any(|i| matches!(i, Ins::Var(15)));
         let vel = p.out.iter().any(|i| matches!(i, Ins::Var(24 | 25)));
         let dynamic = dynamic || vel;
-        let mut e = Expr { code: p.out, dynamic, music, level, vel };
+        let mut e = Expr { code: p.out, tables: p.tables, dynamic, music, level, vel };
         e.fold();
         Ok(e)
     }
@@ -462,6 +547,7 @@ impl Expr {
         if self.code.iter().all(|i| !matches!(i, Ins::Var(_))) {
             let v = self.eval(&Vars::default());
             self.code = vec![Ins::Const(v)];
+            self.tables.clear();
         }
     }
 
@@ -503,6 +589,32 @@ impl Expr {
                     let (c, a, b) = (st[sp - 3], st[sp - 2], st[sp - 1]);
                     sp -= 2;
                     st[sp - 1] = if c != 0.0 { a } else { b };
+                }
+                Ins::Index(k) => {
+                    let t = &self.tables[k as usize];
+                    let i = st[sp - 1];
+                    st[sp - 1] = if i.is_nan() { t[0] } else { t[(i.floor().max(0.0) as usize).min(t.len() - 1)] };
+                }
+                Ins::Steps(a, b) => {
+                    let (ts, vs) = (&self.tables[a as usize], &self.tables[b as usize]);
+                    let x = st[sp - 1];
+                    let k = ts.iter().take(vs.len()).rposition(|&t| t <= x).unwrap_or(0);
+                    st[sp - 1] = vs[k];
+                }
+                Ins::Interp(a, b) => {
+                    let (ts, vs) = (&self.tables[a as usize], &self.tables[b as usize]);
+                    let n = ts.len().min(vs.len());
+                    let x = st[sp - 1];
+                    st[sp - 1] = if x <= ts[0] {
+                        vs[0]
+                    } else if x >= ts[n - 1] {
+                        vs[n - 1]
+                    } else {
+                        let k = ts[..n].iter().rposition(|&t| t <= x).unwrap_or(0).min(n - 2);
+                        let span = ts[k + 1] - ts[k];
+                        let f = if span > 0.0 { (x - ts[k]) / span } else { 1.0 };
+                        vs[k] + (vs[k + 1] - vs[k]) * f
+                    };
                 }
                 Ins::Call(f, n) => {
                     let n = n as usize;
@@ -685,6 +797,28 @@ mod tests {
         assert!(e.music && e.dynamic);
         assert_eq!(e.eval(&Vars { level: 0.5, beat: 3.0, ..Default::default() }), 4.0);
     }
+
+    #[test]
+    fn arrays_index_hold_and_interpolate() {
+        let e = |s: &str, t: f64| Expr::compile(s, 1.0, 1920.0, 1080.0).unwrap().eval(&Vars { t, ..Default::default() });
+        assert_eq!(e("[10, 20, 30][1]", 0.0), 20.0);
+        assert_eq!(e("[10, 20, 30][t]", 2.7), 30.0);
+        assert_eq!(e("[10, 20, 30][t]", 9.0), 30.0, "clamped");
+        assert_eq!(e("at([1, 2, 3], -4)", 0.0), 1.0);
+        assert_eq!(e("[500ms, 2 * 3][1] + 1", 0.0), 7.0);
+        assert_eq!(e("steps([0, 1, 2], [5, 6, 7], t)", 1.5), 6.0);
+        assert_eq!(e("steps([0, 1, 2], [5, 6, 7], t)", -1.0), 5.0);
+        assert_eq!(e("interp([0, 2], [0, 100], t)", 0.5), 25.0);
+        assert_eq!(e("interp([0, 1, 3], [0, 10, 30], t)", 2.0), 20.0);
+        assert_eq!(e("interp([0, 1], [0, 10], t)", 5.0), 10.0);
+        // Big tables don't hit the stack limit.
+        let big = format!("[{}][t]", (0..500).map(|k| k.to_string()).collect::<Vec<_>>().join(","));
+        assert_eq!(e(&big, 321.0), 321.0);
+        assert!(Expr::compile("[t, 1][0]", 1.0, 1.0, 1.0).unwrap_err().contains("must be numbers"));
+        assert!(Expr::compile("steps([0, 1], [1], t)", 1.0, 1.0, 1.0).unwrap_err().contains("2 times but 1 values"));
+        assert!(Expr::compile("[1, 2]", 1.0, 1.0, 1.0).unwrap_err().contains("indexing"));
+        assert!(Expr::compile("[1, 2][0] + 1", 1.0, 1.0, 1.0).unwrap().constant() == Some(2.0));
+    }
 }
 
 /// A colour computed per frame: `"=hsl(t * 60, 70, 55)"`, `"=rgb(255, 128 + 127 * sin(t), 0)"`,
@@ -865,4 +999,5 @@ impl ColorExpr {
         };
         [c[0].clamp(0.0, 1.0) as f32, c[1].clamp(0.0, 1.0) as f32, c[2].clamp(0.0, 1.0) as f32, alpha as f32]
     }
+
 }
