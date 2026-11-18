@@ -183,6 +183,34 @@ def cmd_table(a):
     print(section)
 
 
+def cmd_paired(a):
+    """Per-brief score change vs an earlier round (same tags + seed + ref set => same refs; checked per row)."""
+    rd, bd = J / "rounds" / a.round, J / "rounds" / a.base
+    L = [f"# {a.round} vs {a.base}: paired by brief", "",
+         "Same tags, seed and reference set, so the same 3 refs per brief ('same refs' column checks it). "
+         "Judge test-retest noise is about ±0.4 per piece (r1 PAIRED.md), so only larger moves are real.", "",
+         f"| Brief | {a.base} | {a.round} | Δ | Full {a.base} → {a.round} | Judged pro | Same refs |", "|---|---|---|---|---|---|---|"]
+    ds = []
+    for b in briefs():
+        for pre in ("", "hf-"):
+            n = pre + b["id"]
+            p0, p1 = bd / "results" / n / "result.json", rd / "results" / n / "result.json"
+            if not (p0.exists() and p1.exists()):
+                continue
+            r0, r1 = json.loads(p0.read_text()), json.loads(p1.read_text())
+            s0, s1 = r0["candidate"]["overall"], r1["candidate"]["overall"]
+            d = round(s1 - s0, 2)
+            if not pre:
+                ds.append(d)
+            L.append(f"| {n} | {s0} | {s1} | {d:+} | {r0.get('full_overall')} → {r1.get('full_overall')} | "
+                     f"{r0['candidate']['judged_professional']} → {r1['candidate']['judged_professional']} | {'yes' if r0['refs'] == r1['refs'] else 'NO'} |")
+    if ds:
+        L += ["", f"Mean Δ (Anikit rows): {statistics.mean(ds):+.2f} over {len(ds)} briefs; {sum(1 for d in ds if d > 0.4)} up beyond noise, "
+                  f"{sum(1 for d in ds if d < -0.4)} down beyond noise."]
+    (rd / "PAIRED.md").write_text("\n".join(L) + "\n")
+    print("\n".join(L))
+
+
 def cmd_demos(a):
     """Rank every judged output (rounds/*/results, demos/results) by blind score within its category -> DEMO-CANDIDATES.md."""
     cats = {}
@@ -218,6 +246,9 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
     sub.add_parser("demos")
+    pp = sub.add_parser("paired")
+    pp.add_argument("--round", required=True)
+    pp.add_argument("--base", required=True)
     for n in ("prompts", "collect", "table"):
         p = sub.add_parser(n)
         p.add_argument("--round", required=True)
@@ -226,7 +257,7 @@ def main():
         p.add_argument("--skip-done", action="store_true")
         p.add_argument("--no-sync", action="store_true", help="don't re-fetch REFS's benchmark stills")
     a = ap.parse_args()
-    {"prompts": cmd_prompts, "collect": cmd_collect, "table": cmd_table, "demos": cmd_demos}[a.cmd](a)
+    {"prompts": cmd_prompts, "collect": cmd_collect, "table": cmd_table, "demos": cmd_demos, "paired": cmd_paired}[a.cmd](a)
 
 
 if __name__ == "__main__":
