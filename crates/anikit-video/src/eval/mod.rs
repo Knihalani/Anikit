@@ -402,6 +402,8 @@ pub(crate) struct Node {
     pub posterize_time: f32,
     /// Group drag: seconds of lag per child on the group's own transform.
     pub drag: f32,
+    /// Loop envelope: seconds of fade-in after the start and fade-out before the end (0 = constant).
+    pub loop_ramp: f32,
 }
 
 pub(crate) const PART_BG: u8 = 1;
@@ -1305,6 +1307,14 @@ impl Evaluator {
                 fps: self.fps as f64,
                 ..Default::default()
             };
+            let vars = if n.exprs.iter().any(|(_, e)| e.vel) {
+                // The layer's own velocity from its tracks (and motion path), central difference over 1/120 s.
+                let h = 1.0 / 240.0;
+                let (a, b) = (self.track_xy(n, lt - h), self.track_xy(n, lt + h));
+                Vars { vx: ((b[0] - a[0]) / (2.0 * h)) as f64, vy: ((b[1] - a[1]) / (2.0 * h)) as f64, ..vars }
+            } else {
+                vars
+            };
             let vars = match &self.groove {
                 Some(m) if n.exprs.iter().any(|(_, e)| e.music) || n.cexprs.iter().any(|(_, e)| e.music) => {
                     let (beat, bar, level, bpm) = m.at(cx.gt as f64);
@@ -1324,18 +1334,29 @@ impl Evaluator {
             let s = tr.slot as usize;
             v[s] = tr.sample(lt, v[s], &self.easings);
         }
+        let env = if n.loop_ramp > 0.0 && !n.loops.is_empty() {
+            let s = |x: f32| {
+                let x = x.clamp(0.0, 1.0);
+                x * x * (3.0 - 2.0 * x)
+            };
+            let tail = if n.end.is_finite() { s((n.end - n.start - lt) / n.loop_ramp) } else { 1.0 };
+            s(lt / n.loop_ramp) * tail
+        } else {
+            1.0
+        };
         for l in &n.loops {
             let tau = std::f32::consts::TAU;
             match *l {
-                LoopC::Float { amount, period } => v[prop::Y] += amount * (tau * lt / period).sin(),
+                LoopC::Float { amount, period } => v[prop::Y] += env * amount * (tau * lt / period).sin(),
                 LoopC::Pulse { amount, period } => {
+                    let amount = amount * env;
                     let k = 1.0 + amount * 0.5 * (1.0 - (tau * lt / period).cos());
                     v[prop::SX] *= k;
                     v[prop::SY] *= k;
                 }
                 LoopC::Spin { period } => v[prop::ROT] += 360.0 * lt / period,
-                LoopC::Wiggle { amount, period } => v[prop::ROT] += amount * noise1((lt / period) as f64 * 2.0) as f32,
-                LoopC::Breathe { amount, period } => v[prop::OPACITY] *= 1.0 - amount * 0.5 * (1.0 - (tau * lt / period).cos()),
+                LoopC::Wiggle { amount, period } => v[prop::ROT] += env * amount * noise1((lt / period) as f64 * 2.0) as f32,
+                LoopC::Breathe { amount, period } => v[prop::OPACITY] *= 1.0 - env * amount * 0.5 * (1.0 - (tau * lt / period).cos()),
                 LoopC::Blink { period } => {
                     if (lt / period).fract() >= 0.5 {
                         v[prop::OPACITY] = 0.0
@@ -1347,6 +1368,19 @@ impl Evaluator {
             self.run_update(ast, n, cx, lt, v);
         }
         apply_path(n, v);
+    }
+
+    /// x, y from the layer's base and tracks only (plus its motion path), for `vx`/`vy`.
+    fn track_xy(&self, n: &Node, lt: f32) -> [f32; 2] {
+        let mut v = n.base;
+        for tr in &n.tracks {
+            let s = tr.slot as usize;
+            if s == prop::X || s == prop::Y || s == prop::PROGRESS {
+                v[s] = tr.sample(lt, v[s], &self.easings);
+            }
+        }
+        apply_path(n, &mut v);
+        [v[prop::X], v[prop::Y]]
     }
 
     /// Apply a layer's `update` script: its returned props win for this frame.

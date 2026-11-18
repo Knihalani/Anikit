@@ -27,6 +27,9 @@ pub struct Vars {
     /// Pattern fields only: u, v (0..1 across the box), x, y (px from the centre), d (0 centre … 1 corner),
     /// a (angle, radians), r (a random number per mark).
     pub f: [f64; 7],
+    /// The layer's own velocity in px/s (from its tweens, keyframes, presets and path), for secondary motion.
+    pub vx: f64,
+    pub vy: f64,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -72,9 +75,11 @@ pub struct Expr {
     pub music: bool,
     /// Whether it reads the loudness (`level`), which needs the audio itself.
     pub level: bool,
+    /// Whether it reads the layer's velocity (`vx`, `vy`).
+    pub vel: bool,
 }
 
-const VARS: &[&str] = &["t", "T", "gt", "p", "i", "n", "w", "h", "fps", "frame", "pi", "e", "tau", "beat", "bar", "level", "bpm", "u", "v", "x", "y", "d", "a", "r"];
+const VARS: &[&str] = &["t", "T", "gt", "p", "i", "n", "w", "h", "fps", "frame", "pi", "e", "tau", "beat", "bar", "level", "bpm", "u", "v", "x", "y", "d", "a", "r", "vx", "vy"];
 /// Index of the first pattern-field variable (`u v x y d a r`), valid only in pattern `field`s.
 const FIELD_VAR0: usize = 17;
 const FUNCS: &[(&str, u8)] = &[
@@ -290,7 +295,7 @@ impl P<'_> {
                     self.out = saved;
                     return Err("array entries must be numbers (they can use $i, units and arithmetic, but not t, i or other variables)".into());
                 }
-                let e = Expr { code, tables: self.tables.clone(), dynamic: false, music: false, level: false };
+                let e = Expr { code, tables: self.tables.clone(), dynamic: false, music: false, level: false, vel: false };
                 vals.push(e.eval(&Vars::default()));
                 if self.eat(b',') {
                     continue;
@@ -459,7 +464,7 @@ impl P<'_> {
                 Some(s) => format!("unknown variable '{name}', did you mean '{s}'?"),
                 None => format!("unknown variable '{name}' (use t, T, gt, p, i, n, w, h, fps, frame, beat, bar, level, bpm)"),
             })?;
-            if idx >= FIELD_VAR0 && !self.field {
+            if (FIELD_VAR0..FIELD_VAR0 + 7).contains(&idx) && !self.field {
                 return Err(format!("unknown variable '{name}' (u, v, x, y, d, a and r exist only in a pattern's \"field\")"));
             }
             match name {
@@ -523,7 +528,9 @@ impl Expr {
         let music = p.out.iter().any(|i| matches!(i, Ins::Var(13..=16)));
         let dynamic = music || p.out.iter().any(|i| matches!(i, Ins::Var(0..=3) | Ins::Var(9)));
         let level = p.out.iter().any(|i| matches!(i, Ins::Var(15)));
-        let mut e = Expr { code: p.out, tables: p.tables, dynamic, music, level };
+        let vel = p.out.iter().any(|i| matches!(i, Ins::Var(24 | 25)));
+        let dynamic = dynamic || vel;
+        let mut e = Expr { code: p.out, tables: p.tables, dynamic, music, level, vel };
         e.fold();
         Ok(e)
     }
@@ -570,6 +577,8 @@ impl Expr {
                         15 => v.level,
                         16 => v.bpm,
                         17..=23 => v.f[i as usize - 17],
+                        24 => v.vx,
+                        25 => v.vy,
                         _ => (v.gt * v.fps).floor(),
                     };
                     sp += 1;

@@ -7,7 +7,7 @@
   { "text": "=t < 2 ? 1 : 2", "style": "title", "y": "80%", "color": "=t < 2 ? $accent : $primary" } ] } ] }
 ```
 
-- Variables: `t` (layer s) `T` (scene s) `gt` (video s) `p` (0..1) `frame` `i` `n` `w` `h` `fps`, plus music: `beat` `bar` (fractional), `level` (loudness 0..1), `bpm`.
+- Variables: `t` (layer s) `T` (scene s) `gt` (video s) `p` (0..1) `frame` `i` `n` `w` `h` `fps`, plus music: `beat` `bar` (fractional), `level` (loudness 0..1), `bpm`; and the layer's own velocity `vx` `vy` (px/s, from its tweens and path) for secondary motion: `"rotation": "=vx*0.01"` leans into travel, `"scaleX": "=1 + abs(vx)/6000"` stretches with speed.
 - Siblings: `id.left` `id.right` `id.top` `id.bottom` `id.cx` `id.cy` `id.width` `id.height` read the resting box of an earlier layer in the same list (by its `id`, hyphens allowed): `"y": "=title.bottom + 24"`, `"x": "=card.right + 40"`. Values are the box after layout, before animation; mix them with anything else (`"=title.bottom + 24 + 6 * sin(t)"`).
 - Arrays: `[10, 20, 30][i]` (or `at([…], i)`, clamped), `steps([0, 1.2, 3], [0, 1, 0], t)` (hold each value from its time), `interp([0, 1, 3], [0, 300, 120], t)` (straight lines between points). Entries are numbers (`$i`, units and arithmetic are fine), so one table can drive a whole `repeat`: `"opacity": "=t >= [0, 0.4, 1.1][$i] ? 1 : 0"`.
 - Logic: `< <= > >= == != && || !`, `c ? a : b`, `if(c, a, b)`.
