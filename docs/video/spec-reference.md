@@ -418,7 +418,7 @@ Three layers of control, from simplest to most precise.
 
 **Animatable properties:** `x`, `y`, `width`, `height`, `scale`, `scaleX`, `scaleY`, `rotation`, `skewX`, `skewY`, `opacity`, `blur`, `radius`, `fill`/`color` (interpolated in OKLab), `stroke`(colour), `strokeWidth`, `trimStart`, `trimEnd`, `reveal`, `value`, `wipe`, `depth`, `pathOffset`, `dashOffset`, `rangeStart`/`rangeEnd`/`rangeOffset` (text animator); camera: `zoom`, `focus`, `aperture`.
 
-**Easings:** `linear`, `ease`, `easeIn`, `easeOut`, `easeInOut`; Penner names as `in`/`out`/`inOut` + `Sine`, `Quad`, `Cubic`, `Quart`, `Quint`, `Expo`, `Circ`, `Back`, `Elastic`, `Bounce` (e.g. `outCubic`, `inOutBack`; `easeOutCubic` also works); `cubicBezier(0.2, 0, 0, 1)` or an array `"ease": [0.2, 0, 0, 1]`; `steps(4)`; GSAP-style `back.out(1.7)`, `elastic.out(1, 0.3)`; springs `gentle`, `wobbly`, `stiff`, `slow`, `molasses`, `snappy`, `bouncy`.
+**Easings:** `linear`, `ease`, `easeIn`, `easeOut`, `easeInOut`; Penner names as `in`/`out`/`inOut` + `Sine`, `Quad`, `Cubic`, `Quart`, `Quint`, `Expo`, `Circ`, `Back`, `Elastic`, `Bounce` (e.g. `outCubic`, `inOutBack`; `easeOutCubic` also works); `cubicBezier(0.2, 0, 0, 1)` or an array `"ease": [0.2, 0, 0, 1]`; `steps(4)`; GSAP-style `back.out(1.7)`, `elastic.out(1, 0.3)`; springs `gentle`, `wobbly`, `stiff`, `slow`, `molasses`, `snappy`, `bouncy` (~8% overshoot), `springy` (~39%, the old `bouncy`).
 
 ### 3. Expressions
 

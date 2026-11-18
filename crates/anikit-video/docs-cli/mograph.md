@@ -27,8 +27,8 @@
   (±), `puckerBloat` −1..1, `zigzag {size, ridges, smooth}`, `twist` deg, `wigglePath {amount, detail, speed, seed}` (animated, deterministic).
 - **Track matte** `"matte": "logo"` or `{"layer": "logo", "mode": "alpha|alphaInverted|luma|lumaInverted"}`: the layer shows only through
   the sibling with that `id` (which is then not drawn itself). Gradient inside text: a gradient rect with `"matte": "word"`.
-- **Follow-through** `"inertia": true | "soft" | "bouncy" | "tight" | "heavy"` or `{"stiffness", "damping", "mass", "props": ["x", "y", "rotation", "scale"]}`:
-  a spring chases the layer's own motion (tweens, presets, paths, expressions), so moves overshoot and settle. Stagger it across children for overlapping action.
+- **Follow-through** `"inertia": true | "soft" | "bouncy" | "tight" | "heavy" | "springy" | "wobbly"` or `{"stiffness", "damping", "mass", "props": ["x", "y", "rotation", "scale"]}`:
+  a spring chases the layer's own motion (tweens, presets, paths, expressions), so moves overshoot and settle (soft 5%, bouncy 7%, tight 3%, heavy 2%; springy 37%, wobbly 18%). Stagger it across children for overlapping action.
 - **Drag** `"drag": 0.04` on a moving group: child i follows the group's motion i × 0.04 s later (overlapping action; add `inertia` for settle).
 - **Smear** `"smear": true` (or a strength): fast moves stretch along their travel, volume kept; still layers are untouched.
 - **Idea transitions** (on the incoming scene): `{"type": "zoomThrough", "layer": "logo"}` flies into a layer of the outgoing

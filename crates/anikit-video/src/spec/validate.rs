@@ -32,7 +32,7 @@ pub const ALIGNS: &[&str] = &["left", "center", "right"];
 pub const BOX_ALIGNS: &[&str] = &["start", "center", "end", "stretch"];
 pub const JUSTIFIES: &[&str] = &["start", "center", "end", "spaceBetween", "spaceAround", "spaceEvenly"];
 pub const STAGGER_FROM: &[&str] = &["start", "center", "end", "random"];
-pub const SPRINGS: &[&str] = &["gentle", "wobbly", "stiff", "slow", "molasses", "snappy", "bouncy"];
+pub const SPRINGS: &[&str] = &["gentle", "wobbly", "stiff", "slow", "molasses", "snappy", "bouncy", "springy"];
 pub const ANIM_PROPS: &[&str] = &[
     "x", "y", "width", "height", "scale", "scaleX", "scaleY", "rotation", "skewX", "skewY", "opacity", "blur", "radius",
     "fill", "color", "stroke", "strokeWidth", "trimStart", "trimEnd", "reveal", "value", "size", "letterSpacing",

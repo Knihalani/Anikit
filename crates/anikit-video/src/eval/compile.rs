@@ -573,6 +573,16 @@ impl Built {
     }
 }
 
+/// Spring names whose anikit-core defaults overshoot more than motion design wants by default:
+/// `bouncy` lands at ~8% here (core's is ~39%); `springy` keeps the big bounce on request.
+fn spring_alias(name: &str) -> Option<&'static str> {
+    match name {
+        "bouncy" | "spring.bouncy" => Some("spring(300, 22)"),
+        "springy" => Some("spring(300, 10)"),
+        _ => None,
+    }
+}
+
 fn empty_node(kind: Kind) -> Node {
     Node {
         kind,
@@ -1003,7 +1013,7 @@ impl C<'_> {
             "expressiveExit" => Some("cubic-bezier(0.4, 0.14, 1, 1)"),
             _ => None,
         };
-        match Easing::parse(named.unwrap_or(name)) {
+        match Easing::parse(named.or(spring_alias(name)).unwrap_or(name)) {
             Some(e) => {
                 let i = self.easings.len() as u32;
                 self.easings.push(e);
@@ -1020,6 +1030,7 @@ impl C<'_> {
     /// Spring easing and its settle duration.
     fn spring(&mut self, s: &spec::SpringSpec, path: &str) -> (u32, f32) {
         let e = match s {
+            spec::SpringSpec::Name(n) if spring_alias(n).is_some() => Easing::parse(spring_alias(n).unwrap()),
             spec::SpringSpec::Name(n) => {
                 if val::check_word(n, val::SPRINGS).is_err() {
                     self.d.push(Diagnostic::error(path, format!("unknown spring '{n}'")).suggest(suggest(n, val::SPRINGS)));
@@ -2250,10 +2261,13 @@ impl C<'_> {
             let p = format!("{path}.inertia");
             // (stiffness, damping, mass): damping ratio ≈ damping / (2·sqrt(stiffness·mass)).
             let preset = |name: &str| match name {
-                "soft" => Some((90.0, 9.0, 1.0)),
-                "bouncy" => Some((220.0, 9.0, 1.0)),
+                // Overshoot on a step: soft 5%, bouncy 7%, tight 3%, heavy 2% (tasteful range); springy 37%, wobbly 18% go further.
+                "soft" => Some((90.0, 13.0, 1.0)),
+                "bouncy" => Some((220.0, 19.0, 1.0)),
                 "tight" => Some((400.0, 30.0, 1.0)),
-                "heavy" => Some((120.0, 16.0, 2.2)),
+                "heavy" => Some((120.0, 25.0, 2.2)),
+                "springy" => Some((220.0, 9.0, 1.0)),
+                "wobbly" => Some((90.0, 9.0, 1.0)),
                 "" | "default" => Some((170.0, 14.0, 1.0)),
                 _ => None,
             };
@@ -2264,7 +2278,7 @@ impl C<'_> {
                 serde_json::Value::String(s) => {
                     let r = preset(s);
                     if r.is_none() {
-                        self.d.push(Diagnostic::error(&p, format!("unknown inertia preset '{s}'")).suggest(suggest(s, &["soft", "bouncy", "tight", "heavy"])));
+                        self.d.push(Diagnostic::error(&p, format!("unknown inertia preset '{s}'")).suggest(suggest(s, &["soft", "bouncy", "tight", "heavy", "springy", "wobbly"])));
                     }
                     r
                 }
@@ -4955,11 +4969,12 @@ impl C<'_> {
                 };
                 (vec![(OPACITY, 1, ValS::Abs(0.0)), (slot, 1, pd(v))], 0.7, "outExpo")
             }
-            "pop" => (vec![(SX, 2, ValS::Abs(0.0)), (OPACITY, 1, ValS::Abs(0.0))], 0.5, "outBack"),
+            // Overshoot kept in the tasteful 3–8% range (docs/video/craft/motion-design.md); `back.out(1.7)` / `springy` go further.
+            "pop" => (vec![(SX, 2, ValS::Abs(0.0)), (OPACITY, 1, ValS::Abs(0.0))], 0.5, "back.out(1.2)"),
             "scale" => (vec![(SX, 2, ValS::Mul(0.8)), (OPACITY, 1, ValS::Abs(0.0))], 0.5, "outCubic"),
             "zoom" => (vec![(SX, 2, ValS::Mul(1.4)), (OPACITY, 1, ValS::Abs(0.0)), (BLUR, 1, ValS::Abs(20.0))], 0.7, "outExpo"),
             "blur" => (vec![(BLUR, 1, ValS::Abs(30.0)), (OPACITY, 1, ValS::Abs(0.0))], 0.6, "outCubic"),
-            "rotate" => (vec![(ROT, 1, ValS::Add(-90.0)), (SX, 2, ValS::Mul(0.6)), (OPACITY, 1, ValS::Abs(0.0))], 0.6, "outBack"),
+            "rotate" => (vec![(ROT, 1, ValS::Add(-90.0)), (SX, 2, ValS::Mul(0.6)), (OPACITY, 1, ValS::Abs(0.0))], 0.6, "back.out(1.2)"),
             "flip" => (vec![(SX, 1, ValS::Abs(0.0))], 0.5, "outCubic"),
             "bounce" => (vec![(Y, 1, ValS::Add(-dist.unwrap_or(h * 0.3))), (OPACITY, 1, ValS::Abs(0.0))], 0.9, "bouncy"),
             "draw" => {
