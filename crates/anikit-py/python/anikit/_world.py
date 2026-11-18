@@ -801,6 +801,18 @@ class World:
 
     # ---- bindings ---------------------------------------------------------------------------
 
+    def _make_binding(
+        self,
+        body: BodyRef,
+        target: Any,
+        *,
+        x: Optional[str] = "x",
+        y: Optional[str] = "y",
+        rotation: Optional[str] = "rotation",
+        offset: Sequence[float] = (0.0, 0.0),
+    ) -> _Binding:
+        return _Binding(self._index(body), target, x, y, rotation, float(offset[0]), float(offset[1]))
+
     def bind(
         self,
         body: BodyRef,
@@ -821,14 +833,20 @@ class World:
         >>> sprite
         {'x': 5.0, 'y': 5.0}
         """
-        b = _Binding(self._index(body), target, x, y, rotation, float(offset[0]), float(offset[1]))
+        b = self._make_binding(body, target, x=x, y=y, rotation=rotation, offset=offset)
         self._bindings.append(b)
         self._write([b], self._native.output())
 
     def bind_many(self, bodies: Iterable[BodyRef], targets: Iterable[Any], **keys: Any) -> None:
         """:meth:`bind` pairwise (e.g. ``world.bind_many(world.add_bodies(pts), sprites)``)."""
-        for b, t in zip(bodies, targets):
-            self.bind(b, t, **keys)
+        new: List[_Binding] = []
+        try:
+            for b, t in zip(bodies, targets):
+                new.append(self._make_binding(b, t, **keys))
+        finally:
+            if new:
+                self._bindings.extend(new)
+                self._write(new, self._native.output())
 
     def unbind(self, what: Any = None) -> None:
         """Remove bindings of a target, a body, or (``None``) all of them."""
