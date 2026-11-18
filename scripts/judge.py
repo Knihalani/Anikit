@@ -39,6 +39,7 @@ PACE = ROOT / "docs/video/quality/pace.py"
 DIMS = ["idea", "composition", "typography", "colour", "light_texture", "motion", "craft", "originality"]
 CRITIC_DIMS = ["motion", "sound", "craft"]
 N_FRAMES = 6
+MOTION_FLOOR = 4  # PASS/PRO need the jury's median motion >= this (controls: 5-8)
 MIN_FRAMES = int(os.environ.get("JUDGE_MIN_FRAMES", 4))  # refs need this many real frames
 CELL = (480, 300)
 MODEL = os.environ.get("JUDGE_MODEL", "claude-opus-5-5")
@@ -368,7 +369,7 @@ def motion_strips(src, n_strips=3, n=10, fps=10, w=320):
     return strips
 
 
-CLIPS = Path(os.environ.get("JUDGE_CLIPS", ROOT / ".cache/judge-clips"))  # <slug>.mp4, lawfully obtained (clips.json)
+CLIPS = Path(os.environ.get("JUDGE_CLIPS", ROOT / ".cache/judge-clips-md"))  # <slug>.mp4, lawfully obtained (clips.json)
 
 MOTION_PROMPT = """You are on the final jury of an international motion-design award, judging MOTION only.
 
@@ -534,7 +535,7 @@ def judge(name, frames, tags, args, exclude=(), video=None):
             dims["sound"] = s["sound"]
         result["full_scores"] = dims
         result["full_overall"] = round(statistics.mean(dims.values()), 2)
-    if video and os.environ.get("JUDGE_MOTION", "0") == "1":
+    if video and os.environ.get("JUDGE_MOTION", "0") == "1":  # informational: not part of the verdict (VALIDATION.md)
         m = motion_compare(video, tags, args.trials, args.seed, out, exclude=exclude)
         if m:
             result["motion_blind"] = m
@@ -553,6 +554,8 @@ def verdict(cand, delta):
     """PASS: indistinguishable from the style-matched refs. PRO: passes as real studio work but below the refs.
     FAIL: the jury can tell. Thresholds come from controls (held-out pro refs): every control is PRO or PASS."""
     pro = cand.get("pro_rate", 0) >= 0.6
+    if pro and (cand.get("scores", {}).get("motion") or 0) < MOTION_FLOOR:
+        return "FAIL"  # a well-made still is not a film: every control scores motion >= 5
     if pro and delta is not None and delta >= -1.0:
         return "PASS"
     if pro and (cand.get("overall") or 0) >= 5.0:
@@ -613,6 +616,35 @@ def cmd_sync_bench(args):
     subprocess.run([sys.executable, "-I", str(tool), "fetch", "--refresh"], cwd=src, env=env)
     shutil.rmtree(BENCH / "export", ignore_errors=True)
     subprocess.run([sys.executable, "-I", str(tool), "export", "--no-thumbs", "--out", str(BENCH / "export")], cwd=src, env=env, check=True)
+    cj = src / "docs/video/judge/benchmark/clips.json"
+    if cj.exists():
+        sync_clips(cj)
+
+
+MOTION_CLIP_SET = ["calibration-simon-vpro-idents-2010", "calibration-simon-vpro-motion-identity-launch-showreel-2010",
+                   "calibration-simon-vpro-vrije-geluiden-program-leader-2015",
+                   "calibration-nasa-how-far-away-is-voyager-1-one-light-day-explained",
+                   "calibration-blender-hero-grease-pencil-showcase", "blender-studio-charge-2022"]
+
+
+def sync_clips(clips_json):
+    """Lawful (CC/PD) direct-file clips from REFS's clips.json: a 20 s excerpt from the middle of each, into .cache/judge-clips."""
+    import time
+    allc = ROOT / ".cache/judge-clips"; allc.mkdir(parents=True, exist_ok=True)
+    md = ROOT / ".cache/judge-clips-md"; md.mkdir(parents=True, exist_ok=True)
+    ua = "anikit-judge/1.0 (evaluation; CC/PD clips)"
+    for c in json.loads(Path(clips_json).read_text()):
+        out = allc / f"{c['slug']}.mp4"
+        if not out.exists():
+            d = subprocess.run(["ffprobe", "-v", "error", "-user_agent", ua, "-show_entries", "format=duration", "-of", "csv=p=0", c["url"]],
+                               capture_output=True, text=True).stdout.strip()
+            ss = max(0.0, float(d) / 2 - 10) if d else 0.0
+            time.sleep(5)  # Commons rate-limits
+            subprocess.run(["ffmpeg", "-v", "error", "-y", "-user_agent", ua, "-ss", f"{ss:.1f}", "-i", c["url"], "-t", "20", "-an",
+                            "-c:v", "libx264", "-crf", "18", "-preset", "fast", str(out)], check=False)
+            time.sleep(5)
+        if c["slug"] in MOTION_CLIP_SET and out.exists() and not (md / out.name).exists():
+            (md / out.name).symlink_to(out)
 
 
 def cmd_batch(args):

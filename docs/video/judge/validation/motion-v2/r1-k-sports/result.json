@@ -1,0 +1,347 @@
+{
+  "refs": [
+    "calibration-nasa-how-far-away-is-voyager-1-one-light-day-explained",
+    "calibration-blender-hero-grease-pencil-showcase",
+    "blender-studio-charge-2022"
+  ],
+  "candidate": {
+    "motion": 4,
+    "judged_professional": "0/3",
+    "gaps": [
+      "No overshoot or settle on type, and the easing reads as default",
+      "One element moves at a time, with no overlapping choreography",
+      "No weight or camera language; the end card is a dead hold",
+      "Elements move one at a time, with no overlap or follow-through",
+      "Dead holds at the start and end of each strip",
+      "Easing is generic, with no overshoot, settle or weight in the type",
+      "No easing personality: no overshoot, no settle, nothing with weight",
+      "Strictly sequential reveals with long static holds between them, and no layer stays alive",
+      "No camera language at all: the frame is locked off and flat for the whole piece"
+    ]
+  },
+  "refs_summary": {
+    "blender-studio-charge-2022": {
+      "motion": 9,
+      "judged_professional": "3/3",
+      "gaps": [
+        "Second strip's action is partly hidden by blur, so the impact's key poses are hard to read",
+        "The cut from the grinder shot to the robot fight has no visual link; it is a plain cut",
+        "Final frames of the robot settle drift toward a near-hold",
+        "The second strip gets busy, and a few frames muddy where the action reads",
+        "The cut into the dark impact frame relies on blur more than on a clearly built transition",
+        "The sparks repeat a similar rhythm across the close-up beats",
+        "Fast action plus blur occasionally muddies the readability of key poses",
+        "The cut into the second strip is energetic but not a designed match",
+        "Spark density is high with little hierarchy in the motion"
+      ]
+    },
+    "calibration-blender-hero-grease-pencil-showcase": {
+      "motion": 8,
+      "judged_professional": "3/3",
+      "gaps": [
+        "The dissolve runs long and the motion inside it is soft and floaty",
+        "Some crowd members are nearly held during the hero's action",
+        "The rider in the wide shot moves with little visible gait or weight",
+        "The dissolve shot is mostly a held drawing while the opacity changes; little moves inside the frame",
+        "Background figures sometimes hold on a few drawings and read as limited animation",
+        "Camera language is mostly cuts and dissolves, without the driven, motivated camera of C",
+        "The background crowd is held on twos or frozen, so parts of the frame are dead",
+        "The dissolve runs about 6 frames and loses some punch",
+        "Less volumetric weight and camera complexity than C"
+      ]
+    },
+    "calibration-nasa-how-far-away-is-voyager-1-one-light-day-explained": {
+      "motion": 4,
+      "judged_professional": "1/3",
+      "gaps": [
+        "Transitions rely on a flash and a fade instead of a built morph or match",
+        "Linear spacing with no anticipation or settle on the zoom",
+        "Long near-dead holds on the solar-system layout",
+        "Long near-static holds once the orbit view settles",
+        "The transitions are not motivated: a flash to white instead of a match or morph",
+        "No secondary motion or overlap; one thing moves at a time",
+        "No secondary action or follow-through; elements move one at a time while everything else holds",
+        "The final orbit frames are almost static, with no camera drift or parallax to keep them alive",
+        "The easing looks generic (linear fades and scales) next to C's physically driven spacing"
+      ]
+    }
+  },
+  "ref_mean": 7,
+  "trials": [
+    {
+      "key": {
+        "A": "blender-studio-charge-2022",
+        "B": "candidate",
+        "C": "calibration-blender-hero-grease-pencil-showcase",
+        "D": "calibration-nasa-how-far-away-is-voyager-1-one-light-day-explained"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "motion": 8,
+            "tells": [
+              "Spark particles have varied velocity, motion blur and falloff, so they read as real ballistic physics",
+              "Handheld camera drift and rack focus on the grinder close-up keep every frame alive",
+              "Robot hit uses a whip-pan smear and a motion-blurred impact frame, then settles into a heavy, weighted recovery",
+              "Secondary motion: the character reacts while the sparks and the machine keep moving"
+            ],
+            "gaps": [
+              "Second strip's action is partly hidden by blur, so the impact's key poses are hard to read",
+              "The cut from the grinder shot to the robot fight has no visual link; it is a plain cut",
+              "Final frames of the robot settle drift toward a near-hold"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "motion": 8,
+            "tells": [
+              "Slow multi-frame cross-dissolve from the face to the wide shot, with the composition planned so the two images overlap with intent",
+              "Character anticipates (head turn, recoil) before the run, with overlapping hair and scarf follow-through",
+              "Crowd figures keep small offset secondary motion instead of freezing",
+              "Foreground smear and a wipe-by body push the cut into the next shot"
+            ],
+            "gaps": [
+              "The dissolve runs long and the motion inside it is soft and floaty",
+              "Some crowd members are nearly held during the hero's action",
+              "The rider in the wide shot moves with little visible gait or weight"
+            ]
+          },
+          "B": {
+            "verdict": "not professional",
+            "confidence": 0.7,
+            "motion": 4,
+            "tells": [
+              "Logo card holds dead still for about 6 frames; only the waves drift",
+              "Dot-matrix digits build on one at a time in a stepped, mechanical way",
+              "Wipe to the pitch reuses the circle shape, a decent match idea, but it is executed as a linear slide",
+              "Team names and the lower third pop or slide in, then freeze; long static end hold"
+            ],
+            "gaps": [
+              "No overshoot or settle on type, and the easing reads as default",
+              "One element moves at a time, with no overlapping choreography",
+              "No weight or camera language; the end card is a dead hold"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.7,
+            "motion": 4,
+            "tells": [
+              "Whiteout flash is used as a catch-all transition and covers about 5 frames with nothing designed in it",
+              "Title and labels fade or type on, then sit static",
+              "Earth\u2013Mars line collapses with a linear scale, then cuts to the orrery",
+              "Orrery zoom-out is a smooth linear camera pull; the planets barely orbit and the last 5 frames are nearly identical"
+            ],
+            "gaps": [
+              "Transitions rely on a flash and a fade instead of a built morph or match",
+              "Linear spacing with no anticipation or settle on the zoom",
+              "Long near-dead holds on the solar-system layout"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "C",
+          "B",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 21.2,
+        "cost_usd": 0.12582739999999998,
+        "tokens": 68118,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "calibration-blender-hero-grease-pencil-showcase",
+        "B": "candidate",
+        "C": "blender-studio-charge-2022",
+        "D": "calibration-nasa-how-far-away-is-voyager-1-one-light-day-explained"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "motion": 8,
+            "tells": [
+              "Slow, eased cross-dissolve from close-up to wide carries the emotion of the cut, not just a fade",
+              "Crowd keeps moving during the lead's acting beat: weight shifts, head turns and follow-through on hair and scarf",
+              "Strong anticipation into the lunge, then a foreground body crosses the frame and acts as a wipe into the next shot",
+              "Hand-drawn spacing has clear arcs, and the character's run toward the camera has real weight"
+            ],
+            "gaps": [
+              "The dissolve shot is mostly a held drawing while the opacity changes; little moves inside the frame",
+              "Background figures sometimes hold on a few drawings and read as limited animation",
+              "Camera language is mostly cuts and dissolves, without the driven, motivated camera of C"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "motion": 9,
+            "tells": [
+              "Particle sparks have correct motion blur, scatter with physical speed and decay naturally",
+              "Handheld camera shake and rack focus make the camera feel physically present",
+              "Heavy mechanical limbs swing with inertia, overlap and settle; the impact frame is smeared",
+              "Something is alive in every frame, with no dead holds"
+            ],
+            "gaps": [
+              "The second strip gets busy, and a few frames muddy where the action reads",
+              "The cut into the dark impact frame relies on blur more than on a clearly built transition",
+              "The sparks repeat a similar rhythm across the close-up beats"
+            ]
+          },
+          "B": {
+            "verdict": "not professional",
+            "confidence": 0.55,
+            "motion": 5,
+            "tells": [
+              "The logo holds almost still for about 6 frames, with only a looping wave",
+              "The dot-matrix counter builds on at a linear, mechanical rate",
+              "There is one good idea: the 19:45 graphic match-cuts into the pitch centre circle",
+              "The split wipe and team names slide in, then freeze, and the tagline pops on late"
+            ],
+            "gaps": [
+              "Elements move one at a time, with no overlap or follow-through",
+              "Dead holds at the start and end of each strip",
+              "Easing is generic, with no overshoot, settle or weight in the type"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.6,
+            "motion": 4,
+            "tells": [
+              "A white-out flash is used as a catch-all transition and hides the change rather than building it",
+              "Type-on and fade-in text is a template pattern",
+              "The zoom-out from Earth\u2013Mars to the solar system is a uniform scale with no camera easing",
+              "Planets drift at constant speed, and labels pop on, then the frame holds for about 5 frames"
+            ],
+            "gaps": [
+              "Long near-static holds once the orbit view settles",
+              "The transitions are not motivated: a flash to white instead of a match or morph",
+              "No secondary motion or overlap; one thing moves at a time"
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "A",
+          "B",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 21.1,
+        "cost_usd": 0.125978,
+        "tokens": 68112,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "calibration-nasa-how-far-away-is-voyager-1-one-light-day-explained",
+        "B": "calibration-blender-hero-grease-pencil-showcase",
+        "C": "blender-studio-charge-2022",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.6,
+            "motion": 6,
+            "tells": [
+              "The flare whiteout bridges the title into the diagram scene, so the transition reads as a motivated light burst rather than a plain dissolve",
+              "Text builds word by word ('IT' \u2192 'IT TAKES') with a soft fade-up",
+              "The Earth\u2013Mars pair shrinks into the solar-system view as a continuous scale-out, and the orbits expand outward in sequence",
+              "The second half of strip 2 is close to a dead hold: only small planet drift while the title and labels stay frozen",
+              "Label fade-ons are uniform, with no visible overshoot or settle"
+            ],
+            "gaps": [
+              "No secondary action or follow-through; elements move one at a time while everything else holds",
+              "The final orbit frames are almost static, with no camera drift or parallax to keep them alive",
+              "The easing looks generic (linear fades and scales) next to C's physically driven spacing"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "motion": 8,
+            "tells": [
+              "Long cross-dissolve from the close-up to the wide running shot, with the camera pushing in during it, so the cut reads as memory/intention",
+              "Character acting has clear anticipation: the head turn and shocked take come before the lunge forward",
+              "The foreground body wipes across camera into the next shot, a deliberate wipe built from the action itself",
+              "The crowd behind holds as limited animation, but the hero's arcs overlap",
+              "The running figure has a weight-bearing stride and the camera keeps advancing"
+            ],
+            "gaps": [
+              "The background crowd is held on twos or frozen, so parts of the frame are dead",
+              "The dissolve runs about 6 frames and loses some punch",
+              "Less volumetric weight and camera complexity than C"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "motion": 9,
+            "tells": [
+              "Particle sparks have believable ballistic spacing, motion blur and falloff",
+              "A handheld camera with rack focus and drift keeps every frame alive",
+              "The robot swing has weight: blurred acceleration, impact, then a heavy settle",
+              "Overlapping action between the character, the machine arms and the debris",
+              "Cuts land on the action, with the whip-blur frame used as the transition"
+            ],
+            "gaps": [
+              "Fast action plus blur occasionally muddies the readability of key poses",
+              "The cut into the second strip is energetic but not a designed match",
+              "Spark density is high with little hierarchy in the motion"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.7,
+            "motion": 4,
+            "tells": [
+              "The logo holds for about 6 frames with only faint wave and light-beam movement: a dead hold",
+              "Dot-matrix digits light on one at a time on a linear schedule, the typical template/plugin build",
+              "The crossfade into the pitch is a plain dissolve, and the split-screen wipe moves at constant speed",
+              "Team names pop or slide on and freeze; the bottom texts fade in one after another with no overlap",
+              "There is one intentional idea, the clock 'X' matching into the centre-circle ball, but it is executed as a dissolve"
+            ],
+            "gaps": [
+              "No easing personality: no overshoot, no settle, nothing with weight",
+              "Strictly sequential reveals with long static holds between them, and no layer stays alive",
+              "No camera language at all: the frame is locked off and flat for the whole piece"
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "B",
+          "A",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 22.1,
+        "cost_usd": 0.128251,
+        "tokens": 68236,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "cost_usd": 0.38
+}

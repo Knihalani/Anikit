@@ -1,0 +1,527 @@
+{
+  "name": "sim_snow",
+  "tags": [
+    "cg-3d",
+    "generative"
+  ],
+  "refs": [
+    "netflix-ribbon-logo-2019",
+    "futuredeluxe-plume-2017",
+    "weirdcore-aphex-twin-t69-collapse-2018"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 2,
+      "composition": 2,
+      "typography": 2,
+      "colour": 3,
+      "light_texture": 3,
+      "motion": 2,
+      "craft": 3,
+      "originality": 1
+    },
+    "overall": 2.25,
+    "judged_professional": "0/3",
+    "pro_rate": 0.0,
+    "mean_rank": 4,
+    "gaps": [
+      "It has no subject or point of view. It needs a specific image or story about snow (a place, a person, a material event) the way D builds a creature",
+      "The type is set as defaults and centred like a slide. It needs a typographic idea, with scale, placement or interaction with the falling snow",
+      "There is no choreography. It needs camera movement, changes of scene and a build that pays off, instead of one static layout with particles accumulating",
+      "Find a specific subject and a point of view: whose first snow, where, lit by what. Show C-level material (wet surfaces, rim light, real depth of field) instead of a particle preset on a gradient",
+      "Make the type part of the image: scale, crop, or letterforms that accumulate or melt like snow. Do not set a centred default serif plus a tracked-caps tagline",
+      "Build choreography: varied framing, a camera move, a change in state between frames, instead of one static layout with a fade-in",
+      "There is no subject or idea beyond the effect; it needs a specific image, place or story the snow acts on",
+      "The typography needs a point of view: a chosen face, expressive scale, and type that interacts with the snow (settling, melting, being covered)",
+      "It needs choreography and light: a changing camera, real lighting and material instead of a static vignette with particles"
+    ],
+    "tells": [
+      "It is the textbook 'tasteful AI' formula: a dark violet-black ground, a centred generic editorial-serif headline ('First snow') with a soft glow, and a tiny tracked-caps tagline ('THE QUIET BEFORE EVERYTHING') underneath",
+      "Stock particle snow plus depth-of-field bokeh is an effect with no subject",
+      "The composition is the same in every frame. Only the particle density increases and the text fades in, so almost nothing happens",
+      "The idea is entirely literal: the words 'First snow' over snow. The copy is vague, mood-board poetry",
+      "There is no light source, material or texture beyond the default particle sprites",
+      "A textbook 'tasteful AI' formula: a dark ground, a small generic editorial serif headline ('First snow') centred, and a tiny tracked-caps subline ('THE QUIET BEFORE EVERYTHING') under it",
+      "Effect with no subject: a stock falling-particle snow layer on a near-black gradient, with no place, object, person or light source",
+      "The same composition repeats across all five frames; the only change is the particle density and the title fading in. Effectively nothing happens",
+      "The idea is literal and obvious: the words 'first snow' over snow. The tagline is a vague, generic platitude",
+      "The headline has a soft glow and default kerning, sits in the same position, and has no scale contrast or integration with the image",
+      "Flat, unmotivated light, and the bokeh flakes are uniform sprites with no depth logic",
+      "The textbook 'tasteful AI' formula: a dark ground, a generic editorial-serif headline ('First snow'), and a tiny tracked-caps tagline ('THE QUIET BEFORE EVERYTHING') under it",
+      "The same composition in every frame; the only change is snow density increasing and the title fading in",
+      "Stock particle snow with default bokeh: an effect with no subject",
+      "The idea is literal: the words 'First snow' over snow",
+      "The type has a default glow and is placed like a slide, with no scale contrast and no link to the image",
+      "The title also shifts position between frames with no apparent motivation"
+    ]
+  },
+  "refs_summary": {
+    "netflix-ribbon-logo-2019": {
+      "overall": 7.88,
+      "judged_professional": "3/3",
+      "mean_rank": 2.33
+    },
+    "futuredeluxe-plume-2017": {
+      "overall": 8.25,
+      "judged_professional": "3/3",
+      "mean_rank": 1
+    },
+    "weirdcore-aphex-twin-t69-collapse-2018": {
+      "overall": 6.75,
+      "judged_professional": "3/3",
+      "mean_rank": 2.67
+    }
+  },
+  "ref_mean": 7.63,
+  "delta": -5.38,
+  "trials": [
+    {
+      "key": {
+        "A": "weirdcore-aphex-twin-t69-collapse-2018",
+        "B": "netflix-ribbon-logo-2019",
+        "C": "candidate",
+        "D": "futuredeluxe-plume-2017"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 8,
+              "composition": 7,
+              "typography": 6,
+              "colour": 7,
+              "light_texture": 8,
+              "motion": 8,
+              "craft": 7,
+              "originality": 9
+            },
+            "tells": [
+              "Photogrammetry and point-cloud scans of a real street are deliberately broken: buildings tear into shards, fold into a radial kaleidoscope against a burning sky and dissolve into data",
+              "The text is scattered monospace fragments mapped onto the point-cloud walls ('point cloud', 'midi', 'theory', 'simulation'). It works as material inside the space, not as a slide",
+              "The world changes from frame to frame (saturated red interior, sky-lit spiky mass, inverted radial architecture, dark text-scan corridor), so a camera path and progression are clearly choreographed",
+              "The glitch looks authored. The scan artefacts are pushed into a coherent red/yellow/teal palette rather than left as raw errors"
+            ],
+            "gaps": [
+              "The scan artefacts are under-art-directed in places (frame 2's mauve blob mass looks muddy and unresolved next to D's controlled material detail)",
+              "The text layer is legible only by accident. Choose a face and set the scale so the phrases land as a designed reading moment, not just texture",
+              "Lighting is mostly baked from the scan data. Add motivated light and depth grading so key frames hold up as posters the way D's do"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 8,
+              "composition": 7,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 7,
+              "motion": 8,
+              "craft": 9,
+              "originality": 7
+            },
+            "tells": [
+              "A specific brand idea: the logo's ribbon breaks into hundreds of coloured strands, a spectrum of stories, and gathers back into the N. Only this brand could make it",
+              "Clear choreography: the N dollies and tilts, ribbon striations appear, the camera dives into the strands, a perspective tunnel of colour opens, then the logo resolves again",
+              "The wordmark is used as architecture rather than as a label. The type is the image",
+              "The deliberate shift from monochrome red to a full spectrum and back is a real colour idea"
+            ],
+            "gaps": [
+              "Very large stretches are a lone centred mark on black. The frames are sparse compared with D's layered, dense compositions",
+              "The light-streak tunnel is a familiar motion-graphics trope. Push the strands toward a more tactile, unexpected material",
+              "It is so short and functional that it has little room to surprise. As a standalone film it reads as a superb ident rather than a piece with an emotional arc"
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.92,
+            "scores": {
+              "idea": 2,
+              "composition": 2,
+              "typography": 2,
+              "colour": 3,
+              "light_texture": 3,
+              "motion": 2,
+              "craft": 3,
+              "originality": 1
+            },
+            "tells": [
+              "It is the textbook 'tasteful AI' formula: a dark violet-black ground, a centred generic editorial-serif headline ('First snow') with a soft glow, and a tiny tracked-caps tagline ('THE QUIET BEFORE EVERYTHING') underneath",
+              "Stock particle snow plus depth-of-field bokeh is an effect with no subject",
+              "The composition is the same in every frame. Only the particle density increases and the text fades in, so almost nothing happens",
+              "The idea is entirely literal: the words 'First snow' over snow. The copy is vague, mood-board poetry",
+              "There is no light source, material or texture beyond the default particle sprites"
+            ],
+            "gaps": [
+              "It has no subject or point of view. It needs a specific image or story about snow (a place, a person, a material event) the way D builds a creature",
+              "The type is set as defaults and centred like a slide. It needs a typographic idea, with scale, placement or interaction with the falling snow",
+              "There is no choreography. It needs camera movement, changes of scene and a build that pays off, instead of one static layout with particles accumulating"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 8,
+              "composition": 9,
+              "typography": 7,
+              "colour": 9,
+              "light_texture": 10,
+              "motion": 8,
+              "craft": 9,
+              "originality": 8
+            },
+            "tells": [
+              "A phoenix-like human creature: it goes from a tar-black, oily, spined chrysalis to a figure dusted in gold and feathered, ending in a wings-spread ascension. There is a clear transformation arc",
+              "Exceptional material work: wet black shell, metallic powder on skin, iridescent feathers, floating motes and fine trails, all with real subsurface and specular response",
+              "A deliberate palette of oxblood, ember orange and violet over deep indigo/black, held consistently through every frame",
+              "Cinematic lighting with a lens character (soft rim light, shallow depth of field, bokeh that serves the subject). Every frame works as a poster",
+              "No type is visible. Its absence serves the piece, since the image carries the whole narrative"
+            ],
+            "gaps": [
+              "The 'dark-fantasy CG creature rebirth' genre is well trodden. One more unexpected conceptual turn would lift it from excellent to unforgettable",
+              "The final frame's centred, symmetrical pose is the most predictable composition in the set. Keep the off-axis tension of the earlier frames through the climax",
+              "If it is a title or brand piece, the missing type leaves the graphic layer unproven. An integrated typographic moment would complete it"
+            ]
+          }
+        },
+        "ranking": [
+          "D",
+          "A",
+          "B",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 31.4,
+        "cost_usd": 0.1565504,
+        "tokens": 71874,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "weirdcore-aphex-twin-t69-collapse-2018",
+        "B": "netflix-ribbon-logo-2019",
+        "C": "futuredeluxe-plume-2017",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.72,
+            "scores": {
+              "idea": 7,
+              "composition": 6,
+              "typography": 6,
+              "colour": 7,
+              "light_texture": 7,
+              "motion": 7,
+              "craft": 6,
+              "originality": 8
+            },
+            "tells": [
+              "Photogrammetry / point-cloud scans of real streets and houses, deliberately broken: a red-shifted alley, a spiky melted landscape, buildings folded into a tiny-planet kaleidoscope around a windmill-like hub against a burning sky",
+              "Every sampled frame is a different spatial idea (corridor, terrain, radial fold, text-as-geometry, return to the alley), so the sequence has a structure that starts and ends in the same place",
+              "Type is used as material: monospaced fragments of a spoken or written text mapped onto the scanned walls and floor as a field of words, not set as a headline",
+              "The look is raw and messy on purpose, and texture, artefacts and glitch carry the subject (memory, simulation, data) instead of decorating a template",
+              "Craft is uneven: some frames read as unresolved mesh noise, and the composition depends on the effect rather than being authored"
+            ],
+            "gaps": [
+              "Edit the glitch harder: some frames (the melted terrain) are just a render artefact with no focal point. Give each scan state a clear subject and a composed frame, as C does with its figure",
+              "Grade with a tighter palette. The saturated red, sky-blue and fire-orange swings feel arbitrary, where C holds one deliberate magenta/ember/indigo world",
+              "Give the text-mapped walls a typographic hierarchy (scale contrast, a readable key phrase) so the type lands as an idea and does not dissolve into texture"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 8,
+              "composition": 7,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 7,
+              "motion": 9,
+              "craft": 9,
+              "originality": 7
+            },
+            "tells": [
+              "A brand ident built on one specific idea: the letterform's ribbon strokes unfurl into a spectrum of light streaks, as if you are travelling through the mark into the content, and then reassemble into the N",
+              "Clear choreography across frames: flat mark, a turn in depth with the stroke splitting into striations, full-frame vertical bars, a perspective rush of coloured lines, then the resolved mark. That is a beginning, middle and end",
+              "The letterform is the only type, and it is a custom, dimensional and shaded logotype handled with precision: shadowed folds, a ribbon-like stroke, and a consistent red edge carried through the streaks",
+              "A deliberate palette: brand red opening into a controlled spectrum on black, then back to red",
+              "The centred mark on black is normal for an ident here and gets earned by the transformation, so it does not read as an AI tell"
+            ],
+            "gaps": [
+              "The bookend frames (a centred mark on pure black) are inherently sparse. C makes every single frame a dense, lit poster",
+              "The light streaks are a well-worn speed-tunnel trope. Give the streaks more material specificity (fibre, grain, light falloff) so the middle section is unmistakably this ident's own",
+              "Add texture and depth to the black void (atmosphere, subtle haze, reflection) so the light has something to live in, the way C's volumetric indigo does"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.88,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 7,
+              "colour": 9,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 9,
+              "originality": 8
+            },
+            "tells": [
+              "A specific transformation narrative: a dark, wet, chitinous body becomes a human face dusted in pigment, then a feathered creature, a storm of feathers, and finally a winged figure. The phoenix / metamorphosis idea is told through material change, not text",
+              "Rich, physically motivated light: rim-lit wet surfaces, shallow depth of field with bokeh, volumetric indigo haze, particulate gold dust",
+              "A deliberate, unusual palette of ember orange, oxblood, violet and iridescent cyan on deep indigo-black, held consistently across every frame",
+              "High-density detail: individually modelled feathers, scales, droplets and threads, with no stock primitives",
+              "Varied framing (extreme close-up, profile, mid-shot, an abstract feather swarm, a frontal hero shot) gives clear evidence of camera choreography. No type is visible, and its absence serves the piece: the imagery carries the entire narrative"
+            ],
+            "gaps": [
+              "The final frontal hero pose on pure black is the most conventional frame. Hold the volumetric environment through to the end rather than dropping to a void",
+              "Several mid-frames lean on the same dark-violet ground. Introduce one sharper tonal or scale shift to punctuate the arc",
+              "If this is a title or brand piece, any end-card type needs to match the image's level of craft. Nothing shown proves a typographic point of view yet"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 2,
+              "composition": 2,
+              "typography": 3,
+              "colour": 3,
+              "light_texture": 3,
+              "motion": 2,
+              "craft": 3,
+              "originality": 1
+            },
+            "tells": [
+              "A textbook 'tasteful AI' formula: a dark ground, a small generic editorial serif headline ('First snow') centred, and a tiny tracked-caps subline ('THE QUIET BEFORE EVERYTHING') under it",
+              "Effect with no subject: a stock falling-particle snow layer on a near-black gradient, with no place, object, person or light source",
+              "The same composition repeats across all five frames; the only change is the particle density and the title fading in. Effectively nothing happens",
+              "The idea is literal and obvious: the words 'first snow' over snow. The tagline is a vague, generic platitude",
+              "The headline has a soft glow and default kerning, sits in the same position, and has no scale contrast or integration with the image",
+              "Flat, unmotivated light, and the bokeh flakes are uniform sprites with no depth logic"
+            ],
+            "gaps": [
+              "Find a specific subject and a point of view: whose first snow, where, lit by what. Show C-level material (wet surfaces, rim light, real depth of field) instead of a particle preset on a gradient",
+              "Make the type part of the image: scale, crop, or letterforms that accumulate or melt like snow. Do not set a centred default serif plus a tracked-caps tagline",
+              "Build choreography: varied framing, a camera move, a change in state between frames, instead of one static layout with a fade-in"
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "B",
+          "A",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 34.4,
+        "cost_usd": 0.1645198,
+        "tokens": 72286,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "futuredeluxe-plume-2017",
+        "B": "netflix-ribbon-logo-2019",
+        "C": "weirdcore-aphex-twin-t69-collapse-2018",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 7,
+              "colour": 9,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 9,
+              "originality": 8
+            },
+            "tells": [
+              "Dense, layered CG figure built from feathers, spines, wet obsidian skin and gold dust: the material is designed in detail, not a stock shader",
+              "Deliberate palette of oxblood, ember orange and ultraviolet against deep indigo, with iridescent magenta feather accents",
+              "Real lighting: soft rim light, shallow depth of field, floating particles and bokeh that give the frames atmosphere",
+              "Clear arc across frames: a dark, wet chrysalis-like form turns into a feathered face, then a figure splitting into feathers, then a full phoenix spread in profile. That is choreography, not one repeated shot",
+              "No type is shown; this is a pure image piece and loses nothing without it",
+              "Off-axis, cropped, intimate compositions that change scale from macro detail to the full figure"
+            ],
+            "gaps": [
+              "The rebirth/phoenix idea is familiar territory; a more specific conceptual hook would make it unmistakable",
+              "Its look of saturated feathers and particles sits close to well-known title-sequence aesthetics and could push further from the genre",
+              "The final black-ground, symmetric hero pose is the most conventional frame; the ending needs as much surprise as the middle"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 8,
+              "composition": 7,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 7,
+              "motion": 9,
+              "craft": 9,
+              "originality": 7
+            },
+            "tells": [
+              "A single clear idea: the logo's ribbon strokes split into hundreds of coloured light filaments, a spectrum of 'stories', and then come back together",
+              "Strong choreography: the mark sits still, then a push-in into the stroke, a macro of the fibres, a perspective rush of rainbow lines, and a resolve to the mark",
+              "The letterform is the typography itself, treated as a material with folds, shading and fibre detail",
+              "A controlled palette: brand red opens up into a full spectrum and then returns to red",
+              "Huge scale contrast between the small centred mark and the full-frame abstraction"
+            ],
+            "gaps": [
+              "Three of five frames are a centred mark on flat black; between the transitions there is little world or texture",
+              "The light-streak 'hyperspace' passage is a familiar motion-graphics move; it needs a more ownable texture or detail",
+              "Compared with A, it lacks physical material and light; the fibres read as clean CG rather than tactile"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.6,
+            "scores": {
+              "idea": 7,
+              "composition": 6,
+              "typography": 6,
+              "colour": 6,
+              "light_texture": 6,
+              "motion": 7,
+              "craft": 5,
+              "originality": 8
+            },
+            "tells": [
+              "Photogrammetry and point-cloud streets broken on purpose, with mesh tearing used as an aesthetic, which reads as an artist's choice rather than a tool default",
+              "Varied set-pieces: a red-mapped alley, a crumpled terrain mesh, a kaleidoscopic radial ring of houses against a fiery sky, and a corridor rebuilt from typed words",
+              "The type is part of the space: monospace text fragments mapped onto the walls as the city's data, a real typographic idea",
+              "Strong variety and spatial camera movement implied between frames"
+            ],
+            "gaps": [
+              "The finish is rough and the colour harsh (saturated red/yellow false-colour); the palette feels found rather than authored",
+              "Compositions are chaotic and lack a clear focal hierarchy; few frames work as posters",
+              "The glitch-photogrammetry language is now common; it needs more control of light and a sharper thread between scenes"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 2,
+              "composition": 2,
+              "typography": 2,
+              "colour": 3,
+              "light_texture": 3,
+              "motion": 2,
+              "craft": 3,
+              "originality": 1
+            },
+            "tells": [
+              "The textbook 'tasteful AI' formula: a dark ground, a generic editorial-serif headline ('First snow'), and a tiny tracked-caps tagline ('THE QUIET BEFORE EVERYTHING') under it",
+              "The same composition in every frame; the only change is snow density increasing and the title fading in",
+              "Stock particle snow with default bokeh: an effect with no subject",
+              "The idea is literal: the words 'First snow' over snow",
+              "The type has a default glow and is placed like a slide, with no scale contrast and no link to the image",
+              "The title also shifts position between frames with no apparent motivation"
+            ],
+            "gaps": [
+              "There is no subject or idea beyond the effect; it needs a specific image, place or story the snow acts on",
+              "The typography needs a point of view: a chosen face, expressive scale, and type that interacts with the snow (settling, melting, being covered)",
+              "It needs choreography and light: a changing camera, real lighting and material instead of a static vignette with particles"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "B",
+          "C",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 29.8,
+        "cost_usd": 0.154415,
+        "tokens": 71772,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "critic": {
+    "answer": {
+      "scores": {
+        "motion": 3,
+        "sound": 3,
+        "craft": 5
+      },
+      "checks": {
+        "idea": false,
+        "invariant": true,
+        "arc": false,
+        "type_meaning": false,
+        "freeze_frame": false,
+        "ending": false,
+        "restraint": true,
+        "material": false,
+        "sync": false
+      },
+      "defects": [
+        "Single 8 s locked-off shot with no camera move, cut or change of scene. The only change is particle density rising, so frames 4\u20136 are nearly identical, about 4 s of dead air.",
+        "The snow looks like stock particle emitters: falling straight down at a constant rate, with no turbulence, gusts or variation in wind. The large bokeh flakes read as flat grey discs with hard-ish edges instead of real defocus.",
+        "The title just fades in with a soft glow, and the tracked tagline reveals left to right ('THE QUIET BEFORE EVERY\u2026'). This is a stock text reveal with no choreography and no link to the snow.",
+        "The tagline is small and low-contrast. The thin tracked sans breaks up against the busy particle field at 100%, and flakes cross over the text without any depth separation.",
+        "The glow halo behind 'First snow' is an obvious soft rectangular smear, visible in the crop.",
+        "The audio is a static harmonic drone (evenly spaced, unchanging partials) with a white-noise riser that cuts sharply at about 3.75 s. That cut doesn't clearly line up with the title reveal, and after it the drone just sustains and fades. There is no sound design for snow, wind or texture.",
+        "The ending doesn't resolve: the frame holds the same title plate with more flakes and then stops."
+      ],
+      "gaps": [
+        "No idea or arc: 'quiet before everything' is stated in text but never staged. The piece needs a build and a release, for example snow suspending or freezing at the peak, a reveal of a world or a camera push, and an ending that echoes the empty opening frame.",
+        "Motion has no physicality or variety. Top studio work would use layered depth with parallax, wind fields with gusts, flakes interacting with the type (landing, settling, wiping it), and a camera move to give the shot weight and point of view.",
+        "The sound is a generated drone plus a noise sweep. It needs foley-level detail (hush, crunch, breath, room tone), a dynamic shape that follows the picture, and a real hit or silence beat locked to the title moment."
+      ]
+    },
+    "meta": {
+      "seconds": 20.6,
+      "cost_usd": 0.15728,
+      "tokens": 71856,
+      "models": [
+        "claude-opus-5-5"
+      ]
+    },
+    "pace": "snow.mp4: 8.0s, 1 shots, median 8.00s, longest 8.00s\nper-second change: [3.8, 8.4, 11.1, 13.7, 15.1, 15.8, 16.4]\nPACE: FAIL \u2014 longest shot 8.0s > 2.5s; median shot 8.0s > 1.5s"
+  },
+  "full_scores": {
+    "idea": 2,
+    "composition": 2,
+    "typography": 2,
+    "colour": 3,
+    "light_texture": 3,
+    "motion": 2.5,
+    "craft": 4.0,
+    "originality": 1,
+    "sound": 3
+  },
+  "full_overall": 2.5,
+  "cost_usd": 0.633,
+  "judge_seconds": 116.2,
+  "verdict": "FAIL"
+}

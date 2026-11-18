@@ -1,0 +1,355 @@
+{
+  "refs": [
+    "calibration-nasa-how-far-away-is-voyager-1-one-light-day-explained",
+    "calibration-simon-vpro-motion-identity-launch-showreel-2010",
+    "calibration-blender-hero-grease-pencil-showcase"
+  ],
+  "candidate": {
+    "motion": 7,
+    "judged_professional": "3/3",
+    "gaps": [
+      "One element family (rays plus logo) carries all the motion, with no secondary layer for follow-through",
+      "Hold of about 4\u20135 frames on the small logo before the white cut feels dead",
+      "Transitions are hard cuts with no built morph between the white and black states",
+      "The idea is one radial burst plus scale, with no handoffs to secondary elements",
+      "The settle runs about 4 frames with little secondary motion, close to a hold",
+      "No real camera language or weight beyond scale changes",
+      "Dead hold of about 0.4 s near the end, then a hard pop to the end card with no transition",
+      "Motion vocabulary is limited to scale and rotate, with no physical weight or secondary detail",
+      "No camera language; everything is frontal 2D"
+    ]
+  },
+  "refs_summary": {
+    "calibration-blender-hero-grease-pencil-showcase": {
+      "motion": 8,
+      "judged_professional": "3/3",
+      "gaps": [
+        "Background crowd moves less than the hero, and a few figures nearly hold across 3\u20134 frames",
+        "The dissolve is a fairly conventional transition and is not a true match cut",
+        "Some held poses on limited-animation 2s/3s, so a few consecutive frames barely change",
+        "The first transition is a plain cross-dissolve rather than a built match cut",
+        "Some held drawings, typical of animating on twos, give slight stepping in the crowd",
+        "The dissolve frames have little motion of their own and lean on the bloom",
+        "The dissolve in strip 1 runs long and goes a little soft in the middle frames",
+        "The crowd is fairly static during the lead's action, with limited secondary motion",
+        "Minimal camera move in the first shot, which leans on the dissolve"
+      ]
+    },
+    "calibration-simon-vpro-motion-identity-launch-showreel-2010": {
+      "motion": 4,
+      "judged_professional": "1/3",
+      "gaps": [
+        "No spatial motion, easing or overshoot on the main element compared with A's acting and camera",
+        "No choreography: one property changes while everything else holds",
+        "Transitions are pops and fades rather than built wipes, morphs or match cuts",
+        "No spatial motion or camera: everything happens inside a locked logo, while C pushes the camera and moves bodies through depth",
+        "Changes happen as cuts and colour pops with no ease in or out, and no anticipation or settle",
+        "Dead holds between beats where nothing in the frame is alive",
+        "No spatial motion, weight or overshoot: the mark never moves and only its fill changes",
+        "Changes pop on frame-to-frame with no visible easing between states",
+        "No choreography: one effect at a time while everything else holds"
+      ]
+    },
+    "calibration-nasa-how-far-away-is-voyager-1-one-light-day-explained": {
+      "motion": 7,
+      "judged_professional": "3/3",
+      "gaps": [
+        "The flare whiteout spends about 3 frames at near-blank white, which reads as a held frame",
+        "Diagram elements move in a uniform, mechanical way with no weight or overshoot",
+        "The second strip ends in a long, slow drift with little new action compared with A",
+        "The whiteout spends about 3 frames on a near-blank frame, which reads as a dead hold dressed up",
+        "The orbit zoom is linear and gentle, with no overshoot or settle accent",
+        "Elements mostly fade on rather than moving into place, which flattens the choreography",
+        "Second strip turns into a near-static hold with only slow, linear orbital drift",
+        "Little weight or overshoot: elements dissolve or scale rather than land",
+        "Camera stays flat apart from the implied zoom-out; no parallax or depth staging like C"
+      ]
+    }
+  },
+  "ref_mean": 6.33,
+  "trials": [
+    {
+      "key": {
+        "A": "calibration-blender-hero-grease-pencil-showcase",
+        "B": "candidate",
+        "C": "calibration-simon-vpro-motion-identity-launch-showreel-2010",
+        "D": "calibration-nasa-how-far-away-is-voyager-1-one-light-day-explained"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "motion": 8,
+            "tells": [
+              "Long overlapping cross-dissolve from the face close-up to the wide shot, timed so the walking figure comes forward through the fade",
+              "Character acting has anticipation: the head turns, the expression changes, then she lunges forward",
+              "The secondary crowd keeps moving with small offsets (heads, staffs) instead of freezing",
+              "Foreground smear and occlusion wipe built into the action (the arm and body sweep past camera) to hide the cut into the next shot",
+              "Camera push and depth parallax in the desert shot, with smoke drifting the whole time"
+            ],
+            "gaps": [
+              "Background crowd moves less than the hero, and a few figures nearly hold across 3\u20134 frames",
+              "The dissolve is a fairly conventional transition and is not a true match cut",
+              "Some held poses on limited-animation 2s/3s, so a few consecutive frames barely change"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.7,
+            "motion": 7,
+            "tells": [
+              "Hard cut from white to black, then the starburst spins out from behind the wordmark with clear acceleration",
+              "The wordmark scales up past its rest size and settles back (overshoot and settle)",
+              "The rays rotate and stagger, so they overlap with the type's scale move instead of moving in lockstep",
+              "Exit is eased: the burst collapses and slows into the final lockup before the cut back to white"
+            ],
+            "gaps": [
+              "One element family (rays plus logo) carries all the motion, with no secondary layer for follow-through",
+              "Hold of about 4\u20135 frames on the small logo before the white cut feels dead",
+              "Transitions are hard cuts with no built morph between the white and black states"
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.6,
+            "motion": 4,
+            "tells": [
+              "The logo stays locked in place and at the same scale in almost every frame; only the background colour and fills change",
+              "Background shifts by linear opacity fades (grey ramp to white) or pops (cyan on, cyan off)",
+              "Light streaks fade out linearly with no direction change or spacing variation",
+              "Fill effects (stripes, dots, radial burst on the 'o') pop on frame to frame instead of animating in",
+              "Many near-identical frames: dead holds on the white field"
+            ],
+            "gaps": [
+              "No spatial motion, easing or overshoot on the main element compared with A's acting and camera",
+              "No choreography: one property changes while everything else holds",
+              "Transitions are pops and fades rather than built wipes, morphs or match cuts"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.65,
+            "motion": 7,
+            "tells": [
+              "Flare blowout used as a motivated transition from the title into the diagram, with build, peak and decay",
+              "Text reveals word by word ('IT' \u2192 'IT TAKES'), staggered against the planets fading in",
+              "Camera pulls back from the Earth\u2013Mars line to the solar system with eased deceleration as the orbits resolve",
+              "Orbiting bodies keep moving through the text holds, so the frame stays alive",
+              "The 'NEPTUNE' label types on in sync with the planet arriving"
+            ],
+            "gaps": [
+              "The flare whiteout spends about 3 frames at near-blank white, which reads as a held frame",
+              "Diagram elements move in a uniform, mechanical way with no weight or overshoot",
+              "The second strip ends in a long, slow drift with little new action compared with A"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "B",
+          "D",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 21.6,
+        "cost_usd": 0.1307466,
+        "tokens": 68564,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "calibration-simon-vpro-motion-identity-launch-showreel-2010",
+        "B": "candidate",
+        "C": "calibration-blender-hero-grease-pencil-showcase",
+        "D": "calibration-nasa-how-far-away-is-voyager-1-one-light-day-explained"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "not professional",
+            "confidence": 0.55,
+            "motion": 4,
+            "tells": [
+              "Strip 1 is mostly a global brightness fade from dark to white, and the logo never moves",
+              "The light streaks dissolve away in place instead of travelling across the frame",
+              "The cyan/yellow colour swap pops on for two frames and pops off with no easing",
+              "Frames 5-7 and 10 are near-identical dead holds",
+              "The sunburst fill in strip 2 is a texture swap inside fixed letterforms, with no change of scale, position or weight",
+              "Nothing overshoots, settles or follows through, and there is no camera"
+            ],
+            "gaps": [
+              "No spatial motion or camera: everything happens inside a locked logo, while C pushes the camera and moves bodies through depth",
+              "Changes happen as cuts and colour pops with no ease in or out, and no anticipation or settle",
+              "Dead holds between beats where nothing in the frame is alive"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.7,
+            "motion": 7,
+            "tells": [
+              "The logo scales up hard past frame, then pulls back to rest size, so the scale has a clear peak and a settle",
+              "The star-burst blades rotate and fan out while the wordmark scales, so two layers move in overlapping motion",
+              "The blades break apart and sweep out as the logo shrinks, which reads as follow-through",
+              "It cuts from white to black and back as clean bookends",
+              "The settled wordmark in the last frames still has a slight drift"
+            ],
+            "gaps": [
+              "The idea is one radial burst plus scale, with no handoffs to secondary elements",
+              "The settle runs about 4 frames with little secondary motion, close to a hold",
+              "No real camera language or weight beyond scale changes"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "motion": 8,
+            "tells": [
+              "Character acting has anticipation: the woman's head turns and she leans back before lunging forward",
+              "The camera pushes past her into a foreground occluder (shoulder and fist) that works as a motivated wipe into the next shot",
+              "Background crowd figures shift and react; overlapping action keeps every frame alive",
+              "The run gives the body weight, with the camera tracking it in depth",
+              "The driver-to-runner transition is a long cross-dissolve with a light bloom, which is soft but deliberate"
+            ],
+            "gaps": [
+              "The first transition is a plain cross-dissolve rather than a built match cut",
+              "Some held drawings, typical of animating on twos, give slight stepping in the crowd",
+              "The dissolve frames have little motion of their own and lean on the bloom"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.65,
+            "motion": 6,
+            "tells": [
+              "A light flare blows out to white and then resolves into the diagram, so the transition has a purpose",
+              "Text types on word by word (IT / TAKES), in time with the scene",
+              "The Earth-Mars line collapses as the solar system scales in, a handoff from one diagram to the next",
+              "The camera zooms out on the orbits with easing, and planets keep orbiting",
+              "The last strip is a slow drift where the only change is a label fading on, close to a hold"
+            ],
+            "gaps": [
+              "The whiteout spends about 3 frames on a near-blank frame, which reads as a dead hold dressed up",
+              "The orbit zoom is linear and gentle, with no overshoot or settle accent",
+              "Elements mostly fade on rather than moving into place, which flattens the choreography"
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "B",
+          "D",
+          "A"
+        ]
+      },
+      "meta": {
+        "seconds": 24.0,
+        "cost_usd": 0.1325226,
+        "tokens": 68648,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "calibration-nasa-how-far-away-is-voyager-1-one-light-day-explained",
+        "B": "calibration-simon-vpro-motion-identity-launch-showreel-2010",
+        "C": "calibration-blender-hero-grease-pencil-showcase",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.7,
+            "motion": 7,
+            "tells": [
+              "Title dissolves through a building light flare and whiteout, then resolves into the diagram: a transition built with intent",
+              "Earth\u2013Moon labels and words come in one after another ('IT' then 'TAKES'), so the beats are staggered",
+              "Earth\u2013Mars light-beam measurement scales down and hands off to the full orbital system, which works as a match transition",
+              "Planets keep drifting along their orbits during the text holds, so the frame never fully dies",
+              "Orbital drift in strip 2 is slow and even, almost linear, with little easing or accent"
+            ],
+            "gaps": [
+              "Second strip turns into a near-static hold with only slow, linear orbital drift",
+              "Little weight or overshoot: elements dissolve or scale rather than land",
+              "Camera stays flat apart from the implied zoom-out; no parallax or depth staging like C"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.6,
+            "motion": 6,
+            "tells": [
+              "Diagonal light streaks sweep while the background steps up in value: a deliberate fade-to-white ramp",
+              "Hard colour-flash cuts (cyan/yellow) timed as punches",
+              "Letterforms change through glyph effects (line fill, burst rays on the 'o'), giving the logo some life",
+              "The logo stays locked in position and scale for all 20 frames; all the action is surface treatment",
+              "Several near-identical consecutive frames read as dead holds"
+            ],
+            "gaps": [
+              "No spatial motion, weight or overshoot: the mark never moves and only its fill changes",
+              "Changes pop on frame-to-frame with no visible easing between states",
+              "No choreography: one effect at a time while everything else holds"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "motion": 9,
+            "tells": [
+              "Long cross-dissolve from a close-up to a wide shot, matched on the character's position: a motivated match transition",
+              "Old woman shows clear anticipation (head turn, recoil) before a lunge toward the camera, then her fist/shoulder wipes the frame into a new shot",
+              "Secondary action from the crowd and overlapping action on hair and scarf",
+              "Camera push and depth staging, with foreground occlusion used as the cut",
+              "Something is alive in every frame; no dead holds"
+            ],
+            "gaps": [
+              "The dissolve in strip 1 runs long and goes a little soft in the middle frames",
+              "The crowd is fairly static during the lead's action, with limited secondary motion",
+              "Minimal camera move in the first shot, which leans on the dissolve"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.7,
+            "motion": 7,
+            "tells": [
+              "Hard cut white\u2192black, then the logo scales up with an overshoot while a gradient star blade fans out and rotates",
+              "Wordmark and star move at different rates, giving overlapping action and parallax",
+              "Snap scale-down settles back to rest size and the blades retract with a follow-through",
+              "Ends on four near-identical frames before a pop to the white end card",
+              "Bold, graphic energy, but limited to scale and rotate"
+            ],
+            "gaps": [
+              "Dead hold of about 0.4 s near the end, then a hard pop to the end card with no transition",
+              "Motion vocabulary is limited to scale and rotate, with no physical weight or secondary detail",
+              "No camera language; everything is frontal 2D"
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "A",
+          "D",
+          "B"
+        ]
+      },
+      "meta": {
+        "seconds": 23.0,
+        "cost_usd": 0.1299978,
+        "tokens": 68513,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "cost_usd": 0.393
+}

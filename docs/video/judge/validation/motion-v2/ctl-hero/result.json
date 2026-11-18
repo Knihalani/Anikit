@@ -1,0 +1,347 @@
+{
+  "refs": [
+    "calibration-simon-vpro-idents-2010",
+    "calibration-simon-vpro-motion-identity-launch-showreel-2010",
+    "calibration-nasa-how-far-away-is-voyager-1-one-light-day-explained"
+  ],
+  "candidate": {
+    "motion": 8,
+    "judged_professional": "3/3",
+    "gaps": [
+      "Some crowd members hold quite still behind the hero (limited animation)",
+      "The dissolve lingers; a match cut would be tighter",
+      "Camera is mostly locked; little camera language beyond the foreground wipe",
+      "The crossfade runs a little long and soft compared with a tighter match cut",
+      "Background crowd figures hold fairly still in places",
+      "The camera move in the first strip is mostly a 2D scale with little parallax",
+      "The dissolve is long and soft and could be tighter",
+      "Some crowd figures hold on similar poses for several frames",
+      "Limited camera movement during the dialogue beat"
+    ]
+  },
+  "refs_summary": {
+    "calibration-nasa-how-far-away-is-voyager-1-one-light-day-explained": {
+      "motion": 6,
+      "judged_professional": "3/3",
+      "gaps": [
+        "Whiteout transition is a generic flash rather than a match cut or morph; frames 5\u20137 are dead white",
+        "Orbit motion reads as linear and constant-rate, with no secondary motion or overlap once the system settles",
+        "Text and labels pop and fade instead of carrying momentum; the choreography is functional rather than expressive",
+        "Motion is mostly linear orbit drift and fades, with little overshoot or settle",
+        "The whiteout runs for several frames and hides the change instead of choreographing it",
+        "Elements move one at a time with little overlap between them",
+        "The orbits look evenly spaced and linear, close to a template",
+        "In the second strip the label and planets mostly hold while a single dot moves",
+        "The washed-out white frames leave about 2 frames of dead air during the bloom"
+      ]
+    },
+    "calibration-simon-vpro-motion-identity-launch-showreel-2010": {
+      "motion": 4,
+      "judged_professional": "1/3",
+      "gaps": [
+        "No spacing, overshoot or settle on any element; everything is either frozen or popped",
+        "No choreography: a single layer changes at a time while the mark holds rigid",
+        "No camera, scale or weight; it reads as a sequence of styleframes rather than motion",
+        "The logo never travels, scales or turns, so it shows no weight or physicality",
+        "Long dead holds (frames 6\u20137 and 10\u201312) where nothing reads as alive",
+        "Transitions are hard colour cuts and fades rather than motivated wipes or morphs",
+        "There is no scale, overshoot or physical weight on any element",
+        "Nothing hands off or overlaps; changes happen as one global swap at a time",
+        "Transitions are flashes and dissolves with no clear purpose"
+      ]
+    },
+    "calibration-simon-vpro-idents-2010": {
+      "motion": 7,
+      "judged_professional": "3/3",
+      "gaps": [
+        "Several near-identical frames in strip 1 (rows 2) and the tail of strip 2 are holds",
+        "Out-of-frame scale punches feel a bit brute-force rather than finely eased",
+        "The transition back to white is a straight cut with no morph or match",
+        "The wordmark scales and slides as one rigid block, with no per-letter overlap or follow-through",
+        "Hold on the settled logo in black (about 4 frames) before the cut",
+        "Black-to-white endframe change is a hard cut rather than a built transition",
+        "The settle at rest size holds for about 4 frames with little secondary motion",
+        "The transitions in and out of the white card are cuts rather than built morphs",
+        "It is a single element choreographed against itself, so there is no layered handoff between parts"
+      ]
+    }
+  },
+  "ref_mean": 5.67,
+  "trials": [
+    {
+      "key": {
+        "A": "calibration-nasa-how-far-away-is-voyager-1-one-light-day-explained",
+        "B": "candidate",
+        "C": "calibration-simon-vpro-motion-identity-launch-showreel-2010",
+        "D": "calibration-simon-vpro-idents-2010"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.7,
+            "motion": 6,
+            "tells": [
+              "Title push-in eases into a bloom/whiteout flash that is used as a deliberate transition into the diagram scene",
+              "Labels type on word by word ('IT' \u2192 'IT TAKES'), timed against the arrival of the planets",
+              "Earth\u2013Mars light beam draws on, then the whole system eases out and scales down to show the wider orbit; the scale handoff is clean",
+              "Second strip ends in a near-hold: the orbits creep while the frame barely changes over 5+ frames"
+            ],
+            "gaps": [
+              "Whiteout transition is a generic flash rather than a match cut or morph; frames 5\u20137 are dead white",
+              "Orbit motion reads as linear and constant-rate, with no secondary motion or overlap once the system settles",
+              "Text and labels pop and fade instead of carrying momentum; the choreography is functional rather than expressive"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "motion": 8,
+            "tells": [
+              "Long cross-dissolve from a close-up of the driver to a wide desert run builds a layered emotional transition, not a plain fade",
+              "Character acting carries the scene: the head turn with hair follow-through, a shift in expression, and an anticipation pose before the run",
+              "Foreground body wipes past camera (smear/occlusion wipe) and hands off into the next shot, so the cut is motivated by action",
+              "Crowd has subtle secondary life while the hero moves; weight shifts into the run read physically"
+            ],
+            "gaps": [
+              "Some crowd members hold quite still behind the hero (limited animation)",
+              "The dissolve lingers; a match cut would be tighter",
+              "Camera is mostly locked; little camera language beyond the foreground wipe"
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.5,
+            "motion": 4,
+            "tells": [
+              "Logo stays locked in place across almost every frame; the motion is only background luminance ramps and streak fades",
+              "Color swaps (cyan field, yellow fill) are hard pops with no easing, held 2 frames and then gone",
+              "Late fill/pattern reveal inside the letters is a texture swap rather than animated forms",
+              "Long dead holds on an identical white frame with the logo (row 2 and much of strip 2)"
+            ],
+            "gaps": [
+              "No spacing, overshoot or settle on any element; everything is either frozen or popped",
+              "No choreography: a single layer changes at a time while the mark holds rigid",
+              "No camera, scale or weight; it reads as a sequence of styleframes rather than motion"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.75,
+            "motion": 7,
+            "tells": [
+              "Hard cut from white ident to black, then a radial star of gradient blades bursts out, rotating and scaling with the wordmark",
+              "Wordmark punches in scale with camera-like push and overshoot past frame edges, then pulls back and settles",
+              "Blades retract and peel off asymmetrically, so the elements overlap instead of moving in lockstep",
+              "Ends on a cut back to the brand frame, though the last 4 black frames are a near-hold"
+            ],
+            "gaps": [
+              "Several near-identical frames in strip 1 (rows 2) and the tail of strip 2 are holds",
+              "Out-of-frame scale punches feel a bit brute-force rather than finely eased",
+              "The transition back to white is a straight cut with no morph or match"
+            ]
+          }
+        },
+        "ranking": [
+          "B",
+          "D",
+          "A",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 23.3,
+        "cost_usd": 0.1314108,
+        "tokens": 68594,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "calibration-simon-vpro-motion-identity-launch-showreel-2010",
+        "B": "candidate",
+        "C": "calibration-nasa-how-far-away-is-voyager-1-one-light-day-explained",
+        "D": "calibration-simon-vpro-idents-2010"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.55,
+            "motion": 5,
+            "tells": [
+              "Logo stays locked in place in every frame; all the change is in fills and background",
+              "Background goes from grey to white by a linear fade with no easing",
+              "Cyan and yellow colour swaps cut on and off as hard pops",
+              "Light streaks and radial-burst fills have some designed rhythm, which looks like a branding system",
+              "Second strip has a few frames of interior pattern wipes inside the letterforms, but the logo itself never moves"
+            ],
+            "gaps": [
+              "The logo never travels, scales or turns, so it shows no weight or physicality",
+              "Long dead holds (frames 6\u20137 and 10\u201312) where nothing reads as alive",
+              "Transitions are hard colour cuts and fades rather than motivated wipes or morphs"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "motion": 8,
+            "tells": [
+              "Hand-drawn character acting with anticipation: the grandmother's head turns, she reacts, then pushes forward",
+              "Layered crowd with offset secondary motion: hair, staff and bodies drift at different times",
+              "Long dissolve plus slow push-in that carries the man from the cockpit close-up into the desert wide, so the cut is motivated",
+              "Foreground body wipes across the camera into a new shot, a transition built with intent",
+              "Atmospheric light bloom and dust keep every frame alive"
+            ],
+            "gaps": [
+              "The crossfade runs a little long and soft compared with a tighter match cut",
+              "Background crowd figures hold fairly still in places",
+              "The camera move in the first strip is mostly a 2D scale with little parallax"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.6,
+            "motion": 6,
+            "tells": [
+              "Lens-flare whiteout used as the act transition: effective, but a stock gesture",
+              "Type builds in word by word with opacity fades",
+              "Earth\u2013Mars line scales down, then hands off to a zoom-out into the orbit system",
+              "Planets move steadily along their orbits, and the camera eases out so new labels come into frame",
+              "Last 5 frames are near-static: labels hold while the planets barely drift"
+            ],
+            "gaps": [
+              "Motion is mostly linear orbit drift and fades, with little overshoot or settle",
+              "The whiteout runs for several frames and hides the change instead of choreographing it",
+              "Elements move one at a time with little overlap between them"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.75,
+            "motion": 7,
+            "tells": [
+              "Cut to black, then the shutter star bursts out of the logo's accent shape",
+              "Star blades rotate with gradient motion trails while the wordmark scales up past frame and drifts",
+              "Exaggerated scale overshoot (huge wordmark), then it eases back down to the resting lockup",
+              "Blades collapse back into the single accent wedge, a morph-style resolve",
+              "Snap cut back to the white endframe as a punctuated button"
+            ],
+            "gaps": [
+              "The wordmark scales and slides as one rigid block, with no per-letter overlap or follow-through",
+              "Hold on the settled logo in black (about 4 frames) before the cut",
+              "Black-to-white endframe change is a hard cut rather than a built transition"
+            ]
+          }
+        },
+        "ranking": [
+          "B",
+          "D",
+          "C",
+          "A"
+        ]
+      },
+      "meta": {
+        "seconds": 24.0,
+        "cost_usd": 0.1297906,
+        "tokens": 68509,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "calibration-simon-vpro-idents-2010",
+        "B": "calibration-simon-vpro-motion-identity-launch-showreel-2010",
+        "C": "calibration-nasa-how-far-away-is-voyager-1-one-light-day-explained",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.75,
+            "motion": 7,
+            "tells": [
+              "The star burst rotates and scales up with clear acceleration, then collapses back into the wordmark",
+              "The wordmark punches in with an overshoot, scales past the frame, then settles back to rest size",
+              "The burst blades are lagged so they fan out in sequence rather than moving as one rigid shape",
+              "The black-to-white end card arrives as a hard cut, with no shape carrying the move into it"
+            ],
+            "gaps": [
+              "The settle at rest size holds for about 4 frames with little secondary motion",
+              "The transitions in and out of the white card are cuts rather than built morphs",
+              "It is a single element choreographed against itself, so there is no layered handoff between parts"
+            ]
+          },
+          "B": {
+            "verdict": "not professional",
+            "confidence": 0.6,
+            "motion": 4,
+            "tells": [
+              "The light streaks drift linearly and fade with the background in a uniform cross-dissolve",
+              "Colour backgrounds pop on and off as hard flashes with no easing",
+              "The wordmark stays static for most frames, which leaves dead holds",
+              "The texture fills (stripes and a radial burst) pop on as substitutions instead of being animated in"
+            ],
+            "gaps": [
+              "There is no scale, overshoot or physical weight on any element",
+              "Nothing hands off or overlaps; changes happen as one global swap at a time",
+              "Transitions are flashes and dissolves with no clear purpose"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.65,
+            "motion": 6,
+            "tells": [
+              "A light bloom is used as a motivated transition from the title into the diagram",
+              "The type reveals word by word with a soft fade",
+              "The camera pulls out from the Earth\u2013Mars line to the solar system as a continuous scale move",
+              "The orbiting bodies keep moving through the late frames, so there are some signs of life"
+            ],
+            "gaps": [
+              "The orbits look evenly spaced and linear, close to a template",
+              "In the second strip the label and planets mostly hold while a single dot moves",
+              "The washed-out white frames leave about 2 frames of dead air during the bloom"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "motion": 8,
+            "tells": [
+              "A slow layered dissolve from the close-up to the walking figure works as a thematic match",
+              "The old woman's head turn shows anticipation and secondary motion in the hair and scarf",
+              "A foreground body crosses the lens as a wipe into the next shot",
+              "The crowd keeps idle motion while the lead acts, so no frame is dead"
+            ],
+            "gaps": [
+              "The dissolve is long and soft and could be tighter",
+              "Some crowd figures hold on similar poses for several frames",
+              "Limited camera movement during the dialogue beat"
+            ]
+          }
+        },
+        "ranking": [
+          "D",
+          "A",
+          "C",
+          "B"
+        ]
+      },
+      "meta": {
+        "seconds": 18.5,
+        "cost_usd": 0.1250912,
+        "tokens": 68286,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "cost_usd": 0.386
+}
