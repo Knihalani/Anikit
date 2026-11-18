@@ -183,7 +183,7 @@ Defaults: duration 0.5 s (glitch 0.3 s), ease `inOutCubic` (`reveal`, `blinds`, 
 
 `x`/`y` pan the view (px; positive `x` moves the camera right, so content moves left), `zoom` scales about the centre of the frame, and `rotation` is in degrees. `shake` adds smooth noise (`amount` px, `frequency` Hz), optionally limited to a window that decays to zero at its end.
 
-**Depth (parallax and depth of field).** Give layers a `depth` (0 = the focal plane, positive = farther, negative = nearer). When the camera pans, a layer moves by `1 / (1 + depth)` of the pan, so backgrounds drift slower than the foreground. Set `camera.aperture` (blur σ in px per unit of |depth − focus|) to blur layers away from `camera.focus`. `depth`, `focus` and `aperture` are all animatable, which gives you focus pulls:
+**Depth (parallax and depth of field).** Give layers a `depth` (0 = the focal plane, positive = farther, negative = nearer). When the camera pans, a layer moves by `1 / (1 + depth)` of the pan, so backgrounds drift slower than the foreground. Set `camera.aperture` (blur σ in px per unit of |depth − focus|) to blur layers away from `camera.focus`. `camera.dolly` moves the camera through depth: a layer at `depth` d sits 1 + d away and is drawn at (1 + d) / (1 + d − dolly) of its size, so a push-in grows near layers faster than far ones, pans move layers by 1 / (1 + d − dolly), and layers the camera passes are hidden. `depth`, `focus` and `aperture` are all animatable, which gives you focus pulls:
 
 ```json
 "camera": { "aperture": 8, "animate": [ { "to": { "focus": 2, "x": 120 }, "duration": 2, "ease": "inOutSine" } ] },

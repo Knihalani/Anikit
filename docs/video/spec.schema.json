@@ -844,6 +844,17 @@
             }
           ]
         },
+        "dolly": {
+          "description": "Dolly: move the camera through depth (a push-in with real parallax: near layers grow faster than far ones).\nLayers at `depth` 0 sit 1 unit away, so `0.5` halves their distance; layers the camera passes disappear. Animatable.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Num"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "focus": {
           "description": "Depth in focus (layers at this `depth` are sharp). Default 0. Animatable (focus pulls).",
           "anyOf": [

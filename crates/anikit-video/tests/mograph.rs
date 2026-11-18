@@ -168,3 +168,12 @@ fn carried_layer_travels_between_layouts() {
         assert!((cx - 600.0).abs() < 5.0, "centre {cx} ({t:?})");
     }
 }
+
+#[test]
+fn camera_dolly_scales_by_depth() {
+    let e = ev(r#"{ "scenes": [ { "duration": 2, "camera": { "dolly": 0.5 }, "layers": [
+        { "shape": "rect", "width": 100, "height": 100, "depth": 0 }, { "shape": "rect", "width": 100, "height": 100, "depth": 3 } ] } ] }"#);
+    let s: Vec<f32> = e.eval(0.5).ops.iter().filter_map(|o| if let Op::RoundRect { transform, w, .. } = o { (*w == 100.0).then_some(transform[0]) } else { None }).collect();
+    // Near: 1 / (1 - 0.5) = 2×; far (distance 4): 4 / 3.5.
+    assert!((s[0] - 2.0).abs() < 1e-3 && (s[1] - 4.0 / 3.5).abs() < 1e-3, "{s:?}");
+}

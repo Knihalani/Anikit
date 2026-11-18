@@ -617,6 +617,9 @@ pub struct Camera {
     pub y: Option<Num>,
     pub zoom: Option<Num>,
     pub rotation: Option<Num>,
+    /// Dolly: move the camera through depth (a push-in with real parallax: near layers grow faster than far ones).
+    /// Layers at `depth` 0 sit 1 unit away, so `0.5` halves their distance; layers the camera passes disappear. Animatable.
+    pub dolly: Option<Num>,
     /// Depth in focus (layers at this `depth` are sharp). Default 0. Animatable (focus pulls).
     pub focus: Option<Num>,
     /// Depth-of-field strength: blur σ in px per unit of |depth − focus|. Default 0 (off).

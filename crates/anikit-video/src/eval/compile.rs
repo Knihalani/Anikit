@@ -467,6 +467,9 @@ impl Evaluator {
             }
             let depth = camera.base[prop::APERTURE] != 0.0
                 || camera.tracks.iter().any(|t| t.slot as usize == prop::APERTURE)
+                || camera.base[prop::DOLLY] != 0.0
+                || camera.tracks.iter().any(|t| t.slot as usize == prop::DOLLY)
+                || camera.exprs.iter().any(|e| e.0 as usize == prop::DOLLY)
                 || layers.iter().any(|n| n.base[prop::DEPTH] != 0.0 || n.tracks.iter().any(|t| t.slot as usize == prop::DEPTH) || n.exprs.iter().any(|e| e.0 as usize == prop::DEPTH));
             // Leading layers that fill the frame and don't move are the backdrop.
             let (fw, fh) = (c.w, c.h);
@@ -1414,6 +1417,7 @@ impl C<'_> {
             self.set(&mut camera, prop::ZOOM, cam.zoom.as_ref(), &format!("{cp}.zoom"), 1.0);
             self.set(&mut camera, prop::ROT, cam.rotation.as_ref(), &format!("{cp}.rotation"), 1.0);
             self.set(&mut camera, prop::FOCUS, cam.focus.as_ref(), &format!("{cp}.focus"), 1.0);
+            self.set(&mut camera, prop::DOLLY, cam.dolly.as_ref(), &format!("{cp}.dolly"), 1.0);
             self.set(&mut camera, prop::APERTURE, cam.aperture.as_ref(), &format!("{cp}.aperture"), 1.0);
             let mut tw = Vec::new();
             if let Some(a) = &cam.animate {
