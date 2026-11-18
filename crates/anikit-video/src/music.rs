@@ -179,8 +179,8 @@ TRACKS  (add to a style, or write everything yourself)
                                                               x hit X accent o ghost . rest 2/3/4 roll; voices kick snare clap hat ohh rim tom crash ride shaker…
   {"inst":"strings","notes":"o4 l4 A4 C5 E5/2 | [A3 C4 E4]/1","at":3,"gain":-4,"reverb":0.4,"pan":-0.3,"duck":6}
 NOTES   C4 Eb3 F#5 (C7 = octave 7) · C = note in the current octave (o5 C) · degrees 1-7 b3 5' 3,
-        chords need a quality: Cmaj Am Cmaj7 Cdom7 G/B [C E G] or numerals vi IV V7 · r rest · _ hold
-        /4 quarter /8 /16 /2 /1 /8t triplet . dotted :1.5 beats · ! accent ? ghost ^ staccato ~ legato
+        chords need a quality: Cmaj Am Cmaj7 Cdom7 G/B [C E G] or numerals vi IV V7 · r or r4 rest · _ or _8 hold · D' D, octave up/down
+        /4 quarter /8 /16 /2 /1 /8t triplet . dotted :1.5 beats · ! accent ? ghost ^ staccato ~ legato (marks anywhere: C4/8! = C4!/8)
         o3 octave > < · l8 default length · v100 velocity · t+2 transpose · | bar line · @5 bar · (…)x4 repeat
 MAKE ANYTHING (example: docs/video/music/custom.json)
   "define": {"wob": {"synth": {"base":"bass-synth"?, "osc":[{"wave":"saw|square|tri|sine|supersaw","voices":3,"detune":12,"semis":0,"level":0.8,"pw":0.5}],
@@ -205,6 +205,38 @@ EXAMPLES
             {"inst":"drums","drums":{"kick":"x.......x.......","snare":"....x.......x..."}}]}}
 Errors name the field and suggest the closest word. Same spec + seed → bit-identical audio.
 "#;
+
+/// The exact beat grid of a score: `input` is a video spec or music spec file
+/// (`.json`/`.yaml`), or inline JSON. `None` when it is not a spec (an audio file).
+pub fn score_beats(input: &str) -> Result<Option<crate::audio::Beats>, String> {
+    let text = if input.trim_start().starts_with('{') {
+        input.to_string()
+    } else if [".json", ".yaml", ".yml"].iter().any(|e| input.ends_with(e)) {
+        std::fs::read_to_string(input).map_err(|e| format!("can't read {input}: {e}"))?
+    } else {
+        return Ok(None);
+    };
+    let v: serde_json::Value = if input.ends_with(".yaml") || input.ends_with(".yml") {
+        serde_norway::from_str(&text).map_err(|e| format!("{input}: {e}"))?
+    } else {
+        serde_json::from_str(&text).map_err(|e| format!("{input}: {e}"))?
+    };
+    let video_len = v.get("duration").and_then(|d| d.as_f64());
+    let m = match v.get("music") {
+        Some(serde_json::Value::String(s)) => serde_json::json!({ "style": s }),
+        Some(m) => m.clone(),
+        None => v.clone(),
+    };
+    let spec = MusicSpec::from_json(&m.to_string())?;
+    let a = anikit_music::style::compose(&spec, video_len)?;
+    let at = spec.at.unwrap_or(0.0);
+    Ok(Some(crate::audio::Beats {
+        bpm: a.grid.bpm,
+        beats: a.beats().iter().map(|t| t + at).collect(),
+        downbeats: a.bars().iter().map(|t| t + at).collect(),
+        ..Default::default()
+    }))
+}
 
 /// The alternate mixes `--alts` writes: (name, spec). Cutdowns only when the
 /// piece is longer than them.
@@ -456,6 +488,16 @@ pub fn write_audio(path: &Path, rate: u32, l: &[f32], r: &[f32]) -> Result<(), S
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn score_beats_use_the_exact_grid() {
+        let b = score_beats(r#"{"bpm":120,"tracks":[{"inst":"piano","notes":"C4 E4 G4 C5 | C4 E4 G4 C5"}]}"#).unwrap().unwrap();
+        assert_eq!(b.downbeats[0], 0.0);
+        assert!((b.downbeats[1] - 2.0).abs() < 1e-9 && (b.beats[1] - 0.5).abs() < 1e-9);
+        let v = score_beats(r#"{"duration":6,"music":{"style":"house","bpm":120,"at":1.0}}"#).unwrap().unwrap();
+        assert!((v.downbeats[0] - 1.0).abs() < 1e-9);
+        assert!(score_beats("song.wav").unwrap().is_none());
+    }
 
     #[test]
     fn alt_mixes_for_editors() {
