@@ -515,14 +515,14 @@ impl Renderer {
         let (wf, hf) = (center.width as f64, center.height as f64);
         let skip = |l: &DisplayList| super::smooth::prefix(&l.ops, wf, hf, &|_| None);
         let k = skip(&center).min(skip(&a)).min(skip(&b));
-        let top = |l: &DisplayList| DisplayList {
-            ops: l.ops[k.min(l.ops.len())..].to_vec(),
-            ..l.clone()
-        };
-        let (ta, tc, tb) = (top(&a), top(&center), top(&b));
-        let same = ta.ops.len() == tc.ops.len()
-            && tb.ops.len() == tc.ops.len()
-            && ta.ops.iter().zip(&tc.ops).zip(&tb.ops).all(|((x, c), y)| {
+        let (ta, tc, tb) = (
+            &a.ops[k.min(a.ops.len())..],
+            &center.ops[k.min(center.ops.len())..],
+            &b.ops[k.min(b.ops.len())..],
+        );
+        let same = ta.len() == tc.len()
+            && tb.len() == tc.len()
+            && ta.iter().zip(tc).zip(tb).all(|((x, c), y)| {
                 let hc = hash_op(c);
                 hash_op(x) == hc && hash_op(y) == hc
             });
@@ -534,12 +534,12 @@ impl Renderer {
         // that turns back mid-shutter still counts).
         let cut = 0.5 * w.max(h) as f64;
         let mut rects = [Vec::new(), Vec::new(), Vec::new()];
-        for (r, l) in rects.iter_mut().zip([&ta, &tc, &tb]) {
-            op_rects(&l.ops, r);
+        for (r, l) in rects.iter_mut().zip([ta, tc, tb]) {
+            op_rects(l, r);
         }
         let mut items = Vec::new();
-        changes(&ta.ops, &tc.ops, &rects[0], &rects[1], cut, &mut items);
-        changes(&tc.ops, &tb.ops, &rects[1], &rects[2], cut, &mut items);
+        changes(ta, tc, &rects[0], &rects[1], cut, &mut items);
+        changes(tc, tb, &rects[1], &rects[2], cut, &mut items);
         // Each half's motion is half the streak.
         let d = items.iter().map(|i| 2.0 * i.moved).fold(0.0, f64::max);
         if d < 0.5 && !items.iter().any(|i| i.event) {
@@ -574,12 +574,12 @@ impl Renderer {
             }
         }
         // Ops that don't change at all over the shutter.
-        let aligned = ta.ops.len() == tc.ops.len() && tb.ops.len() == tc.ops.len();
+        let aligned = ta.len() == tc.len() && tb.len() == tc.len();
         let still: Vec<bool> = if aligned {
-            (0..tc.ops.len())
+            (0..tc.len())
                 .map(|j| {
-                    let hc = hash_op(&tc.ops[j]);
-                    hash_op(&ta.ops[j]) == hc && hash_op(&tb.ops[j]) == hc
+                    let hc = hash_op(&tc[j]);
+                    hash_op(&ta[j]) == hc && hash_op(&tb[j]) == hc
                 })
                 .collect()
         } else {
@@ -605,7 +605,7 @@ impl Renderer {
             if rel > 0.2 || inside.iter().any(|i| i.event || i.vel.is_none()) {
                 return (n, None);
             }
-            let smooth_still = (0..tc.ops.len()).filter(|&j| still[j]).all(|j| match &tc.ops[j] {
+            let smooth_still = (0..tc.len()).filter(|&j| still[j]).all(|j| match &tc[j] {
                 Op::PushLayer { clip: None, .. } | Op::PopLayer => true,
                 op => match rects[1][j] {
                     None => true,
@@ -683,12 +683,12 @@ impl Renderer {
                 if inside.iter().any(|i| i.event || i.clip_of != Some(p)) {
                     return None;
                 }
-                let q = layer_end(&tc.ops, p)?;
-                let calm = (0..tc.ops.len()).all(|j| {
+                let q = layer_end(tc, p)?;
+                let calm = (0..tc.len()).all(|j| {
                     j == p
                         || j == q
                         || still[j]
-                        || (!matches!(tc.ops[j], Op::PushLayer { .. } | Op::PopLayer)
+                        || (!matches!(tc[j], Op::PushLayer { .. } | Op::PopLayer)
                             && [&rects[0], &rects[1], &rects[2]].iter().all(|r| r[j].is_none_or(|r| !r.overlaps(br))))
                 });
                 calm.then_some((p, q))
@@ -716,14 +716,14 @@ impl Renderer {
         }
         // Sub-frame samples per blurred layer: spaced ≥ σ/2 apart (a box streak
         // that short widens the blur by well under a pixel).
-        let soft: Vec<(usize, usize, usize)> = if reference || ta.ops.len() != tc.ops.len() || tb.ops.len() != tc.ops.len() {
+        let soft: Vec<(usize, usize, usize)> = if reference || ta.len() != tc.len() || tb.len() != tc.len() {
             Vec::new()
         } else {
-            soft_layers(&tc.ops)
+            soft_layers(tc)
                 .into_iter()
                 .map(|(s0, s1, sigma)| {
                     let moved = (s0..s1)
-                        .filter_map(|j| Some(op_motion(&ta.ops[j], &tb.ops[j], rects[0][j]?, rects[2][j]?)))
+                        .filter_map(|j| Some(op_motion(&ta[j], &tb[j], rects[0][j]?, rects[2][j]?)))
                         .filter(|m| *m < cut)
                         .fold(0.0, f64::max);
                     let m = (moved * scale / (0.5 * sigma as f64).max(1.25)).ceil() as usize;
