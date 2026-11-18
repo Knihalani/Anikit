@@ -1,0 +1,782 @@
+{
+ "size": [
+  1920,
+  1080
+ ],
+ "fps": 30,
+ "compositions": {
+  "face": {
+   "size": [
+    1024,
+    1024
+   ],
+   "duration": 12,
+   "layers": [
+    {
+     "text": "MERIDIAN",
+     "x": 512,
+     "y": 300,
+     "size": 58,
+     "color": "#1C1E24",
+     "font": "Instrument Serif"
+    },
+    {
+     "text": "N",
+     "x": 512,
+     "y": 120,
+     "size": 72,
+     "color": "#B4322A",
+     "font": "Instrument Serif"
+    },
+    {
+     "text": "S",
+     "x": 512,
+     "y": 904,
+     "size": 60,
+     "color": "#1C1E24",
+     "font": "Instrument Serif"
+    },
+    {
+     "text": "E",
+     "x": 904,
+     "y": 512,
+     "size": 60,
+     "color": "#1C1E24",
+     "font": "Instrument Serif"
+    },
+    {
+     "text": "W",
+     "x": 120,
+     "y": 512,
+     "size": 60,
+     "color": "#1C1E24",
+     "font": "Instrument Serif"
+    },
+    {
+     "text": "No. 7",
+     "x": 512,
+     "y": 720,
+     "size": 28,
+     "color": "#4A4E57"
+    }
+   ]
+  }
+ },
+ "scenes": [
+  {
+   "duration": 4,
+   "transition": "cut",
+   "scene3d": {
+    "env": "studio",
+    "rig": {
+     "preset": "product",
+     "animate": "reveal",
+     "duration": 3
+    },
+    "set": {
+     "preset": "plinth",
+     "color": "#24252A"
+    },
+    "camera": {
+     "lens": "macro100",
+     "shake": "breath",
+     "keys": [
+      {
+       "t": 0,
+       "pos": [
+        0.35,
+        0.75,
+        1.3
+       ],
+       "target": [
+        0,
+        0.08,
+        0
+       ],
+       "focus": "crystal",
+       "fstop": 4
+      },
+      {
+       "t": 1.5,
+       "pos": [
+        0.3,
+        0.72,
+        1.25
+       ],
+       "target": [
+        0,
+        0.08,
+        0
+       ],
+       "focus": "crystal",
+       "fstop": 4
+      },
+      {
+       "t": 2.6,
+       "pos": [
+        0.27,
+        0.7,
+        1.22
+       ],
+       "target": [
+        0,
+        0.08,
+        0
+       ],
+       "focus": "dial",
+       "fstop": 4
+      },
+      {
+       "t": 4,
+       "pos": [
+        0.24,
+        0.68,
+        1.18
+       ],
+       "target": [
+        0,
+        0.08,
+        0
+       ],
+       "focus": "dial",
+       "fstop": 4
+      }
+     ]
+    },
+    "objects": [
+     {
+      "type": "lathe",
+      "name": "case",
+      "points": [
+       [
+        0,
+        0
+       ],
+       [
+        0.33,
+        0
+       ],
+       [
+        0.36,
+        0.02
+       ],
+       [
+        0.37,
+        0.06
+       ],
+       [
+        0.35,
+        0.09
+       ],
+       [
+        0.31,
+        0.095
+       ],
+       [
+        0.31,
+        0.07
+       ],
+       [
+        0,
+        0.07
+       ]
+      ],
+      "smooth": false,
+      "segments": 160,
+      "material": {
+       "extends": "aluminium",
+       "base": "#CDD0D4",
+       "roughness": 0.2,
+       "pattern": "brushed",
+       "patternScale": 0.004,
+       "imperfections": 0.25
+      }
+     },
+     {
+      "type": "cylinder",
+      "name": "dial",
+      "radius": 0.31,
+      "height": 0.01,
+      "pos": [
+       0,
+       0.07,
+       0
+      ],
+      "material": {
+       "extends": "ceramic",
+       "base": "#EFEBE3",
+       "roughness": 0.3,
+       "pattern": "sunburst",
+       "patternScale": 0.006,
+       "patternStrength": 0.5
+      }
+     },
+     {
+      "type": "plane",
+      "size": [
+       0.6,
+       0.6
+      ],
+      "pos": [
+       0,
+       0.0755,
+       0
+      ],
+      "rot": [
+       -90,
+       0,
+       0
+      ],
+      "texture": "#face",
+      "material": "decal",
+      "thin": true,
+      "shadow": false
+     },
+     {
+      "type": "box",
+      "name": "needle",
+      "size": [
+       0.02,
+       0.008,
+       0.46
+      ],
+      "radius": 0.004,
+      "pos": [
+       0,
+       0.085,
+       0
+      ],
+      "rot": "=[0, 12*sin(t*1.7)*exp(-t*0.35)+4, 0]",
+      "material": {
+       "extends": "lacquer",
+       "base": "#B4322A"
+      }
+     },
+     {
+      "type": "cylinder",
+      "radius": 0.02,
+      "height": 0.02,
+      "pos": [
+       0,
+       0.088,
+       0
+      ],
+      "material": "gold"
+     },
+     {
+      "type": "lathe",
+      "name": "crystal",
+      "points": [
+       [
+        0,
+        0.13
+       ],
+       [
+        0.2,
+        0.12
+       ],
+       [
+        0.3,
+        0.1
+       ],
+       [
+        0.315,
+        0.093
+       ]
+      ],
+      "segments": 160,
+      "material": {
+       "extends": "glass",
+       "smudges": 0.3
+      }
+     },
+     {
+      "type": "cylinder",
+      "name": "crown",
+      "radius": 0.04,
+      "height": 0.06,
+      "pos": [
+       0,
+       0.05,
+       -0.39
+      ],
+      "rot": [
+       90,
+       0,
+       0
+      ],
+      "material": {
+       "extends": "aluminium",
+       "pattern": "knurl",
+       "patternScale": 0.008
+      }
+     }
+    ]
+   },
+   "layers": []
+  },
+  {
+   "duration": 3.5,
+   "transition": "cut",
+   "scene3d": {
+    "env": "studio",
+    "rig": {
+     "preset": "product",
+     "animate": "sweep",
+     "duration": 3.5
+    },
+    "set": {
+     "preset": "plinth",
+     "color": "#24252A"
+    },
+    "camera": {
+     "lens": "macro100",
+     "shake": "breath",
+     "keys": [
+      {
+       "t": 0,
+       "pos": [
+        -0.5,
+        0.2,
+        -0.95
+       ],
+       "target": [
+        0,
+        0.05,
+        -0.38
+       ],
+       "focus": "crown",
+       "fstop": 2.8
+      },
+      {
+       "t": 3.5,
+       "pos": [
+        -0.35,
+        0.18,
+        -1.0
+       ],
+       "target": [
+        0,
+        0.05,
+        -0.38
+       ],
+       "focus": "crown",
+       "fstop": 2.8
+      }
+     ]
+    },
+    "objects": [
+     {
+      "type": "lathe",
+      "name": "case",
+      "points": [
+       [
+        0,
+        0
+       ],
+       [
+        0.33,
+        0
+       ],
+       [
+        0.36,
+        0.02
+       ],
+       [
+        0.37,
+        0.06
+       ],
+       [
+        0.35,
+        0.09
+       ],
+       [
+        0.31,
+        0.095
+       ],
+       [
+        0.31,
+        0.07
+       ],
+       [
+        0,
+        0.07
+       ]
+      ],
+      "smooth": false,
+      "segments": 160,
+      "material": {
+       "extends": "aluminium",
+       "base": "#CDD0D4",
+       "roughness": 0.2,
+       "pattern": "brushed",
+       "patternScale": 0.004,
+       "imperfections": 0.25
+      }
+     },
+     {
+      "type": "cylinder",
+      "name": "dial",
+      "radius": 0.31,
+      "height": 0.01,
+      "pos": [
+       0,
+       0.07,
+       0
+      ],
+      "material": {
+       "extends": "ceramic",
+       "base": "#EFEBE3",
+       "roughness": 0.3,
+       "pattern": "sunburst",
+       "patternScale": 0.006,
+       "patternStrength": 0.5
+      }
+     },
+     {
+      "type": "plane",
+      "size": [
+       0.6,
+       0.6
+      ],
+      "pos": [
+       0,
+       0.0755,
+       0
+      ],
+      "rot": [
+       -90,
+       0,
+       0
+      ],
+      "texture": "#face",
+      "material": "decal",
+      "thin": true,
+      "shadow": false
+     },
+     {
+      "type": "box",
+      "name": "needle",
+      "size": [
+       0.02,
+       0.008,
+       0.46
+      ],
+      "radius": 0.004,
+      "pos": [
+       0,
+       0.085,
+       0
+      ],
+      "rot": "=[0, 12*sin(t*1.7)*exp(-t*0.35)+4, 0]",
+      "material": {
+       "extends": "lacquer",
+       "base": "#B4322A"
+      }
+     },
+     {
+      "type": "cylinder",
+      "radius": 0.02,
+      "height": 0.02,
+      "pos": [
+       0,
+       0.088,
+       0
+      ],
+      "material": "gold"
+     },
+     {
+      "type": "lathe",
+      "name": "crystal",
+      "points": [
+       [
+        0,
+        0.13
+       ],
+       [
+        0.2,
+        0.12
+       ],
+       [
+        0.3,
+        0.1
+       ],
+       [
+        0.315,
+        0.093
+       ]
+      ],
+      "segments": 160,
+      "material": {
+       "extends": "glass",
+       "smudges": 0.3
+      }
+     },
+     {
+      "type": "cylinder",
+      "name": "crown",
+      "radius": 0.04,
+      "height": 0.06,
+      "pos": [
+       0,
+       0.05,
+       -0.39
+      ],
+      "rot": [
+       90,
+       0,
+       0
+      ],
+      "material": {
+       "extends": "aluminium",
+       "pattern": "knurl",
+       "patternScale": 0.008
+      }
+     }
+    ]
+   },
+   "layers": []
+  },
+  {
+   "duration": 4.5,
+   "transition": "cut",
+   "scene3d": {
+    "env": "cyc",
+    "rig": {
+     "preset": "window"
+    },
+    "set": {
+     "preset": "sweep",
+     "color": "#3B4A44"
+    },
+    "camera": {
+     "lens": "portrait85",
+     "shake": "breath",
+     "keys": [
+      {
+       "t": 0,
+       "pos": [
+        1.6,
+        1.9,
+        3.1
+       ],
+       "target": [
+        0,
+        0.08,
+        0
+       ],
+       "focus": "dial",
+       "fstop": 5.6
+      },
+      {
+       "t": 4.5,
+       "pos": [
+        0.9,
+        1.8,
+        3.4
+       ],
+       "target": [
+        0,
+        0.08,
+        0
+       ],
+       "focus": "dial",
+       "fstop": 5.6
+      }
+     ]
+    },
+    "objects": [
+     {
+      "type": "lathe",
+      "name": "case",
+      "points": [
+       [
+        0,
+        0
+       ],
+       [
+        0.33,
+        0
+       ],
+       [
+        0.36,
+        0.02
+       ],
+       [
+        0.37,
+        0.06
+       ],
+       [
+        0.35,
+        0.09
+       ],
+       [
+        0.31,
+        0.095
+       ],
+       [
+        0.31,
+        0.07
+       ],
+       [
+        0,
+        0.07
+       ]
+      ],
+      "smooth": false,
+      "segments": 160,
+      "material": {
+       "extends": "aluminium",
+       "base": "#CDD0D4",
+       "roughness": 0.2,
+       "pattern": "brushed",
+       "patternScale": 0.004,
+       "imperfections": 0.25
+      }
+     },
+     {
+      "type": "cylinder",
+      "name": "dial",
+      "radius": 0.31,
+      "height": 0.01,
+      "pos": [
+       0,
+       0.07,
+       0
+      ],
+      "material": {
+       "extends": "ceramic",
+       "base": "#EFEBE3",
+       "roughness": 0.3,
+       "pattern": "sunburst",
+       "patternScale": 0.006,
+       "patternStrength": 0.5
+      }
+     },
+     {
+      "type": "plane",
+      "size": [
+       0.6,
+       0.6
+      ],
+      "pos": [
+       0,
+       0.0755,
+       0
+      ],
+      "rot": [
+       -90,
+       0,
+       0
+      ],
+      "texture": "#face",
+      "material": "decal",
+      "thin": true,
+      "shadow": false
+     },
+     {
+      "type": "box",
+      "name": "needle",
+      "size": [
+       0.02,
+       0.008,
+       0.46
+      ],
+      "radius": 0.004,
+      "pos": [
+       0,
+       0.085,
+       0
+      ],
+      "rot": "=[0, 12*sin(t*1.7)*exp(-t*0.35)+4, 0]",
+      "material": {
+       "extends": "lacquer",
+       "base": "#B4322A"
+      }
+     },
+     {
+      "type": "cylinder",
+      "radius": 0.02,
+      "height": 0.02,
+      "pos": [
+       0,
+       0.088,
+       0
+      ],
+      "material": "gold"
+     },
+     {
+      "type": "lathe",
+      "name": "crystal",
+      "points": [
+       [
+        0,
+        0.13
+       ],
+       [
+        0.2,
+        0.12
+       ],
+       [
+        0.3,
+        0.1
+       ],
+       [
+        0.315,
+        0.093
+       ]
+      ],
+      "segments": 160,
+      "material": {
+       "extends": "glass",
+       "smudges": 0.3
+      }
+     },
+     {
+      "type": "cylinder",
+      "name": "crown",
+      "radius": 0.04,
+      "height": 0.06,
+      "pos": [
+       0,
+       0.05,
+       -0.39
+      ],
+      "rot": [
+       90,
+       0,
+       0
+      ],
+      "material": {
+       "extends": "aluminium",
+       "pattern": "knurl",
+       "patternScale": 0.008
+      }
+     }
+    ]
+   },
+   "layers": [
+    {
+     "text": "Meridian 7",
+     "x": "8%",
+     "y": "86%",
+     "anchor": "bottomLeft",
+     "size": 56,
+     "font": "Instrument Serif",
+     "color": "#F2EEE6",
+     "animate": [
+      {
+       "from": {
+        "opacity": 0,
+        "y": "+20"
+       },
+       "at": 1.4,
+       "duration": 0.8,
+       "ease": "outCubic"
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

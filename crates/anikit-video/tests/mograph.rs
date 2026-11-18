@@ -187,3 +187,12 @@ fn extrude_draws_a_tinted_stack_behind_the_layer() {
     // 20 steps of 1.5 px, then the layer itself on top.
     assert_eq!(count(&ops, |o| matches!(o, Op::RoundRect { .. })), 21);
 }
+
+#[test]
+fn layer_motion_blur_only_when_moving() {
+    let e = ev(r#"{ "scenes": [ { "duration": 2, "layers": [ { "shape": "rect", "x": 100, "width": 50, "height": 50, "motionBlur": true,
+        "animate": { "to": { "x": 1500 }, "duration": 0.5, "ease": "linear" } } ] } ] }"#);
+    let rects = |t: f32| count(&e.eval(t).ops, |o| matches!(o, Op::RoundRect { .. }));
+    assert!(rects(0.25) >= 8, "{}", rects(0.25));
+    assert_eq!(rects(1.5), 1, "still frames draw once");
+}
