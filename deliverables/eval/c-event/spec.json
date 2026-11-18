@@ -1,0 +1,533 @@
+{
+ "size": "9:16",
+ "fps": 30,
+ "fonts": {
+  "Display": "fonts/Big_Shoulders_Display_wght_900.ttf"
+ },
+ "intent": {
+  "pace": "fast"
+ },
+ "post": {
+  "bloom": 0.35,
+  "bloomThreshold": 0.6,
+  "halation": 0.25,
+  "vignette": 0.35,
+  "grain": 0.035,
+  "contrast": 1.08
+ },
+ "music": {
+  "bpm": 128,
+  "key": "Fm",
+  "length": "15s",
+  "seed": 7,
+  "followCuts": false,
+  "define": {
+   "hum": {
+    "synth": {
+     "osc": [
+      {
+       "wave": "sine",
+       "level": 0.9
+      },
+      {
+       "wave": "saw",
+       "level": 0.12
+      }
+     ],
+     "filter": {
+      "type": "lp",
+      "cutoff": 260,
+      "res": 0.2
+     },
+     "amp": [
+      0.4,
+      0.2,
+      1.0,
+      0.05
+     ]
+    }
+   },
+   "rumble": {
+    "synth": {
+     "osc": [
+      {
+       "wave": "saw",
+       "level": 0.8
+      },
+      {
+       "wave": "sine",
+       "semis": -12,
+       "level": 0.6
+      }
+     ],
+     "filter": {
+      "type": "ladder",
+      "cutoff": 220,
+      "res": 0.3,
+      "drive": 2.5,
+      "env": 1.5
+     },
+     "fenv": [
+      0.001,
+      0.09,
+      0.0,
+      0.05
+     ],
+     "amp": [
+      0.001,
+      0.12,
+      0.0,
+      0.05
+     ],
+     "mono": true
+    }
+   },
+   "acid": {
+    "synth": {
+     "osc": [
+      {
+       "wave": "saw"
+      },
+      {
+       "wave": "square",
+       "pw": 0.4,
+       "level": 0.4
+      }
+     ],
+     "filter": {
+      "type": "ladder",
+      "cutoff": 380,
+      "res": 0.72,
+      "drive": 2.2,
+      "env": 2.6
+     },
+     "fenv": [
+      0.002,
+      0.16,
+      0.0,
+      0.08
+     ],
+     "amp": [
+      0.002,
+      0.2,
+      0.5,
+      0.06
+     ],
+     "mono": true,
+     "glide": 0.03
+    }
+   }
+  },
+  "tracks": [
+   {
+    "inst": "hum",
+    "notes": "o1 G1/1 | G1/2 G1/2",
+    "gain": -6,
+    "automate": {
+     "volume": [
+      [
+       0,
+       0.5
+      ],
+      [
+       3.8,
+       1.0
+      ],
+      [
+       4,
+       0.0
+      ]
+     ]
+    }
+   },
+   {
+    "inst": "drums:techno",
+    "drums": {
+     "kick": "x...x...x...x..."
+    },
+    "bars": 6,
+    "at": "@bar2",
+    "fx": [
+     {
+      "type": "comp",
+      "threshold": -12,
+      "ratio": 4
+     }
+    ]
+   },
+   {
+    "inst": "drums:techno",
+    "drums": {
+     "hat": "..x...x...x...x.",
+     "rim": "x..x..x...x..x.."
+    },
+    "bars": 4,
+    "at": "@bar3",
+    "gain": -5
+   },
+   {
+    "inst": "drums:techno",
+    "drums": {
+     "hat": "..x...x...x...x.",
+     "clap": "....x.......x...",
+     "ohh": "..x...x...x...x.",
+     "rim": "x..x..x...x..x.."
+    },
+    "bars": 2,
+    "at": "@bar7",
+    "gain": -4
+   },
+   {
+    "inst": "rumble",
+    "notes": "o1 l16 (r F1 F1 F1 r F1 F1 F1 r F1 F1 F1 r F1 F1 F1)x6",
+    "at": "@bar2",
+    "duck": 6,
+    "gain": -3
+   },
+   {
+    "inst": "acid",
+    "notes": "o2 l16 (F2 F2 F3 F2 Ab2 F2 Eb2 F2^ F2 C3 F2 F2 Bb2 Ab2 F2 Eb2)x5",
+    "at": "@bar3",
+    "duck": 5,
+    "gain": -7,
+    "automate": {
+     "synth.cutoff": [
+      [
+       8,
+       300
+      ],
+      [
+       24,
+       2600
+      ],
+      [
+       28,
+       4200
+      ],
+      [
+       32,
+       900
+      ]
+     ]
+    },
+    "fx": [
+     {
+      "type": "delay",
+      "note": "1/8d",
+      "feedback": 0.3,
+      "wet": 0.15
+     },
+     {
+      "type": "saturate",
+      "drive": 0.35
+     }
+    ]
+   }
+  ],
+  "sfx": [
+   {
+    "sfx": "riser",
+    "at": "@bar2"
+   },
+   {
+    "sfx": "impact",
+    "at": "@bar2"
+   },
+   {
+    "sfx": "zap",
+    "at": 3.75
+   },
+   {
+    "sfx": "zap",
+    "at": 4.6875
+   },
+   {
+    "sfx": "zap",
+    "at": 5.625
+   },
+   {
+    "sfx": "zap",
+    "at": 6.5625
+   },
+   {
+    "sfx": "zap",
+    "at": 7.5
+   },
+   {
+    "sfx": "zap",
+    "at": 8.4375
+   },
+   {
+    "sfx": "zap",
+    "at": 9.375
+   },
+   {
+    "sfx": "zap",
+    "at": 10.3125
+   },
+   {
+    "sfx": "boom",
+    "at": "@bar7"
+   },
+   {
+    "sfx": "tape-stop",
+    "at": 14.45
+   }
+  ],
+  "end": "cut"
+ },
+ "scenes": [
+  {
+   "duration": 15,
+   "background": "#060606",
+   "camera": {
+    "shake": {
+     "amount": 16,
+     "at": 11.25,
+     "duration": 0.4
+    },
+    "animate": [
+     {
+      "at": 1.875,
+      "from": {
+       "zoom": 1.12
+      },
+      "to": {
+       "zoom": 1
+      },
+      "duration": 0.5,
+      "ease": "outExpo"
+     },
+     {
+      "at": 3.75,
+      "from": {
+       "zoom": 1.0
+      },
+      "to": {
+       "zoom": 1.045
+      },
+      "duration": 7.5,
+      "ease": "inOutSine"
+     }
+    ]
+   },
+   "layers": [
+    {
+     "type": "shader",
+     "src": "hall.glsl",
+     "uniforms": {
+      "power": "=gt < 1.875 ? 0 : (gt < 11.25 ? 0.45 + 0.08*(1-fract(beat)) : (gt < 14.55 ? 1.0 + 0.3*max(0, 1-(gt-11.25)*3) : 0))",
+      "scope": "=gt < 1.875 ? min(1, gt*2) : max(0, 1 - (gt-1.875)*6)",
+      "amp": "=gt < 1.875 ? 8 + 90*pow(gt/1.875, 3) : 0"
+     }
+    },
+    {
+     "text": "{value} kV",
+     "value": "=floor(400*pow(min(gt/1.8,1), 2))",
+     "font": "JetBrains Mono",
+     "size": 30,
+     "color": "#9A9488",
+     "x": 540,
+     "y": 1110,
+     "end": 1.875,
+     "letterSpacing": "0.1em"
+    },
+    {
+     "text": "50 Hz",
+     "font": "JetBrains Mono",
+     "size": 30,
+     "color": "#9A9488",
+     "x": 540,
+     "y": 810,
+     "end": 1.875,
+     "letterSpacing": "0.1em"
+    },
+    {
+     "id": "spine",
+     "text": "SUBSTATION",
+     "font": "Display",
+     "size": 330,
+     "color": "#F2EEE4",
+     "rotation": -90,
+     "start": 1.875,
+     "x": 540,
+     "y": 960,
+     "lineHeight": 1,
+     "opacity": "=t < 0.4 ? 0.2 + 0.8*step(0.45, rand(floor(t*30)*3.1)) : 1",
+     "glow": {
+      "radius": 30,
+      "intensity": 0.35,
+      "color": "#FFB46A"
+     },
+     "animate": [
+      {
+       "from": {
+        "scale": 1.1
+       },
+       "to": {
+        "scale": 1.07
+       },
+       "duration": 1.875,
+       "ease": "linear"
+      },
+      {
+       "at": 1.8,
+       "to": {
+        "x": 150,
+        "y": 855,
+        "scale": 0.72
+       },
+       "duration": 0.55,
+       "ease": "inOutExpo"
+      }
+     ]
+    },
+    {
+     "shape": "rect",
+     "width": 5,
+     "height": 1170,
+     "fill": "#FFE9C2",
+     "glow": {
+      "radius": 18,
+      "intensity": 0.6,
+      "color": "#FF9A4A"
+     },
+     "x": 280,
+     "y": 270,
+     "anchor": "top",
+     "start": 3.75,
+     "animate": [
+      {
+       "from": {
+        "height": 0
+       },
+       "to": {
+        "height": 1170
+       },
+       "duration": 0.35,
+       "ease": "outExpo"
+      }
+     ]
+    },
+    {
+     "shape": "rect",
+     "width": 9,
+     "height": 60,
+     "fill": "#FFFFFF",
+     "glow": {
+      "radius": 24,
+      "intensity": 0.9,
+      "color": "#FF9A4A"
+     },
+     "x": 280,
+     "y": "=270 + 1170*fract(beat)",
+     "anchor": "top",
+     "start": 4.1,
+     "end": 14.55,
+     "opacity": "=0.9*(1-fract(beat))"
+    },
+    {
+     "script": [
+      "let names = [\"ANCIENT METHODS\", \"PAULA TEMPLE\", \"DVS1\", \"HÉCTOR OAKS\", \"RROSE\", \"PHASE FATALE\", \"KIA\", \"IDA ENGBERG\"];",
+      "let out = [];",
+      "for i in 0..8 {",
+      "  let ti = 3.75 + i * 0.9375;",
+      "  let y = 330 + i * 150;",
+      "  let lit = \"gt < \" + ti;",
+      "  let d0 = 3.85 + i * 0.03;",
+      "  out.push(#{ shape: \"rect\", width: 44, height: 3, fill: \"=\" + lit + \" ? #3E3B36 : #FFE9C2\", x: 282, y: y, anchor: \"left\", start: d0,",
+      "     animate: [#{ from: #{ width: 0 }, to: #{ width: 44 }, duration: 0.2, ease: \"outExpo\" }] });",
+      "  out.push(#{ shape: \"circle\", width: 11, height: 11, fill: \"=\" + lit + \" ? #5A564E : #FFE9C2\", x: 328, y: y, start: d0 });",
+      "  out.push(#{ shape: \"circle\", width: 11, height: 11, fill: \"=\" + lit + \" ? #5A564E : #FFE9C2\", x: 376, y: y, start: d0 });",
+      "  out.push(#{ shape: \"rect\", width: 50, height: 5, anchor: \"left\", x: 328, y: y, start: d0,",
+      "     fill: \"=\" + lit + \" ? #8A847A : #FFF4DE\",",
+      "     rotation: \"=gt < \" + ti + \" ? -38 : -38*(1 - min(1, (gt - \" + ti + \")/0.07))\" });",
+      "  out.push(#{ shape: \"rect\", width: 26, height: 3, fill: \"=\" + lit + \" ? #3E3B36 : #FFE9C2\", x: 380, y: y, anchor: \"left\", start: d0 });",
+      "  out.push(#{ text: \"F0\" + (i + 1), font: \"JetBrains Mono\", size: 20, letterSpacing: \"0.08em\", x: 286, y: y - 26, anchor: \"left\", start: d0,",
+      "     color: \"=\" + lit + \" ? #57534B : #FF4A1C\" });",
+      "  out.push(#{ text: names[i], font: \"Display\", size: 90, color: \"#F2EEE4\", x: 418, y: y + 4, anchor: \"left\", start: 3.75,",
+      "     opacity: \"=gt < \" + ti + \" ? 0.12 : (gt < \" + (ti + 0.3) + \" ? 0.25 + 0.75*step(0.4, rand(floor(gt*30) + \" + (i * 13) + \")) : 1)\",",
+      "     glow: #{ radius: 22, intensity: 0.3, color: \"#FFB46A\" } });",
+      "}",
+      "out"
+     ]
+    },
+    {
+     "text": "TWO NIGHTS IN AN OLD POWER STATION",
+     "font": "JetBrains Mono",
+     "size": 26,
+     "letterSpacing": "0.12em",
+     "color": "#A39D91",
+     "x": 64,
+     "y": 170,
+     "anchor": "left",
+     "start": 3.9,
+     "enter": {
+      "preset": "typewriter"
+     }
+    },
+    {
+     "text": "12—13 JUNE",
+     "font": "Display",
+     "size": 168,
+     "color": "#F2EEE4",
+     "x": 60,
+     "y": 1530,
+     "anchor": "left",
+     "start": 11.25,
+     "glow": {
+      "radius": 26,
+      "intensity": 0.3,
+      "color": "#FFB46A"
+     },
+     "opacity": "=t < 0.25 ? step(0.35, rand(floor(t*30)+91)) : 1"
+    },
+    {
+     "shape": "rect",
+     "width": 1080,
+     "height": 1920,
+     "fill": "#FFF6E6",
+     "x": 540,
+     "y": 960,
+     "start": 11.25,
+     "end": 11.6,
+     "opacity": "=max(0, 0.85 - t*3)",
+     "blend": "screen"
+    },
+    {
+     "shape": "rect",
+     "width": 1080,
+     "height": 1920,
+     "fill": "#000000",
+     "x": 540,
+     "y": 960,
+     "start": 14.55,
+     "opacity": 0.93
+    },
+    {
+     "shape": "rect",
+     "width": 540,
+     "height": 96,
+     "fill": "#FF4A1C",
+     "x": 60,
+     "y": 1660,
+     "anchor": "left",
+     "start": 12.2,
+     "opacity": "=t < 0.2 ? step(0.4, rand(floor(t*30)+57)) : 1"
+    },
+    {
+     "text": "TICKETS FRIDAY",
+     "font": "Display",
+     "size": 78,
+     "color": "#0A0908",
+     "x": 86,
+     "y": 1664,
+     "anchor": "left",
+     "start": 12.2,
+     "letterSpacing": "0.02em",
+     "opacity": "=t < 0.2 ? step(0.4, rand(floor(t*30)+57)) : 1"
+    }
+   ]
+  }
+ ]
+}
