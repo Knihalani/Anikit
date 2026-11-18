@@ -1,0 +1,3102 @@
+{
+ "size": [
+  1080,
+  1080
+ ],
+ "fps": 24,
+ "music": {
+  "bpm": 96,
+  "key": "Dm",
+  "end": "ring",
+  "tracks": [
+   {
+    "inst": "cello",
+    "notes": "o2 D2/1 | D2/1 | Bb1/1 | Bb1/1 | G1/1 | A1/2 A1/4 r4 | D2/1 | D2/1",
+    "gain": -2,
+    "reverb": 0.35
+   },
+   {
+    "inst": "strings",
+    "notes": "o4 [D3 F3 A3]/1 | [D3 F3 A3]/1 | [D3 F3 Bb3]/1 | [D3 G3 Bb3]/1 | [D3 G3 Bb3]/1 | [E3 A3 C#4]/2 r2 | [D3 F#3 A3 D4]/1 | [D3 F#3 A3 D4]/1",
+    "gain": -8,
+    "reverb": 0.5
+   },
+   {
+    "inst": "piano",
+    "notes": "o5 r2 A4/4 D5/4 | F5/2 E5/4 D5/4 | r2 D5/4 F5/4 | A5/2 G5/4 F5/4 | E5/8 F5/8 G5/8 A5/8 Bb5/8 A5/8 G5/8 F5/8 | E5/8 F5/8 G5/8 A5/8 r2 | F#5/2. A5/4 | D6/1",
+    "gain": -6,
+    "reverb": 0.45
+   },
+   {
+    "inst": "drums",
+    "drums": {
+     "rim": "x...x...x...x...|x...x...x...x...|x.x.x.x.x.x.x.x.|x.x.x.x.x.x.x.x.|xxxxxxxxxxxxxxxx|xxxxxxxx........|................|................"
+    },
+    "gain": -10
+   }
+  ]
+ },
+ "sound": {
+  "palette": "organic",
+  "space": "room",
+  "density": 0.4,
+  "cues": [
+   {
+    "sfx": "metal",
+    "at": 0.32,
+    "pitch": -12,
+    "gain": -4
+   },
+   {
+    "sfx": "impact+metal",
+    "at": 15.28,
+    "pitch": -10,
+    "gain": -2
+   }
+  ]
+ },
+ "post": {
+  "grain": 0.05
+ },
+ "transition": "cut",
+ "scenes": [
+  {
+   "duration": 2.5,
+   "scene3d": {
+    "env": {
+     "preset": "studio"
+    },
+    "rig": {
+     "preset": "window",
+     "angle": 75,
+     "height": 16,
+     "warmth": 0.7,
+     "ratio": 16,
+     "key": 1.6
+    },
+    "floor": {
+     "texture": "ambientcg:Travertine009",
+     "scale": 0.6
+    },
+    "camera": {
+     "keys": [
+      {
+       "t": 0,
+       "pos": [
+        0.42,
+        0.16,
+        0.5
+       ],
+       "target": [
+        0.0,
+        0.03,
+        0.06
+       ],
+       "fstop": 4,
+       "focal": 50
+      },
+      {
+       "t": 2.5,
+       "pos": [
+        0.36,
+        0.2,
+        0.44
+       ],
+       "target": [
+        0.0,
+        0.03,
+        0.08
+       ],
+       "fstop": 4,
+       "ease": "out",
+       "focal": 50
+      }
+     ],
+     "shake": "breath"
+    },
+    "lights": [
+     {
+      "pos": "=[1.6*cos(0.25), 0.8, 1.6*sin(0.25)]",
+      "target": [
+       0,
+       0.02,
+       0
+      ],
+      "angle": 10,
+      "penumbra": 0.5,
+      "color": "#FFC98A",
+      "intensity": "14"
+     }
+    ],
+    "objects": [
+     {
+      "type": "lathe",
+      "name": "pan",
+      "smooth": false,
+      "segments": 128,
+      "points": [
+       [
+        0,
+        0
+       ],
+       [
+        0.105,
+        0
+       ],
+       [
+        0.118,
+        0.004
+       ],
+       [
+        0.126,
+        0.016
+       ],
+       [
+        0.131,
+        0.046
+       ],
+       [
+        0.124,
+        0.047
+       ],
+       [
+        0.119,
+        0.018
+       ],
+       [
+        0.112,
+        0.01
+       ],
+       [
+        0.1,
+        0.008
+       ],
+       [
+        0,
+        0.008
+       ]
+      ],
+      "material": {
+       "texture": "ambientcg:Metal063",
+       "scale": 0.3,
+       "color": "#8A7A6C",
+       "roughness": 0.78,
+       "metallic": 0.35
+      },
+      "keys": [
+       {
+        "t": 0,
+        "pos": [
+         0,
+         0.07,
+         0
+        ]
+       },
+       {
+        "t": 0.32,
+        "pos": [
+         0,
+         0,
+         0
+        ],
+        "ease": "in"
+       }
+      ]
+     },
+     {
+      "type": "box",
+      "size": [
+       0.15,
+       0.016,
+       0.026
+      ],
+      "radius": 0.006,
+      "pos": [
+       0.195,
+       0.04,
+       0
+      ],
+      "rot": [
+       0,
+       0,
+       8
+      ],
+      "material": {
+       "texture": "ambientcg:Metal063",
+       "scale": 0.3,
+       "color": "#8A7A6C",
+       "roughness": 0.78,
+       "metallic": 0.35
+      },
+      "keys": [
+       {
+        "t": 0,
+        "pos": [
+         0,
+         0.07,
+         0
+        ]
+       },
+       {
+        "t": 0.32,
+        "pos": [
+         0,
+         0,
+         0
+        ],
+        "ease": "in"
+       }
+      ]
+     },
+     {
+      "type": "box",
+      "size": [
+       0.05,
+       0.012,
+       0.05
+      ],
+      "radius": 0.008,
+      "pos": [
+       -0.145,
+       0.04,
+       0
+      ],
+      "material": {
+       "texture": "ambientcg:Metal063",
+       "scale": 0.3,
+       "color": "#8A7A6C",
+       "roughness": 0.78,
+       "metallic": 0.35
+      },
+      "keys": [
+       {
+        "t": 0,
+        "pos": [
+         0,
+         0.07,
+         0
+        ]
+       },
+       {
+        "t": 0.32,
+        "pos": [
+         0,
+         0,
+         0
+        ],
+        "ease": "in"
+       }
+      ]
+     }
+    ],
+    "gobo": {
+     "text": "2026",
+     "font": "Besley",
+     "weight": 800,
+     "size": 0.06,
+     "at": [
+      0.08,
+      0.24
+     ],
+     "invert": true,
+     "strength": 0.97,
+     "from": [
+      -0.25,
+      0
+     ],
+     "settle": 1.2,
+     "start": 0.4
+    }
+   },
+   "layers": []
+  },
+  {
+   "duration": 2.5,
+   "scene3d": {
+    "env": {
+     "preset": "studio"
+    },
+    "rig": {
+     "preset": "window",
+     "angle": 75,
+     "height": 16,
+     "warmth": 0.7,
+     "ratio": 16,
+     "key": 1.6
+    },
+    "floor": {
+     "texture": "ambientcg:Travertine009",
+     "scale": 0.6
+    },
+    "camera": {
+     "keys": [
+      {
+       "t": 0,
+       "pos": [
+        0.02,
+        1.05,
+        0.06
+       ],
+       "target": [
+        0,
+        0,
+        0.02
+       ],
+       "fstop": 8,
+       "focal": 40
+      },
+      {
+       "t": 2.5,
+       "pos": [
+        0.0,
+        0.95,
+        0.05
+       ],
+       "target": [
+        0,
+        0,
+        0.02
+       ],
+       "fstop": 8,
+       "ease": "inOut",
+       "focal": 40
+      }
+     ],
+     "shake": "breath"
+    },
+    "lights": [
+     {
+      "pos": "=[1.6*cos(0.3+t*0.9), 0.8, 1.6*sin(0.3+t*0.9)]",
+      "target": [
+       0,
+       0.02,
+       0
+      ],
+      "angle": 10,
+      "penumbra": 0.5,
+      "color": "#FFC98A",
+      "intensity": "14"
+     }
+    ],
+    "objects": [
+     {
+      "type": "lathe",
+      "name": "pan",
+      "smooth": false,
+      "segments": 128,
+      "points": [
+       [
+        0,
+        0
+       ],
+       [
+        0.105,
+        0
+       ],
+       [
+        0.118,
+        0.004
+       ],
+       [
+        0.126,
+        0.016
+       ],
+       [
+        0.131,
+        0.046
+       ],
+       [
+        0.124,
+        0.047
+       ],
+       [
+        0.119,
+        0.018
+       ],
+       [
+        0.112,
+        0.01
+       ],
+       [
+        0.1,
+        0.008
+       ],
+       [
+        0,
+        0.008
+       ]
+      ],
+      "material": {
+       "texture": "ambientcg:Metal063",
+       "scale": 0.3,
+       "color": "#857668",
+       "roughness": 0.76,
+       "metallic": 0.365
+      }
+     },
+     {
+      "type": "box",
+      "size": [
+       0.15,
+       0.016,
+       0.026
+      ],
+      "radius": 0.006,
+      "pos": [
+       0.195,
+       0.04,
+       0
+      ],
+      "rot": [
+       0,
+       0,
+       8
+      ],
+      "material": {
+       "texture": "ambientcg:Metal063",
+       "scale": 0.3,
+       "color": "#857668",
+       "roughness": 0.76,
+       "metallic": 0.365
+      }
+     },
+     {
+      "type": "box",
+      "size": [
+       0.05,
+       0.012,
+       0.05
+      ],
+      "radius": 0.008,
+      "pos": [
+       -0.145,
+       0.04,
+       0
+      ],
+      "material": {
+       "texture": "ambientcg:Metal063",
+       "scale": 0.3,
+       "color": "#857668",
+       "roughness": 0.76,
+       "metallic": 0.365
+      }
+     },
+     {
+      "type": "sphere",
+      "radius": 0.022,
+      "scale": [
+       1,
+       1.3,
+       1
+      ],
+      "pos": [
+       -0.2,
+       0.0286,
+       -0.1
+      ],
+      "material": {
+       "base": "#E6D3B8",
+       "roughness": 0.6
+      }
+     },
+     {
+      "type": "sphere",
+      "radius": 0.022,
+      "scale": [
+       1,
+       1.3,
+       1
+      ],
+      "pos": [
+       -0.16,
+       0.0286,
+       -0.15
+      ],
+      "material": {
+       "base": "#E6D3B8",
+       "roughness": 0.6
+      }
+     },
+     {
+      "type": "sphere",
+      "radius": 0.022,
+      "scale": [
+       1,
+       1.3,
+       1
+      ],
+      "pos": [
+       -0.235,
+       0.0286,
+       -0.16
+      ],
+      "material": {
+       "base": "#E6D3B8",
+       "roughness": 0.6
+      }
+     }
+    ],
+    "gobo": {
+     "text": "2031",
+     "font": "Besley",
+     "weight": 800,
+     "size": 0.07,
+     "at": [
+      0.0,
+      0.2
+     ],
+     "invert": true,
+     "strength": 0.97,
+     "from": [
+      0.0,
+      0.25
+     ],
+     "settle": 0.8,
+     "start": 0.0
+    }
+   },
+   "layers": []
+  },
+  {
+   "duration": 2.5,
+   "scene3d": {
+    "env": {
+     "preset": "studio"
+    },
+    "rig": {
+     "preset": "window",
+     "angle": 75,
+     "height": 16,
+     "warmth": 0.7,
+     "ratio": 16,
+     "key": 1.6
+    },
+    "floor": {
+     "texture": "ambientcg:Travertine009",
+     "scale": 0.6
+    },
+    "camera": {
+     "keys": [
+      {
+       "t": 0,
+       "pos": [
+        0.08,
+        0.66,
+        0.74
+       ],
+       "target": [
+        0,
+        0,
+        0.1
+       ],
+       "fstop": 8,
+       "focal": 50
+      },
+      {
+       "t": 2.5,
+       "pos": [
+        -0.04,
+        0.6,
+        0.7
+       ],
+       "target": [
+        0,
+        0,
+        0.1
+       ],
+       "fstop": 8,
+       "ease": "inOut",
+       "focal": 50
+      }
+     ],
+     "shake": "breath"
+    },
+    "lights": [
+     {
+      "pos": "=[1.6*cos(1.4+t*1.8), 0.8, 1.6*sin(1.4+t*1.8)]",
+      "target": [
+       0,
+       0.02,
+       0
+      ],
+      "angle": 10,
+      "penumbra": 0.5,
+      "color": "#FFC98A",
+      "intensity": "=14*(0.7+0.3*sin(t*14))"
+     }
+    ],
+    "objects": [
+     {
+      "type": "lathe",
+      "name": "pan",
+      "smooth": false,
+      "segments": 128,
+      "points": [
+       [
+        0,
+        0
+       ],
+       [
+        0.105,
+        0
+       ],
+       [
+        0.118,
+        0.004
+       ],
+       [
+        0.126,
+        0.016
+       ],
+       [
+        0.131,
+        0.046
+       ],
+       [
+        0.124,
+        0.047
+       ],
+       [
+        0.119,
+        0.018
+       ],
+       [
+        0.112,
+        0.01
+       ],
+       [
+        0.1,
+        0.008
+       ],
+       [
+        0,
+        0.008
+       ]
+      ],
+      "material": {
+       "texture": "ambientcg:Metal063",
+       "scale": 0.3,
+       "color": "#6B5F54",
+       "roughness": 0.652,
+       "metallic": 0.446
+      }
+     },
+     {
+      "type": "box",
+      "size": [
+       0.15,
+       0.016,
+       0.026
+      ],
+      "radius": 0.006,
+      "pos": [
+       0.195,
+       0.04,
+       0
+      ],
+      "rot": [
+       0,
+       0,
+       8
+      ],
+      "material": {
+       "texture": "ambientcg:Metal063",
+       "scale": 0.3,
+       "color": "#6B5F54",
+       "roughness": 0.652,
+       "metallic": 0.446
+      }
+     },
+     {
+      "type": "box",
+      "size": [
+       0.05,
+       0.012,
+       0.05
+      ],
+      "radius": 0.008,
+      "pos": [
+       -0.145,
+       0.04,
+       0
+      ],
+      "material": {
+       "texture": "ambientcg:Metal063",
+       "scale": 0.3,
+       "color": "#6B5F54",
+       "roughness": 0.652,
+       "metallic": 0.446
+      }
+     },
+     {
+      "type": "lathe",
+      "smooth": false,
+      "pos": [
+       -0.21,
+       0,
+       -0.1
+      ],
+      "material": {
+       "extends": "ceramic",
+       "base": "#CDBFA6",
+       "roughness": 0.45,
+       "imperfections": 0.3
+      },
+      "points": [
+       [
+        0,
+        0
+       ],
+       [
+        0.04,
+        0
+       ],
+       [
+        0.042,
+        0.09
+       ],
+       [
+        0.037,
+        0.09
+       ],
+       [
+        0.035,
+        0.006
+       ],
+       [
+        0,
+        0.006
+       ]
+      ]
+     }
+    ],
+    "gobo": {
+     "text": "2058",
+     "font": "Besley",
+     "weight": 800,
+     "size": 0.08,
+     "at": [
+      0.0,
+      0.22
+     ],
+     "invert": true,
+     "strength": 0.97
+    }
+   },
+   "layers": []
+  },
+  {
+   "duration": 2.5,
+   "scene3d": {
+    "env": {
+     "preset": "studio"
+    },
+    "rig": {
+     "preset": "window",
+     "angle": 75,
+     "height": 16,
+     "warmth": 0.7,
+     "ratio": 16,
+     "key": 1.6
+    },
+    "floor": {
+     "texture": "ambientcg:Travertine009",
+     "scale": 0.6
+    },
+    "camera": {
+     "keys": [
+      {
+       "t": 0,
+       "pos": [
+        0.5,
+        0.32,
+        0.36
+       ],
+       "target": [
+        0.17,
+        0.0,
+        0.1
+       ],
+       "fstop": 5.6,
+       "focal": 70
+      },
+      {
+       "t": 2.5,
+       "pos": [
+        0.46,
+        0.3,
+        0.42
+       ],
+       "target": [
+        0.17,
+        0.0,
+        0.11
+       ],
+       "fstop": 5.6,
+       "ease": "inOut",
+       "focal": 70
+      }
+     ],
+     "shake": "breath"
+    },
+    "lights": [
+     {
+      "pos": "=[1.6*cos(t*4), 0.8, 1.6*sin(t*4)]",
+      "target": [
+       0,
+       0.02,
+       0
+      ],
+      "angle": 10,
+      "penumbra": 0.5,
+      "color": "#FFC98A",
+      "intensity": "=15*(0.75+0.25*sin(t*26))"
+     }
+    ],
+    "objects": [
+     {
+      "type": "lathe",
+      "name": "pan",
+      "smooth": false,
+      "segments": 128,
+      "points": [
+       [
+        0,
+        0
+       ],
+       [
+        0.105,
+        0
+       ],
+       [
+        0.118,
+        0.004
+       ],
+       [
+        0.126,
+        0.016
+       ],
+       [
+        0.131,
+        0.046
+       ],
+       [
+        0.124,
+        0.047
+       ],
+       [
+        0.119,
+        0.018
+       ],
+       [
+        0.112,
+        0.01
+       ],
+       [
+        0.1,
+        0.008
+       ],
+       [
+        0,
+        0.008
+       ]
+      ],
+      "material": {
+       "texture": "ambientcg:Metal063",
+       "scale": 0.3,
+       "color": "#524941",
+       "roughness": 0.548,
+       "metallic": 0.524
+      }
+     },
+     {
+      "type": "box",
+      "size": [
+       0.15,
+       0.016,
+       0.026
+      ],
+      "radius": 0.006,
+      "pos": [
+       0.195,
+       0.04,
+       0
+      ],
+      "rot": [
+       0,
+       0,
+       8
+      ],
+      "material": {
+       "texture": "ambientcg:Metal063",
+       "scale": 0.3,
+       "color": "#524941",
+       "roughness": 0.548,
+       "metallic": 0.524
+      }
+     },
+     {
+      "type": "box",
+      "size": [
+       0.05,
+       0.012,
+       0.05
+      ],
+      "radius": 0.008,
+      "pos": [
+       -0.145,
+       0.04,
+       0
+      ],
+      "material": {
+       "texture": "ambientcg:Metal063",
+       "scale": 0.3,
+       "color": "#524941",
+       "roughness": 0.548,
+       "metallic": 0.524
+      }
+     },
+     {
+      "type": "lathe",
+      "smooth": false,
+      "pos": [
+       0.06,
+       0,
+       -0.24
+      ],
+      "material": {
+       "extends": "ceramic",
+       "base": "#5B4A3C",
+       "roughness": 0.3,
+       "imperfections": 0.3
+      },
+      "points": [
+       [
+        0,
+        0
+       ],
+       [
+        0.035,
+        0
+       ],
+       [
+        0.078,
+        0.052
+       ],
+       [
+        0.073,
+        0.053
+       ],
+       [
+        0.032,
+        0.007
+       ],
+       [
+        0,
+        0.007
+       ]
+      ]
+     },
+     {
+      "type": "box",
+      "size": [
+       0.2,
+       0.008,
+       0.022
+      ],
+      "radius": 0.004,
+      "pos": [
+       0.3,
+       0.004,
+       -0.06
+      ],
+      "rot": [
+       0,
+       30,
+       0
+      ],
+      "material": {
+       "base": "#8A6440",
+       "roughness": 0.7,
+       "imperfections": 0.4
+      }
+     }
+    ],
+    "gobo": {
+     "text": "2084",
+     "font": "Besley",
+     "weight": 800,
+     "size": 0.05,
+     "at": [
+      0.2,
+      0.17
+     ],
+     "invert": true,
+     "strength": 0.97
+    }
+   },
+   "layers": []
+  },
+  {
+   "duration": 0.9,
+   "scene3d": {
+    "env": {
+     "preset": "studio"
+    },
+    "rig": {
+     "preset": "window",
+     "angle": 75,
+     "height": 16,
+     "warmth": 0.7,
+     "ratio": 16,
+     "key": 1.6
+    },
+    "floor": {
+     "texture": "ambientcg:Travertine009",
+     "scale": 0.6
+    },
+    "camera": {
+     "keys": [
+      {
+       "t": 0,
+       "pos": [
+        0.0,
+        1.0,
+        0.12
+       ],
+       "target": [
+        0,
+        0,
+        0.06
+       ],
+       "fstop": 8,
+       "focal": 35
+      },
+      {
+       "t": 0.9,
+       "pos": [
+        0.0,
+        0.96,
+        0.11399999999999999
+       ],
+       "target": [
+        0,
+        0,
+        0.06
+       ],
+       "fstop": 8,
+       "focal": 35
+      }
+     ],
+     "shake": "handheld"
+    },
+    "lights": [
+     {
+      "pos": "=[1.6*cos(0.0+t*7), 0.8, 1.6*sin(0.0+t*7)]",
+      "target": [
+       0,
+       0.02,
+       0
+      ],
+      "angle": 12,
+      "penumbra": 0.5,
+      "color": "#FFC98A",
+      "intensity": "=15*(0.7+0.3*sin(t*40))"
+     }
+    ],
+    "objects": [
+     {
+      "type": "lathe",
+      "name": "pan",
+      "smooth": false,
+      "segments": 128,
+      "points": [
+       [
+        0,
+        0
+       ],
+       [
+        0.105,
+        0
+       ],
+       [
+        0.118,
+        0.004
+       ],
+       [
+        0.126,
+        0.016
+       ],
+       [
+        0.131,
+        0.046
+       ],
+       [
+        0.124,
+        0.047
+       ],
+       [
+        0.119,
+        0.018
+       ],
+       [
+        0.112,
+        0.01
+       ],
+       [
+        0.1,
+        0.008
+       ],
+       [
+        0,
+        0.008
+       ]
+      ],
+      "material": {
+       "texture": "ambientcg:Metal063",
+       "scale": 0.3,
+       "color": "#443C36",
+       "roughness": 0.488,
+       "metallic": 0.569
+      }
+     },
+     {
+      "type": "box",
+      "size": [
+       0.15,
+       0.016,
+       0.026
+      ],
+      "radius": 0.006,
+      "pos": [
+       0.195,
+       0.04,
+       0
+      ],
+      "rot": [
+       0,
+       0,
+       8
+      ],
+      "material": {
+       "texture": "ambientcg:Metal063",
+       "scale": 0.3,
+       "color": "#443C36",
+       "roughness": 0.488,
+       "metallic": 0.569
+      }
+     },
+     {
+      "type": "box",
+      "size": [
+       0.05,
+       0.012,
+       0.05
+      ],
+      "radius": 0.008,
+      "pos": [
+       -0.145,
+       0.04,
+       0
+      ],
+      "material": {
+       "texture": "ambientcg:Metal063",
+       "scale": 0.3,
+       "color": "#443C36",
+       "roughness": 0.488,
+       "metallic": 0.569
+      }
+     },
+     {
+      "type": "lathe",
+      "smooth": false,
+      "pos": [
+       0.2,
+       0,
+       -0.16
+      ],
+      "material": {
+       "extends": "ceramic",
+       "base": "#5B4A3C",
+       "roughness": 0.3,
+       "imperfections": 0.3
+      },
+      "points": [
+       [
+        0,
+        0
+       ],
+       [
+        0.04,
+        0
+       ],
+       [
+        0.042,
+        0.09
+       ],
+       [
+        0.037,
+        0.09
+       ],
+       [
+        0.035,
+        0.006
+       ],
+       [
+        0,
+        0.006
+       ]
+      ]
+     },
+     {
+      "type": "sphere",
+      "radius": 0.022,
+      "scale": [
+       1,
+       1.3,
+       1
+      ],
+      "pos": [
+       -0.22,
+       0.0286,
+       -0.12
+      ],
+      "material": {
+       "base": "#E6D3B8",
+       "roughness": 0.6
+      }
+     }
+    ],
+    "gobo": {
+     "text": "2099",
+     "font": "Besley",
+     "weight": 800,
+     "size": 0.075,
+     "at": [
+      0.0,
+      0.25
+     ],
+     "invert": true,
+     "strength": 0.97
+    }
+   },
+   "layers": []
+  },
+  {
+   "duration": 0.7,
+   "scene3d": {
+    "env": {
+     "preset": "studio"
+    },
+    "rig": {
+     "preset": "window",
+     "angle": 75,
+     "height": 16,
+     "warmth": 0.7,
+     "ratio": 16,
+     "key": 1.6
+    },
+    "floor": {
+     "texture": "ambientcg:Travertine009",
+     "scale": 0.6
+    },
+    "camera": {
+     "keys": [
+      {
+       "t": 0,
+       "pos": [
+        0.6,
+        0.26,
+        0.62
+       ],
+       "target": [
+        0,
+        0,
+        0.15
+       ],
+       "fstop": 8,
+       "focal": 40
+      },
+      {
+       "t": 0.7,
+       "pos": [
+        0.57,
+        0.2496,
+        0.589
+       ],
+       "target": [
+        0,
+        0,
+        0.15
+       ],
+       "fstop": 8,
+       "focal": 40
+      }
+     ],
+     "shake": "handheld"
+    },
+    "lights": [
+     {
+      "pos": "=[1.6*cos(1.1+t*7), 0.8, 1.6*sin(1.1+t*7)]",
+      "target": [
+       0,
+       0.02,
+       0
+      ],
+      "angle": 12,
+      "penumbra": 0.5,
+      "color": "#FFC98A",
+      "intensity": "=15*(0.7+0.3*sin(t*40))"
+     }
+    ],
+    "objects": [
+     {
+      "type": "lathe",
+      "name": "pan",
+      "smooth": false,
+      "segments": 128,
+      "points": [
+       [
+        0,
+        0
+       ],
+       [
+        0.105,
+        0
+       ],
+       [
+        0.118,
+        0.004
+       ],
+       [
+        0.126,
+        0.016
+       ],
+       [
+        0.131,
+        0.046
+       ],
+       [
+        0.124,
+        0.047
+       ],
+       [
+        0.119,
+        0.018
+       ],
+       [
+        0.112,
+        0.01
+       ],
+       [
+        0.1,
+        0.008
+       ],
+       [
+        0,
+        0.008
+       ]
+      ],
+      "material": {
+       "texture": "ambientcg:Metal063",
+       "scale": 0.3,
+       "color": "#3C3530",
+       "roughness": 0.456,
+       "metallic": 0.593
+      }
+     },
+     {
+      "type": "box",
+      "size": [
+       0.15,
+       0.016,
+       0.026
+      ],
+      "radius": 0.006,
+      "pos": [
+       0.195,
+       0.04,
+       0
+      ],
+      "rot": [
+       0,
+       0,
+       8
+      ],
+      "material": {
+       "texture": "ambientcg:Metal063",
+       "scale": 0.3,
+       "color": "#3C3530",
+       "roughness": 0.456,
+       "metallic": 0.593
+      }
+     },
+     {
+      "type": "box",
+      "size": [
+       0.05,
+       0.012,
+       0.05
+      ],
+      "radius": 0.008,
+      "pos": [
+       -0.145,
+       0.04,
+       0
+      ],
+      "material": {
+       "texture": "ambientcg:Metal063",
+       "scale": 0.3,
+       "color": "#3C3530",
+       "roughness": 0.456,
+       "metallic": 0.593
+      }
+     },
+     {
+      "type": "lathe",
+      "smooth": false,
+      "pos": [
+       -0.24,
+       0,
+       -0.08
+      ],
+      "material": {
+       "extends": "ceramic",
+       "base": "#CDBFA6",
+       "roughness": 0.45,
+       "imperfections": 0.3
+      },
+      "points": [
+       [
+        0,
+        0
+       ],
+       [
+        0.035,
+        0
+       ],
+       [
+        0.078,
+        0.052
+       ],
+       [
+        0.073,
+        0.053
+       ],
+       [
+        0.032,
+        0.007
+       ],
+       [
+        0,
+        0.007
+       ]
+      ]
+     }
+    ],
+    "gobo": {
+     "text": "2107",
+     "font": "Besley",
+     "weight": 800,
+     "size": 0.075,
+     "at": [
+      0.0,
+      0.25
+     ],
+     "invert": true,
+     "strength": 0.97
+    }
+   },
+   "layers": []
+  },
+  {
+   "duration": 0.6,
+   "scene3d": {
+    "env": {
+     "preset": "studio"
+    },
+    "rig": {
+     "preset": "window",
+     "angle": 75,
+     "height": 16,
+     "warmth": 0.7,
+     "ratio": 16,
+     "key": 1.6
+    },
+    "floor": {
+     "texture": "ambientcg:Travertine009",
+     "scale": 0.6
+    },
+    "camera": {
+     "keys": [
+      {
+       "t": 0,
+       "pos": [
+        -0.5,
+        0.6,
+        0.55
+       ],
+       "target": [
+        0,
+        0,
+        0.1
+       ],
+       "fstop": 8,
+       "focal": 40
+      },
+      {
+       "t": 0.6,
+       "pos": [
+        -0.475,
+        0.576,
+        0.5225
+       ],
+       "target": [
+        0,
+        0,
+        0.1
+       ],
+       "fstop": 8,
+       "focal": 40
+      }
+     ],
+     "shake": "handheld"
+    },
+    "lights": [
+     {
+      "pos": "=[1.6*cos(2.2+t*7), 0.8, 1.6*sin(2.2+t*7)]",
+      "target": [
+       0,
+       0.02,
+       0
+      ],
+      "angle": 12,
+      "penumbra": 0.5,
+      "color": "#FFC98A",
+      "intensity": "=15*(0.7+0.3*sin(t*40))"
+     }
+    ],
+    "objects": [
+     {
+      "type": "lathe",
+      "name": "pan",
+      "smooth": false,
+      "segments": 128,
+      "points": [
+       [
+        0,
+        0
+       ],
+       [
+        0.105,
+        0
+       ],
+       [
+        0.118,
+        0.004
+       ],
+       [
+        0.126,
+        0.016
+       ],
+       [
+        0.131,
+        0.046
+       ],
+       [
+        0.124,
+        0.047
+       ],
+       [
+        0.119,
+        0.018
+       ],
+       [
+        0.112,
+        0.01
+       ],
+       [
+        0.1,
+        0.008
+       ],
+       [
+        0,
+        0.008
+       ]
+      ],
+      "material": {
+       "texture": "ambientcg:Metal063",
+       "scale": 0.3,
+       "color": "#36302C",
+       "roughness": 0.432,
+       "metallic": 0.611
+      }
+     },
+     {
+      "type": "box",
+      "size": [
+       0.15,
+       0.016,
+       0.026
+      ],
+      "radius": 0.006,
+      "pos": [
+       0.195,
+       0.04,
+       0
+      ],
+      "rot": [
+       0,
+       0,
+       8
+      ],
+      "material": {
+       "texture": "ambientcg:Metal063",
+       "scale": 0.3,
+       "color": "#36302C",
+       "roughness": 0.432,
+       "metallic": 0.611
+      }
+     },
+     {
+      "type": "box",
+      "size": [
+       0.05,
+       0.012,
+       0.05
+      ],
+      "radius": 0.008,
+      "pos": [
+       -0.145,
+       0.04,
+       0
+      ],
+      "material": {
+       "texture": "ambientcg:Metal063",
+       "scale": 0.3,
+       "color": "#36302C",
+       "roughness": 0.432,
+       "metallic": 0.611
+      }
+     },
+     {
+      "type": "box",
+      "size": [
+       0.2,
+       0.008,
+       0.022
+      ],
+      "radius": 0.004,
+      "pos": [
+       -0.24,
+       0.004,
+       -0.1
+      ],
+      "rot": [
+       0,
+       -60,
+       0
+      ],
+      "material": {
+       "base": "#8A6440",
+       "roughness": 0.7,
+       "imperfections": 0.4
+      }
+     },
+     {
+      "type": "lathe",
+      "smooth": false,
+      "pos": [
+       0.18,
+       0,
+       -0.2
+      ],
+      "material": {
+       "extends": "ceramic",
+       "base": "#CDBFA6",
+       "roughness": 0.45,
+       "imperfections": 0.3
+      },
+      "points": [
+       [
+        0,
+        0
+       ],
+       [
+        0.04,
+        0
+       ],
+       [
+        0.042,
+        0.09
+       ],
+       [
+        0.037,
+        0.09
+       ],
+       [
+        0.035,
+        0.006
+       ],
+       [
+        0,
+        0.006
+       ]
+      ]
+     }
+    ],
+    "gobo": {
+     "text": "2113",
+     "font": "Besley",
+     "weight": 800,
+     "size": 0.075,
+     "at": [
+      0.0,
+      0.25
+     ],
+     "invert": true,
+     "strength": 0.97
+    }
+   },
+   "layers": []
+  },
+  {
+   "duration": 0.55,
+   "scene3d": {
+    "env": {
+     "preset": "studio"
+    },
+    "rig": {
+     "preset": "window",
+     "angle": 75,
+     "height": 16,
+     "warmth": 0.7,
+     "ratio": 16,
+     "key": 1.6
+    },
+    "floor": {
+     "texture": "ambientcg:Travertine009",
+     "scale": 0.6
+    },
+    "camera": {
+     "keys": [
+      {
+       "t": 0,
+       "pos": [
+        0.06,
+        0.26,
+        0.55
+       ],
+       "target": [
+        0,
+        0,
+        0.22
+       ],
+       "fstop": 8,
+       "focal": 70
+      },
+      {
+       "t": 0.55,
+       "pos": [
+        0.056999999999999995,
+        0.2496,
+        0.5225
+       ],
+       "target": [
+        0,
+        0,
+        0.22
+       ],
+       "fstop": 8,
+       "focal": 70
+      }
+     ],
+     "shake": "handheld"
+    },
+    "lights": [
+     {
+      "pos": "=[1.6*cos(3.3000000000000003+t*7), 0.8, 1.6*sin(3.3000000000000003+t*7)]",
+      "target": [
+       0,
+       0.02,
+       0
+      ],
+      "angle": 12,
+      "penumbra": 0.5,
+      "color": "#FFC98A",
+      "intensity": "=15*(0.7+0.3*sin(t*40))"
+     }
+    ],
+    "objects": [
+     {
+      "type": "lathe",
+      "name": "pan",
+      "smooth": false,
+      "segments": 128,
+      "points": [
+       [
+        0,
+        0
+       ],
+       [
+        0.105,
+        0
+       ],
+       [
+        0.118,
+        0.004
+       ],
+       [
+        0.126,
+        0.016
+       ],
+       [
+        0.131,
+        0.046
+       ],
+       [
+        0.124,
+        0.047
+       ],
+       [
+        0.119,
+        0.018
+       ],
+       [
+        0.112,
+        0.01
+       ],
+       [
+        0.1,
+        0.008
+       ],
+       [
+        0,
+        0.008
+       ]
+      ],
+      "material": {
+       "texture": "ambientcg:Metal063",
+       "scale": 0.3,
+       "color": "#312B27",
+       "roughness": 0.408,
+       "metallic": 0.629
+      }
+     },
+     {
+      "type": "box",
+      "size": [
+       0.15,
+       0.016,
+       0.026
+      ],
+      "radius": 0.006,
+      "pos": [
+       0.195,
+       0.04,
+       0
+      ],
+      "rot": [
+       0,
+       0,
+       8
+      ],
+      "material": {
+       "texture": "ambientcg:Metal063",
+       "scale": 0.3,
+       "color": "#312B27",
+       "roughness": 0.408,
+       "metallic": 0.629
+      }
+     },
+     {
+      "type": "box",
+      "size": [
+       0.05,
+       0.012,
+       0.05
+      ],
+      "radius": 0.008,
+      "pos": [
+       -0.145,
+       0.04,
+       0
+      ],
+      "material": {
+       "texture": "ambientcg:Metal063",
+       "scale": 0.3,
+       "color": "#312B27",
+       "roughness": 0.408,
+       "metallic": 0.629
+      }
+     }
+    ],
+    "gobo": {
+     "text": "2119",
+     "font": "Besley",
+     "weight": 800,
+     "size": 0.075,
+     "at": [
+      0.0,
+      0.25
+     ],
+     "invert": true,
+     "strength": 0.97
+    }
+   },
+   "layers": []
+  },
+  {
+   "duration": 0.5,
+   "scene3d": {
+    "env": {
+     "preset": "studio"
+    },
+    "rig": {
+     "preset": "window",
+     "angle": 75,
+     "height": 16,
+     "warmth": 0.7,
+     "ratio": 16,
+     "key": 1.6
+    },
+    "floor": {
+     "texture": "ambientcg:Travertine009",
+     "scale": 0.6
+    },
+    "camera": {
+     "keys": [
+      {
+       "t": 0,
+       "pos": [
+        0.0,
+        0.2,
+        0.72
+       ],
+       "target": [
+        0,
+        0.03,
+        0.05
+       ],
+       "fstop": 8,
+       "focal": 50
+      },
+      {
+       "t": 0.5,
+       "pos": [
+        0.0,
+        0.192,
+        0.6839999999999999
+       ],
+       "target": [
+        0,
+        0.03,
+        0.05
+       ],
+       "fstop": 8,
+       "focal": 50
+      }
+     ],
+     "shake": "handheld"
+    },
+    "lights": [
+     {
+      "pos": "=[1.6*cos(4.4+t*7), 0.8, 1.6*sin(4.4+t*7)]",
+      "target": [
+       0,
+       0.02,
+       0
+      ],
+      "angle": 12,
+      "penumbra": 0.5,
+      "color": "#FFC98A",
+      "intensity": "=15*(0.7+0.3*sin(t*40))"
+     }
+    ],
+    "objects": [
+     {
+      "type": "lathe",
+      "name": "pan",
+      "smooth": false,
+      "segments": 128,
+      "points": [
+       [
+        0,
+        0
+       ],
+       [
+        0.105,
+        0
+       ],
+       [
+        0.118,
+        0.004
+       ],
+       [
+        0.126,
+        0.016
+       ],
+       [
+        0.131,
+        0.046
+       ],
+       [
+        0.124,
+        0.047
+       ],
+       [
+        0.119,
+        0.018
+       ],
+       [
+        0.112,
+        0.01
+       ],
+       [
+        0.1,
+        0.008
+       ],
+       [
+        0,
+        0.008
+       ]
+      ],
+      "material": {
+       "texture": "ambientcg:Metal063",
+       "scale": 0.3,
+       "color": "#2D2824",
+       "roughness": 0.392,
+       "metallic": 0.641
+      }
+     },
+     {
+      "type": "box",
+      "size": [
+       0.15,
+       0.016,
+       0.026
+      ],
+      "radius": 0.006,
+      "pos": [
+       0.195,
+       0.04,
+       0
+      ],
+      "rot": [
+       0,
+       0,
+       8
+      ],
+      "material": {
+       "texture": "ambientcg:Metal063",
+       "scale": 0.3,
+       "color": "#2D2824",
+       "roughness": 0.392,
+       "metallic": 0.641
+      }
+     },
+     {
+      "type": "box",
+      "size": [
+       0.05,
+       0.012,
+       0.05
+      ],
+      "radius": 0.008,
+      "pos": [
+       -0.145,
+       0.04,
+       0
+      ],
+      "material": {
+       "texture": "ambientcg:Metal063",
+       "scale": 0.3,
+       "color": "#2D2824",
+       "roughness": 0.392,
+       "metallic": 0.641
+      }
+     },
+     {
+      "type": "sphere",
+      "radius": 0.022,
+      "scale": [
+       1,
+       1.3,
+       1
+      ],
+      "pos": [
+       0.2,
+       0.0286,
+       -0.12
+      ],
+      "material": {
+       "base": "#E6D3B8",
+       "roughness": 0.6
+      }
+     },
+     {
+      "type": "sphere",
+      "radius": 0.022,
+      "scale": [
+       1,
+       1.3,
+       1
+      ],
+      "pos": [
+       0.24,
+       0.0286,
+       -0.08
+      ],
+      "material": {
+       "base": "#E6D3B8",
+       "roughness": 0.6
+      }
+     }
+    ],
+    "gobo": {
+     "text": "2123",
+     "font": "Besley",
+     "weight": 800,
+     "size": 0.075,
+     "at": [
+      0.0,
+      0.25
+     ],
+     "invert": true,
+     "strength": 0.97
+    }
+   },
+   "layers": []
+  },
+  {
+   "duration": 0.5,
+   "scene3d": {
+    "env": {
+     "preset": "studio"
+    },
+    "rig": {
+     "preset": "window",
+     "angle": 75,
+     "height": 16,
+     "warmth": 0.7,
+     "ratio": 16,
+     "key": 1.6
+    },
+    "floor": {
+     "texture": "ambientcg:Travertine009",
+     "scale": 0.6
+    },
+    "camera": {
+     "keys": [
+      {
+       "t": 0,
+       "pos": [
+        0.3,
+        1.1,
+        0.9
+       ],
+       "target": [
+        0,
+        0,
+        0.08
+       ],
+       "fstop": 8,
+       "focal": 35
+      },
+      {
+       "t": 0.5,
+       "pos": [
+        0.285,
+        1.056,
+        0.855
+       ],
+       "target": [
+        0,
+        0,
+        0.08
+       ],
+       "fstop": 8,
+       "focal": 35
+      }
+     ],
+     "shake": "handheld"
+    },
+    "lights": [
+     {
+      "pos": "=[1.6*cos(5.5+t*7), 0.8, 1.6*sin(5.5+t*7)]",
+      "target": [
+       0,
+       0.02,
+       0
+      ],
+      "angle": 12,
+      "penumbra": 0.5,
+      "color": "#FFC98A",
+      "intensity": "=15*(0.7+0.3*sin(t*40))"
+     }
+    ],
+    "objects": [
+     {
+      "type": "lathe",
+      "name": "pan",
+      "smooth": false,
+      "segments": 128,
+      "points": [
+       [
+        0,
+        0
+       ],
+       [
+        0.105,
+        0
+       ],
+       [
+        0.118,
+        0.004
+       ],
+       [
+        0.126,
+        0.016
+       ],
+       [
+        0.131,
+        0.046
+       ],
+       [
+        0.124,
+        0.047
+       ],
+       [
+        0.119,
+        0.018
+       ],
+       [
+        0.112,
+        0.01
+       ],
+       [
+        0.1,
+        0.008
+       ],
+       [
+        0,
+        0.008
+       ]
+      ],
+      "material": {
+       "texture": "ambientcg:Metal063",
+       "scale": 0.3,
+       "color": "#2B2623",
+       "roughness": 0.384,
+       "metallic": 0.647
+      }
+     },
+     {
+      "type": "box",
+      "size": [
+       0.15,
+       0.016,
+       0.026
+      ],
+      "radius": 0.006,
+      "pos": [
+       0.195,
+       0.04,
+       0
+      ],
+      "rot": [
+       0,
+       0,
+       8
+      ],
+      "material": {
+       "texture": "ambientcg:Metal063",
+       "scale": 0.3,
+       "color": "#2B2623",
+       "roughness": 0.384,
+       "metallic": 0.647
+      }
+     },
+     {
+      "type": "box",
+      "size": [
+       0.05,
+       0.012,
+       0.05
+      ],
+      "radius": 0.008,
+      "pos": [
+       -0.145,
+       0.04,
+       0
+      ],
+      "material": {
+       "texture": "ambientcg:Metal063",
+       "scale": 0.3,
+       "color": "#2B2623",
+       "roughness": 0.384,
+       "metallic": 0.647
+      }
+     },
+     {
+      "type": "lathe",
+      "smooth": false,
+      "pos": [
+       0.22,
+       0,
+       -0.18
+      ],
+      "material": {
+       "extends": "ceramic",
+       "base": "#5B4A3C",
+       "roughness": 0.3,
+       "imperfections": 0.3
+      },
+      "points": [
+       [
+        0,
+        0
+       ],
+       [
+        0.035,
+        0
+       ],
+       [
+        0.078,
+        0.052
+       ],
+       [
+        0.073,
+        0.053
+       ],
+       [
+        0.032,
+        0.007
+       ],
+       [
+        0,
+        0.007
+       ]
+      ]
+     },
+     {
+      "type": "lathe",
+      "smooth": false,
+      "pos": [
+       -0.24,
+       0,
+       -0.1
+      ],
+      "material": {
+       "extends": "ceramic",
+       "base": "#5B4A3C",
+       "roughness": 0.3,
+       "imperfections": 0.3
+      },
+      "points": [
+       [
+        0,
+        0
+       ],
+       [
+        0.04,
+        0
+       ],
+       [
+        0.042,
+        0.09
+       ],
+       [
+        0.037,
+        0.09
+       ],
+       [
+        0.035,
+        0.006
+       ],
+       [
+        0,
+        0.006
+       ]
+      ]
+     }
+    ],
+    "gobo": {
+     "text": "2125",
+     "font": "Besley",
+     "weight": 800,
+     "size": 0.075,
+     "at": [
+      0.0,
+      0.25
+     ],
+     "invert": true,
+     "strength": 0.97
+    }
+   },
+   "layers": []
+  },
+  {
+   "duration": 1.25,
+   "scene3d": {
+    "env": {
+     "preset": "studio"
+    },
+    "rig": {
+     "preset": "window",
+     "angle": 75,
+     "height": 16,
+     "warmth": 0.7,
+     "ratio": 16,
+     "key": 1.6
+    },
+    "floor": {
+     "texture": "ambientcg:Travertine009",
+     "scale": 0.6
+    },
+    "camera": {
+     "keys": [
+      {
+       "t": 0,
+       "pos": [
+        0.0,
+        0.72,
+        0.8
+       ],
+       "target": [
+        0,
+        0,
+        0.12
+       ],
+       "fstop": 8,
+       "focal": 50
+      },
+      {
+       "t": 1.25,
+       "pos": [
+        0.0,
+        0.7,
+        0.78
+       ],
+       "target": [
+        0,
+        0,
+        0.12
+       ],
+       "fstop": 8,
+       "focal": 50
+      }
+     ],
+     "shake": "breath"
+    },
+    "lights": [
+     {
+      "pos": "=[1.6*cos(0.32), 0.8, 1.6*sin(0.32)]",
+      "target": [
+       0,
+       0.02,
+       0
+      ],
+      "angle": 10,
+      "penumbra": 0.5,
+      "color": "#FFC98A",
+      "intensity": "14"
+     }
+    ],
+    "objects": [
+     {
+      "type": "lathe",
+      "name": "pan",
+      "smooth": false,
+      "segments": 128,
+      "points": [
+       [
+        0,
+        0
+       ],
+       [
+        0.105,
+        0
+       ],
+       [
+        0.118,
+        0.004
+       ],
+       [
+        0.126,
+        0.016
+       ],
+       [
+        0.131,
+        0.046
+       ],
+       [
+        0.124,
+        0.047
+       ],
+       [
+        0.119,
+        0.018
+       ],
+       [
+        0.112,
+        0.01
+       ],
+       [
+        0.1,
+        0.008
+       ],
+       [
+        0,
+        0.008
+       ]
+      ],
+      "material": {
+       "texture": "ambientcg:Metal063",
+       "scale": 0.3,
+       "color": "#2A2522",
+       "roughness": 0.38,
+       "metallic": 0.65
+      }
+     },
+     {
+      "type": "box",
+      "size": [
+       0.15,
+       0.016,
+       0.026
+      ],
+      "radius": 0.006,
+      "pos": [
+       0.195,
+       0.04,
+       0
+      ],
+      "rot": [
+       0,
+       0,
+       8
+      ],
+      "material": {
+       "texture": "ambientcg:Metal063",
+       "scale": 0.3,
+       "color": "#2A2522",
+       "roughness": 0.38,
+       "metallic": 0.65
+      }
+     },
+     {
+      "type": "box",
+      "size": [
+       0.05,
+       0.012,
+       0.05
+      ],
+      "radius": 0.008,
+      "pos": [
+       -0.145,
+       0.04,
+       0
+      ],
+      "material": {
+       "texture": "ambientcg:Metal063",
+       "scale": 0.3,
+       "color": "#2A2522",
+       "roughness": 0.38,
+       "metallic": 0.65
+      }
+     }
+    ],
+    "gobo": {
+     "text": "2126",
+     "font": "Besley",
+     "weight": 800,
+     "size": 0.08,
+     "at": [
+      0.0,
+      0.24
+     ],
+     "invert": true,
+     "strength": 0.97
+    }
+   },
+   "layers": []
+  },
+  {
+   "duration": 5.0,
+   "scene3d": {
+    "env": {
+     "preset": "studio"
+    },
+    "rig": {
+     "preset": "window",
+     "angle": 75,
+     "height": 16,
+     "warmth": 0.7,
+     "ratio": 16,
+     "key": 1.6
+    },
+    "floor": {
+     "texture": "ambientcg:Travertine009",
+     "scale": 0.6
+    },
+    "camera": {
+     "keys": [
+      {
+       "t": 0,
+       "pos": [
+        0.04,
+        0.46,
+        0.4
+       ],
+       "target": [
+        0,
+        0.04,
+        0.0
+       ],
+       "fstop": 8,
+       "focal": 50
+      },
+      {
+       "t": 1.6,
+       "pos": [
+        0.035,
+        0.44,
+        0.38
+       ],
+       "target": [
+        0,
+        0.04,
+        0.0
+       ],
+       "fstop": 8,
+       "focal": 50
+      },
+      {
+       "t": 5.0,
+       "pos": [
+        0.06,
+        0.64,
+        0.78
+       ],
+       "target": [
+        0,
+        0.02,
+        0.15
+       ],
+       "fstop": 8,
+       "ease": "inOut",
+       "focal": 50
+      }
+     ],
+     "shake": "breath"
+    },
+    "lights": [
+     {
+      "pos": "=[1.6*cos(2.3+t*0.05), 0.45, 1.6*sin(2.3+t*0.05)]",
+      "target": [
+       0,
+       0.02,
+       0
+      ],
+      "angle": 7,
+      "penumbra": 0.5,
+      "color": "#FFC98A",
+      "intensity": "16"
+     }
+    ],
+    "objects": [
+     {
+      "type": "lathe",
+      "name": "pan",
+      "smooth": false,
+      "segments": 128,
+      "points": [
+       [
+        0,
+        0.047
+       ],
+       [
+        0.105,
+        0.047
+       ],
+       [
+        0.118,
+        0.043
+       ],
+       [
+        0.126,
+        0.031
+       ],
+       [
+        0.131,
+        0.001
+       ],
+       [
+        0.124,
+        0.0
+       ],
+       [
+        0.119,
+        0.029
+       ],
+       [
+        0.112,
+        0.037
+       ],
+       [
+        0.1,
+        0.039
+       ],
+       [
+        0,
+        0.039
+       ]
+      ],
+      "material": {
+       "texture": "ambientcg:Metal063",
+       "scale": 0.3,
+       "color": "#6A5E54",
+       "roughness": 0.7,
+       "metallic": 0.25
+      },
+      "keys": [
+       {
+        "t": 0,
+        "pos": [
+         0,
+         0.09,
+         0
+        ],
+        "rot": [
+         0,
+         0,
+         0
+        ]
+       },
+       {
+        "t": 0.28,
+        "pos": [
+         0,
+         0,
+         0
+        ],
+        "ease": "in"
+       }
+      ]
+     },
+     {
+      "type": "box",
+      "size": [
+       0.15,
+       0.016,
+       0.026
+      ],
+      "radius": 0.006,
+      "pos": [
+       0.195,
+       0.007,
+       0
+      ],
+      "rot": [
+       0,
+       0,
+       -8
+      ],
+      "material": {
+       "texture": "ambientcg:Metal063",
+       "scale": 0.3,
+       "color": "#6A5E54",
+       "roughness": 0.7,
+       "metallic": 0.25
+      },
+      "keys": [
+       {
+        "t": 0,
+        "pos": [
+         0,
+         0.09,
+         0
+        ],
+        "rot": [
+         0,
+         0,
+         0
+        ]
+       },
+       {
+        "t": 0.28,
+        "pos": [
+         0,
+         0,
+         0
+        ],
+        "ease": "in"
+       }
+      ]
+     },
+     {
+      "type": "box",
+      "size": [
+       0.05,
+       0.012,
+       0.05
+      ],
+      "radius": 0.008,
+      "pos": [
+       -0.145,
+       0.007,
+       0
+      ],
+      "material": {
+       "texture": "ambientcg:Metal063",
+       "scale": 0.3,
+       "color": "#6A5E54",
+       "roughness": 0.7,
+       "metallic": 0.25
+      },
+      "keys": [
+       {
+        "t": 0,
+        "pos": [
+         0,
+         0.09,
+         0
+        ],
+        "rot": [
+         0,
+         0,
+         0
+        ]
+       },
+       {
+        "t": 0.28,
+        "pos": [
+         0,
+         0,
+         0
+        ],
+        "ease": "in"
+       }
+      ]
+     },
+     {
+      "type": "text",
+      "text": "FERRO",
+      "font": "Besley",
+      "weight": 800,
+      "height": 0.032,
+      "depth": 0.0025,
+      "bevel": 0.0008,
+      "pos": [
+       0,
+       0.0494,
+       0.014
+      ],
+      "rot": [
+       -90,
+       0,
+       0
+      ],
+      "material": {
+       "texture": "ambientcg:Metal063",
+       "scale": 0.3,
+       "color": "#C9B4A0",
+       "roughness": 0.45,
+       "metallic": 0.15
+      },
+      "keys": [
+       {
+        "t": 0,
+        "pos": [
+         0,
+         0.09,
+         0
+        ],
+        "rot": [
+         0,
+         0,
+         0
+        ]
+       },
+       {
+        "t": 0.28,
+        "pos": [
+         0,
+         0,
+         0
+        ],
+        "ease": "in"
+       }
+      ]
+     },
+     {
+      "type": "text",
+      "text": "SHEFFIELD",
+      "font": "Besley",
+      "weight": 700,
+      "height": 0.011,
+      "depth": 0.0018,
+      "tracking": 0.12,
+      "pos": [
+       0,
+       0.0487,
+       0.045
+      ],
+      "rot": [
+       -90,
+       0,
+       0
+      ],
+      "material": {
+       "texture": "ambientcg:Metal063",
+       "scale": 0.3,
+       "color": "#C9B4A0",
+       "roughness": 0.45,
+       "metallic": 0.15
+      },
+      "keys": [
+       {
+        "t": 0,
+        "pos": [
+         0,
+         0.09,
+         0
+        ],
+        "rot": [
+         0,
+         0,
+         0
+        ]
+       },
+       {
+        "t": 0.28,
+        "pos": [
+         0,
+         0,
+         0
+        ],
+        "ease": "in"
+       }
+      ]
+     },
+     {
+      "type": "text",
+      "text": "2026",
+      "font": "Besley",
+      "weight": 700,
+      "height": 0.011,
+      "depth": 0.0018,
+      "tracking": 0.1,
+      "pos": [
+       0,
+       0.0487,
+       -0.038
+      ],
+      "rot": [
+       -90,
+       0,
+       0
+      ],
+      "material": {
+       "texture": "ambientcg:Metal063",
+       "scale": 0.3,
+       "color": "#C9B4A0",
+       "roughness": 0.45,
+       "metallic": 0.15
+      },
+      "keys": [
+       {
+        "t": 0,
+        "pos": [
+         0,
+         0.09,
+         0
+        ],
+        "rot": [
+         0,
+         0,
+         0
+        ]
+       },
+       {
+        "t": 0.28,
+        "pos": [
+         0,
+         0,
+         0
+        ],
+        "ease": "in"
+       }
+      ]
+     },
+     {
+      "type": "torus",
+      "radius": 0.088,
+      "tube": 0.0025,
+      "pos": [
+       0,
+       0.047,
+       0
+      ],
+      "rot": [
+       90,
+       0,
+       0
+      ],
+      "material": {
+       "texture": "ambientcg:Metal063",
+       "scale": 0.3,
+       "color": "#6A5E54",
+       "roughness": 0.7,
+       "metallic": 0.25
+      },
+      "keys": [
+       {
+        "t": 0,
+        "pos": [
+         0,
+         0.09,
+         0
+        ],
+        "rot": [
+         0,
+         0,
+         0
+        ]
+       },
+       {
+        "t": 0.28,
+        "pos": [
+         0,
+         0,
+         0
+        ],
+        "ease": "in"
+       }
+      ]
+     }
+    ],
+    "gobo": {
+     "text": "Back it on Kickstarter",
+     "font": "Besley",
+     "weight": 800,
+     "size": 0.026,
+     "at": [
+      0.0,
+      0.3
+     ],
+     "invert": true,
+     "strength": 0.97,
+     "from": [
+      0.0,
+      0.18
+     ],
+     "settle": 1.0,
+     "start": 2.5
+    }
+   },
+   "layers": []
+  }
+ ]
+}
