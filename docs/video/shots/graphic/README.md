@@ -1,5 +1,7 @@
 # Graphic design proofs
 
+**Reel:** `graphic-reel.mp4` (57.7 s) runs all five pieces back to back with their scores, re-encoded with x264 CRF 21.
+
 Five short pieces, each in a different graphic-design tradition. Every one is built from the `graphic` features
 (`anikit-video docs graphic`) plus standard layers, with no bitmaps. Specs are in `examples/video/graphic/`, and the fonts
 (OFL) are in `examples/video/graphic/fonts/`. Render times are wall clock on this container (`render`, release build, 1920×1080).
