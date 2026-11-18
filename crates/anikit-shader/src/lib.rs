@@ -258,6 +258,29 @@ struct Slot {
     ints: Vec<bool>,
 }
 
+#[derive(Default)]
+struct AaScratch {
+    img: Vec<[f32; 4]>,
+    contrast: Vec<f32>,
+}
+
+/// Reusable adaptive-AA buffers, shared by all shaders; at most
+/// `AA_POOL_MAX` are kept, so retained memory doesn't grow with shader count.
+const AA_POOL_MAX: usize = 2;
+static AA_POOL: std::sync::Mutex<Vec<AaScratch>> = std::sync::Mutex::new(Vec::new());
+
+fn take_scratch() -> AaScratch {
+    AA_POOL.lock().ok().and_then(|mut p| p.pop()).unwrap_or_default()
+}
+
+fn give_scratch(s: AaScratch) {
+    if let Ok(mut p) = AA_POOL.lock() {
+        if p.len() < AA_POOL_MAX {
+            p.push(s);
+        }
+    }
+}
+
 /// A compiled shader. Cheap to share between threads; `render` is `&self`.
 pub struct Shader {
     kernel: jit::Kernel,
@@ -474,7 +497,10 @@ impl Shader {
             let mut f1 = f.clone();
             f1.supersample = false;
             self.run(&f1, &mut out, w, |dst, px, _, _| *dst = px);
-            self.refine(f, &mut out, w, h);
+            let mut scratch = take_scratch();
+            let mut none = vec![(); w * h];
+            self.refine(f, &mut out, &mut scratch.contrast, w, h, &mut none, |_, _, _| {});
+            give_scratch(scratch);
         } else {
             self.run(f, &mut out, w, |dst, px, _, _| *dst = px);
         }
@@ -483,46 +509,79 @@ impl Shader {
 
     /// Adaptive supersampling: re-shade, with 2×2 sub-samples, every pixel that
     /// differs from any of its 8 neighbours by more than the threshold in any channel.
-    fn refine(&self, f: &Frame, out: &mut [[f32; 4]], w: usize, h: usize) {
-        let src: &[[f32; 4]] = out;
-        // Contrast of each pixel: its largest channel difference to any of its 8 neighbours.
-        let diff = |a: [f32; 4], b: [f32; 4]| (0..4).map(|k| (a[k].clamp(0.0, 1.0) - b[k].clamp(0.0, 1.0)).abs()).fold(0.0f32, f32::max);
-        let contrast: Vec<f32> = (0..w * h)
-            .into_par_iter()
-            .map(|i| {
-                let (x, y) = (i % w, i / w);
-                let c = src[i];
-                let (x0, x1) = (x.saturating_sub(1), (x + 1).min(w - 1));
-                let (y0, y1) = (y.saturating_sub(1), (y + 1).min(h - 1));
-                let mut m = 0.0f32;
-                for yy in y0..=y1 {
-                    for xx in x0..=x1 {
-                        m = m.max(diff(c, src[yy * w + xx]));
-                    }
-                }
-                m
-            })
-            .collect();
+    #[allow(clippy::too_many_arguments)]
+    #[allow(clippy::neg_cmp_op_on_partial_ord)]
+    fn refine<P: Send>(
+        &self,
+        f: &Frame,
+        img: &mut [[f32; 4]],
+        contrast: &mut Vec<f32>,
+        w: usize,
+        h: usize,
+        dst: &mut [P],
+        put: impl Fn(&mut [P], &[[f32; 4]], usize) + Sync,
+    ) {
+        if w * h == 0 {
+            return;
+        }
+        contrast.resize(w * h, 0.0);
         // Cost budget: refine at most `max_refine` of the pixels, the highest-contrast
         // ones first (a 256-bin histogram picks the cut). Deterministic: it depends
         // on the image, not on timing.
         let mut th = f.threshold;
-        if f.max_refine < 1.0 {
-            let mut hist = [0usize; 256];
-            for &c in &contrast {
-                hist[((c * 255.0) as usize).min(255)] += 1;
-            }
-            let allowed = (f.max_refine.max(0.0) * (w * h) as f32) as usize;
-            let mut above = 0usize;
-            for b in (0..256).rev() {
-                if above + hist[b] > allowed {
-                    th = th.max((b + 1) as f32 / 255.0);
-                    break;
+        {
+            let src: &[[f32; 4]] = img;
+            let diff = |a: [f32; 4], b: [f32; 4]| (0..4).map(|k| (a[k].clamp(0.0, 1.0) - b[k].clamp(0.0, 1.0)).abs()).fold(0.0f32, f32::max);
+            let contrast_row = |y: usize, row: &mut [f32]| {
+                for x in 0..w {
+                    let c = src[y * w + x];
+                    let (x0, x1) = (x.saturating_sub(1), (x + 1).min(w - 1));
+                    let (y0, y1) = (y.saturating_sub(1), (y + 1).min(h - 1));
+                    let mut m = 0.0f32;
+                    for yy in y0..=y1 {
+                        for xx in x0..=x1 {
+                            m = m.max(diff(c, src[yy * w + xx]));
+                        }
+                    }
+                    row[x] = m;
                 }
-                above += hist[b];
+            };
+            if f.max_refine < 1.0 {
+                let hist = contrast
+                    .par_chunks_mut(w)
+                    .enumerate()
+                    .fold(
+                        || [0usize; 256],
+                        |mut hist, (y, row)| {
+                            contrast_row(y, row);
+                            for &c in row.iter() {
+                                hist[((c * 255.0) as usize).min(255)] += 1;
+                            }
+                            hist
+                        },
+                    )
+                    .reduce(
+                        || [0usize; 256],
+                        |mut a, b| {
+                            for i in 0..256 {
+                                a[i] += b[i];
+                            }
+                            a
+                        },
+                    );
+                let allowed = (f.max_refine.max(0.0) * (w * h) as f32) as usize;
+                let mut above = 0usize;
+                for b in (0..256).rev() {
+                    if above + hist[b] > allowed {
+                        th = th.max((b + 1) as f32 / 255.0);
+                        break;
+                    }
+                    above += hist[b];
+                }
+            } else {
+                contrast.par_chunks_mut(w).enumerate().for_each(|(y, row)| contrast_row(y, row));
             }
         }
-        let flags: Vec<bool> = contrast.iter().map(|&c| c > th).collect();
         let mut fs = f.clone();
         fs.supersample = true;
         let uni = self.uniform_buffer(&fs);
@@ -532,16 +591,17 @@ impl Shader {
         let uni_ptr = uni.as_ptr() as usize;
         let hf = h as f32;
         let k = f.coord_scale;
-        out.par_chunks_mut(w).enumerate().for_each_init(Vec::new, |buf: &mut Vec<f32>, (y, row)| {
-            let fl = &flags[y * w..y * w + w];
+        img.par_chunks_mut(w).zip(dst.par_chunks_mut(w)).enumerate().for_each_init(Vec::new, |buf: &mut Vec<f32>, (y, (row, dst_row))| {
+            let cr = &contrast[y * w..y * w + w];
             let mut x = 0;
             while x < w {
-                if !fl[x] {
+                // NaN threshold refines nothing, as before.
+                if !(cr[x] > th) {
                     x += 1;
                     continue;
                 }
                 let s = x;
-                while x < w && fl[x] {
+                while x < w && cr[x] > th {
                     x += 1;
                 }
                 let n = x - s;
@@ -553,7 +613,23 @@ impl Shader {
                     row[s + q] = std::array::from_fn(|k| (0..4).map(|l| sanitize(b[k * 4 + l])).sum::<f32>() * 0.25);
                 }
             }
+            put(dst_row, row, y);
         });
+    }
+
+    fn render_adaptive<P: Send>(
+        &self,
+        f: &Frame,
+        scratch: &mut AaScratch,
+        dst: &mut [P],
+        put: impl Fn(&mut [P], &[[f32; 4]], usize) + Sync,
+    ) {
+        let (w, h) = (f.width as usize, f.height as usize);
+        scratch.img.resize(w * h, [0.0; 4]);
+        let mut f1 = f.clone();
+        f1.supersample = false;
+        self.run(&f1, &mut scratch.img, w, |dst, px, _, _| *dst = px);
+        self.refine(f, &mut scratch.img, &mut scratch.contrast, w, h, dst, put);
     }
 
     /// Shade into premultiplied RGBA8 (`width × height × 4` bytes), the
@@ -583,12 +659,14 @@ impl Shader {
             };
         };
         if f.supersample && f.adaptive {
-            let fl = self.render_f32(f);
-            px.par_chunks_mut(w).zip(fl.par_chunks(w)).enumerate().for_each(|(y, (row, src))| {
+            let put = |row: &mut [[u8; 4]], src: &[[f32; 4]], y: usize| {
                 for x in 0..w {
                     convert(&mut row[x], src[x], x, y);
                 }
-            });
+            };
+            let mut scratch = take_scratch();
+            self.render_adaptive(f, &mut scratch, px, put);
+            give_scratch(scratch);
         } else if !f.supersample {
             self.run_quads(f, px, w, |rows, b, q, py| {
                 let o = quad_rgba8(b, (q * 2) as u32, py as u32, alpha, dither);

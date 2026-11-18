@@ -384,6 +384,91 @@ def test_bindings_write_targets():
     assert sprites[2]["y"] == 10 and sprites[0]["y"] > 10
 
 
+def test_bind_many_matches_individual_bind_with_keys():
+    pts = [(10, 20), (40, 50), (70, 80)]
+    batch, individual = World(gravity=(0, 0)), World(gravity=(0, 0))
+    batch_bodies = batch.add_bodies(pts)
+    individual_bodies = individual.add_bodies(pts)
+    for world in (batch, individual):
+        for i, body in enumerate(world):
+            body.velocity = (10 + i * 3, 0)
+        world.step(0.25)
+
+    batch_targets = [{} for _ in pts]
+    individual_targets = [{} for _ in pts]
+    keys = {"x": "left", "y": "top", "rotation": "angle", "offset": (2, -3)}
+    batch.bind_many(batch_bodies, batch_targets, **keys)
+    for body, target in zip(individual_bodies, individual_targets):
+        individual.bind(body, target, **keys)
+
+    assert batch_targets == individual_targets
+    assert len(batch._bindings) == len(individual._bindings) == len(pts)
+
+
+def test_bind_many_exports_world_output_once():
+    class CountingNative:
+        def __init__(self, native):
+            self.native = native
+            self.output_calls = 0
+
+        def output(self):
+            self.output_calls += 1
+            return self.native.output()
+
+        def __getattr__(self, name):
+            return getattr(self.native, name)
+
+    w = World(gravity=(0, 0))
+    bodies = w.add_bodies([(float(i), 0) for i in range(50)])
+    native = CountingNative(w._native)
+    w._native = native
+
+    w.bind_many(bodies, [{} for _ in bodies])
+
+    assert native.output_calls == 1
+
+
+def test_bind_many_stops_registering_after_target_setter_fails():
+    class Target:
+        pass
+
+    class RaisingTarget:
+        @property
+        def x(self):
+            raise AttributeError
+
+        @x.setter
+        def x(self, value):
+            raise ValueError("x setter failed")
+
+    w = World(gravity=(0, 0))
+    bodies = w.add_bodies([(10, 20), (30, 40), (50, 60)])
+    first, middle, third = Target(), RaisingTarget(), Target()
+
+    with pytest.raises(ValueError, match="x setter failed"):
+        w.bind_many(bodies, [first, middle, third])
+
+    assert len(w._bindings) == 2
+    assert not hasattr(third, "x") and not hasattr(third, "y")
+
+    w.unbind(middle)
+    w.sync()
+
+    assert not hasattr(third, "x") and not hasattr(third, "y")
+
+
+def test_bind_many_preserves_bindings_before_invalid_body():
+    w = World(gravity=(0, 0))
+    w.add_bodies([(10, 20), (30, 40), (50, 60)])
+    targets = [{}, {}, {}]
+
+    with pytest.raises(IndexError):
+        w.bind_many([0, 1, 3], targets)
+
+    assert len(w._bindings) == 2
+    assert targets == [{"x": 10, "y": 20, "rotation": 0}, {"x": 30, "y": 40, "rotation": 0}, {}]
+
+
 def test_run_on_frame_and_render():
     w = World()
     b = w.add_body(0, 0)
