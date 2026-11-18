@@ -1,0 +1,107 @@
+{
+ "size": "16:9",
+ "scenes": [
+  {
+   "duration": 1,
+   "layers": [
+    {
+     "type": "shader",
+     "src": "../../pocket.glsl",
+     "supersample": false,
+     "uniforms": {
+      "open": 0.08,
+      "cy": 0.05
+     },
+     "channels": [
+      "noise",
+      {
+       "layers": [
+        {
+         "shader": "ocean",
+         "uniforms": {
+          "sun": 0.8,
+          "swell": 1.5
+         },
+         "supersample": false
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "duration": 1,
+   "layers": [
+    {
+     "type": "shader",
+     "src": "../../pocket.glsl",
+     "supersample": false,
+     "uniforms": {
+      "open": 0.3,
+      "cy": 0.0,
+      "ang": -6
+     },
+     "channels": [
+      "noise",
+      {
+       "layers": [
+        {
+         "shader": "ocean",
+         "uniforms": {
+          "sun": 0.8,
+          "swell": 1.5
+         },
+         "supersample": false
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "duration": 1,
+   "layers": [
+    {
+     "type": "shader",
+     "src": "../../pocket.glsl",
+     "supersample": false,
+     "uniforms": {
+      "open": 0.02,
+      "cy": 0.42,
+      "lab": 1,
+      "labs": 1.3,
+      "laby": -0.1
+     },
+     "channels": [
+      {
+       "layers": [
+        {
+         "text": "Tern",
+         "font": "Bricolage Grotesque",
+         "weight": 800,
+         "size": "55vh",
+         "color": "#fff",
+         "x": "50%",
+         "y": "50%",
+         "anchor": "center"
+        }
+       ]
+      },
+      {
+       "layers": [
+        {
+         "shape": "rect",
+         "width": 10,
+         "height": 10,
+         "fill": "#000"
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

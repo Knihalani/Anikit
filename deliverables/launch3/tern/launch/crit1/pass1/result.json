@@ -1,0 +1,392 @@
+{
+  "name": "pass1",
+  "tags": [
+    "product-launch",
+    "cg-3d"
+  ],
+  "refs": [
+    "wealthsimple-trade",
+    "tiffany-holiday",
+    "da-vincis-demons"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 4.0,
+      "composition": 3.5,
+      "typography": 3.0,
+      "colour": 4.5,
+      "light_texture": 4.0,
+      "motion": 3.0,
+      "craft": 3.0,
+      "originality": 3.0
+    },
+    "overall": 3.5,
+    "judged_professional": "0/2",
+    "pro_rate": 0.0,
+    "mean_rank": 3,
+    "gaps": [
+      "Build a real lighting setup: volumetric light through actual dust, a shadow that matches the object, and a light patch that moves over time to carry the idea of recording a moment",
+      "Give the type a point of view: a custom or carefully chosen face, scale that relates to the window grid, and type revealed by the light itself rather than dropped onto the end card",
+      "Vary the shots and choreograph them: a macro of the grille, the gesture of lifting the device, sound visualised in the space, instead of the same wall framed five times",
+      "The frames need a real light-driven idea: choreograph the sun patch moving or the shadow interacting with the device, instead of reframing the same static setup.",
+      "The product needs physically based materials, contact shadows and real geometry. Lighting the window should actually shape the object.",
+      "Replace the default italic sans with a considered typographic system that is part of the scene, not stamped on top of it."
+    ],
+    "tells": [
+      "One composition repeated: a four-pane window light patch on a grey wall appears in five of six frames with only small reframing",
+      "The light is not physically coherent: the window patch is crisp, flat and looks like paper texture, while the device next to it casts a mismatched, blobby shadow",
+      "Effects with no subject: generic particle dust and concentric ripple rings are laid over everything",
+      "The end card is a default heavy-italic grotesk, 'Tern' plus 'Lift to record.', placed like a slide with no integration or typographic idea",
+      "The product (a pill-shaped recorder) is a primitive capsule with a speaker grille and a red dot, which reads like a stock 3D model",
+      "The idea is literal and thin: quiet room, light, device, name and tagline",
+      "The same composition repeats across five of six frames: a window-shaped light patch on a grey wall plus a capsule product, with only the scale changing.",
+      "The light patch looks flat and paper-textured, like a cut-out, and does not behave like real sunlight. The dust particles are a generic overlay spread evenly across the frame.",
+      "The product is a basic primitive (a pill shape with a perforated top and a red dot) with weak materials and no real seating or contact shadow.",
+      "The end card uses a default heavy italic grotesk ('Tern', 'Lift to record.') dropped onto the wall with no typographic idea or integration.",
+      "Concentric ripple rings are a literal 'sound' signifier, an effect with no real idea behind it."
+    ]
+  },
+  "refs_summary": {
+    "wealthsimple-trade": {
+      "overall": 3.06,
+      "judged_professional": "0/2",
+      "mean_rank": 4
+    },
+    "tiffany-holiday": {
+      "overall": 7.75,
+      "judged_professional": "2/2",
+      "mean_rank": 1.5
+    },
+    "da-vincis-demons": {
+      "overall": 7.94,
+      "judged_professional": "2/2",
+      "mean_rank": 1.5
+    }
+  },
+  "ref_mean": 6.25,
+  "delta": -2.75,
+  "trials": [
+    {
+      "key": {
+        "A": "da-vincis-demons",
+        "B": "wealthsimple-trade",
+        "C": "candidate",
+        "D": "tiffany-holiday"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 7,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 8,
+              "originality": 8
+            },
+            "tells": [
+              "A specific idea tied to its subject: da Vinci's notebooks, the Vitruvian figure, the Mona Lisa and machine sketches are layered with painted portraits and silhouettes, so the frames read like the inside of the protagonist's head",
+              "Dense, multi-layer compositing: ink line art over cloudscapes, parchment grain, ink spatter, mirror-script handwriting and perspective lines radiating from a vanishing point",
+              "Deliberate split palette of bruised violet and sepia-umber that holds across every frame",
+              "Real texture and painterly light: rim-lit faces, vellum stains, smoky gradients",
+              "Each frame is built differently (aerial architecture, a close-up of a quill, a horizon split with a rider, an upward portrait, a figure with a machine), which suggests choreographed transitions and morphs rather than a single repeated layout",
+              "Credits are set in small caps in a classical serif, sized and placed so they sit inside the image and respect it"
+            ],
+            "gaps": [
+              "The typography is tasteful but conventional: small-caps serif credits placed in open space, with no typographic idea of its own (it could have drawn on mirror-writing or notebook annotation)",
+              "Some frames lean on familiar Photoshop grunge and overlay textures (spatter, parchment multiply), which dates the finish",
+              "The obvious da Vinci quotations (the Vitruvian Man, the Mona Lisa) are expected choices; a less canonical source would make it more surprising"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 8,
+              "composition": 9,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 9,
+              "craft": 9,
+              "originality": 7
+            },
+            "tells": [
+              "There is a narrative through-line: a jewelled bird travels from a clock face over NYC streets, a stage, brownstone windows and a set dinner table, leaving a sparkle trail that ties the shots together as one continuous journey",
+              "Camera language varies widely: macro with shallow depth of field, a vertiginous top-down shot of a corner with a yellow cab, a wide shot of a stage with a lone ballerina, an exterior at dusk, a tabletop with bokeh",
+              "Motivated, cinematic light: practical window glows, string lights, candlelight, stage strip lights, a teal and amber grade",
+              "The jewelled bird has convincing material rendering (pav\u00e9 facets, gold detailing) and sits in each environment rather than pasted on top",
+              "The tonal shift to the painted desert in the last frame signals a deliberate change of world, so the piece has structure and surprise"
+            ],
+            "gaps": [
+              "No type is visible; given the luxury-brand context its absence is fine, but an end card with a typographic signature would make it complete",
+              "The painted desert frame is rendered in a looser, flatter style than the photoreal 3D, so the change needs a clearer bridge to read as intended",
+              "Sparkle-trail and holiday-NYC tropes are well worn in luxury advertising; the idea is beautifully executed but not unexpected"
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.75,
+            "scores": {
+              "idea": 4,
+              "composition": 4,
+              "typography": 3,
+              "colour": 5,
+              "light_texture": 4,
+              "motion": 3,
+              "craft": 3,
+              "originality": 3
+            },
+            "tells": [
+              "One composition repeated: a four-pane window light patch on a grey wall appears in five of six frames with only small reframing",
+              "The light is not physically coherent: the window patch is crisp, flat and looks like paper texture, while the device next to it casts a mismatched, blobby shadow",
+              "Effects with no subject: generic particle dust and concentric ripple rings are laid over everything",
+              "The end card is a default heavy-italic grotesk, 'Tern' plus 'Lift to record.', placed like a slide with no integration or typographic idea",
+              "The product (a pill-shaped recorder) is a primitive capsule with a speaker grille and a red dot, which reads like a stock 3D model",
+              "The idea is literal and thin: quiet room, light, device, name and tagline"
+            ],
+            "gaps": [
+              "Build a real lighting setup: volumetric light through actual dust, a shadow that matches the object, and a light patch that moves over time to carry the idea of recording a moment",
+              "Give the type a point of view: a custom or carefully chosen face, scale that relates to the window grid, and type revealed by the light itself rather than dropped onto the end card",
+              "Vary the shots and choreograph them: a macro of the grille, the gesture of lifting the device, sound visualised in the space, instead of the same wall framed five times"
+            ]
+          },
+          "B": {
+            "verdict": "not professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 3,
+              "composition": 3,
+              "typography": 2,
+              "colour": 4,
+              "light_texture": 5,
+              "motion": 2,
+              "craft": 4,
+              "originality": 3
+            },
+            "tells": [
+              "Every frame repeats one structure: a single centred circular object on a flat pastel or cream ground, with nothing else in frame",
+              "The subjects are unrelated (earbuds, a steering wheel with traffic-sign UI badges, a cannabis bud, an EV charge port, a ball TV playing chess, a sci-fi reactor ring), so there is no idea connecting them, only a 'round things' prompt",
+              "Placeholder-like UI icons are floating around the steering wheel, and the chessboard pieces are muddled",
+              "Frames have inconsistent aspect ratios, and the last frame suddenly jumps to a saturated navy sci-fi look, which suggests separate generations rather than a designed system",
+              "Soft, generic studio light; the materials are plausible but anonymous, the typical 'tasteful AI product render' look",
+              "No typography at all, and its absence serves nothing because there is no message or brand",
+              "No implied choreography between frames: they read as a contact sheet of stills, not a film"
+            ],
+            "gaps": [
+              "Find a single idea that connects the objects (a transformation, a continuous morph, a narrative) so each frame earns its place in a sequence",
+              "Compose with intent: scale contrast, cropping, off-centre framing and layered depth instead of one object dead centre on a seamless backdrop",
+              "Commit to one deliberate palette and lighting language across the piece, and add typography or a mark that gives it authorship"
+            ]
+          }
+        },
+        "ranking": [
+          "D",
+          "A",
+          "C",
+          "B"
+        ]
+      },
+      "meta": {
+        "seconds": 32.9,
+        "cost_usd": 0.17524800000000001,
+        "tokens": 72176,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "da-vincis-demons",
+        "B": "wealthsimple-trade",
+        "C": "tiffany-holiday",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 7,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 8,
+              "originality": 8
+            },
+            "tells": [
+              "The idea is specific to its subject: Leonardo's notebooks, drawings and inventions are layered into a living collage. Vitruvian Man over clouds, the Mona Lisa dissolving into a rider, ink-sketched machines over painted figures.",
+              "Dense, layered frames that mix ink line, painterly rendering, parchment grain, ink spatter and mirror-script handwriting. The texture has a reason to be there.",
+              "A deliberate muted palette of violet, sepia and bruised umber, held consistently across every frame.",
+              "Credits are set in a classical small-caps serif and placed differently in each frame to work around the image, not centred like a slide.",
+              "Choreography is visible between frames: drawings turn into figures, the scale moves from cosmic to an intimate face, and construction lines carry from one frame to the next."
+            ],
+            "gaps": [
+              "The type is tasteful but conventional, a stock-feeling classical small-caps serif. A custom or more expressive treatment, such as mirror-writing or ink-drawn credits, would match how ambitious the imagery is.",
+              "Some frames run toward murk and low contrast. A stronger single focal light per shot would make each one read as a poster.",
+              "The Renaissance-collage look is well established in the genre. One unexpected formal device would lift it from excellent craft to something memorable."
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.75,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 5,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "A jewelled bird works as a recurring character that guides the viewer through New York: a clock face, an overhead street corner with a taxi, a stage, a brownstone and a dinner table. That is a narrative journey, not a slide structure.",
+              "Lighting has real cinematographic intent: shallow depth of field, practical window light, warm interiors against a cool dusk city, and strong top light on the stage.",
+              "Camera variety (a macro close-up, a god's-eye overhead, a wide stage shot, an architectural mid-shot) points to choreographed cuts and a moving camera.",
+              "The sparkle trail is used as a connective motion device that carries through the shots.",
+              "The final painterly desert frame breaks the style. That could be a deliberate scene-shift or reel padding, and it costs some coherence."
+            ],
+            "gaps": [
+              "No typographic presence. Even an end card or integrated title would give the piece an identity beyond festive luxury spectacle.",
+              "The idea of a magical object flying through a festive city is a familiar holiday-campaign trope. It needs a more specific conceit to be memorable.",
+              "The style breaks in the last frame (a painted desert after photoreal CG), which reads as inconsistent unless it is properly motivated."
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.75,
+            "scores": {
+              "idea": 4,
+              "composition": 3,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 4,
+              "motion": 3,
+              "craft": 3,
+              "originality": 3
+            },
+            "tells": [
+              "The same composition repeats across five of six frames: a window-shaped light patch on a grey wall plus a capsule product, with only the scale changing.",
+              "The light patch looks flat and paper-textured, like a cut-out, and does not behave like real sunlight. The dust particles are a generic overlay spread evenly across the frame.",
+              "The product is a basic primitive (a pill shape with a perforated top and a red dot) with weak materials and no real seating or contact shadow.",
+              "The end card uses a default heavy italic grotesk ('Tern', 'Lift to record.') dropped onto the wall with no typographic idea or integration.",
+              "Concentric ripple rings are a literal 'sound' signifier, an effect with no real idea behind it."
+            ],
+            "gaps": [
+              "The frames need a real light-driven idea: choreograph the sun patch moving or the shadow interacting with the device, instead of reframing the same static setup.",
+              "The product needs physically based materials, contact shadows and real geometry. Lighting the window should actually shape the object.",
+              "Replace the default italic sans with a considered typographic system that is part of the scene, not stamped on top of it."
+            ]
+          },
+          "B": {
+            "verdict": "not professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 2,
+              "composition": 3,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 4,
+              "motion": 2,
+              "craft": 3,
+              "originality": 2
+            },
+            "tells": [
+              "Six unrelated objects (earbuds, a steering wheel with traffic-icon badges, a cannabis bud, a plug in a glowing socket, a ball TV showing chess, a glowing chip) each sit dead centre on a pastel or cream seamless. It reads as one layout with the subject swapped.",
+              "No type is visible, but its absence does nothing for the piece. Nothing ties the objects to an idea or a brand.",
+              "The look is generic, glossy and AI-like: soft studio light, inconsistent aspect ratios and backgrounds, and placeholder-like UI pills on the steering wheel.",
+              "The objects show default 3D or AI rendering (an odd chess board, an implausible plug and socket, a plastic-looking wheel) and no evidence of motion or transitions between them.",
+              "There is no narrative, no choreography and no surprise. It looks like a grid of image-generator outputs."
+            ],
+            "gaps": [
+              "It has no unifying idea. It needs a concept that links the objects and gives them a reason to share a sequence.",
+              "Compositions need variety and intent (scale, cropping, camera movement, interaction) instead of one centred object per frame.",
+              "Lighting and materials need specificity and a consistent art direction, plus a typographic or narrative layer that gives the piece a voice."
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "C",
+          "D",
+          "B"
+        ]
+      },
+      "meta": {
+        "seconds": 30.3,
+        "cost_usd": 0.15919300000000003,
+        "tokens": 72022,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "critic": {
+    "answer": {
+      "scores": {
+        "motion": 5,
+        "sound": 5,
+        "craft": 5
+      },
+      "checks": {
+        "idea": true,
+        "invariant": true,
+        "arc": false,
+        "type_meaning": false,
+        "freeze_frame": false,
+        "ending": true,
+        "restraint": true,
+        "material": false,
+        "sync": true
+      },
+      "defects": [
+        "The light doesn't add up: the wall patch is a sheared diagonal parallelogram, but the floor patch below it is an upright rectangle with a different mullion layout. One window can't cast both.",
+        "The sound-wave rings are made of evenly spaced dots, like a halftone screen. At 100% they read as a procedural particle preset, not as air or dust.",
+        "There are too many dust particles. In the 100% crop, bright sharp specks of the same size sit at every depth with no depth-of-field change, which flattens the space and hides the subject.",
+        "The wall patch carries a crumpled-paper texture, but the wall it falls on doesn't. The light looks like a texture laid on top rather than light falling on a surface.",
+        "Shot 2 (the floor and baseboard) is a dead, empty frame with no subject. It is filler between two wall shots.",
+        "The end card sets heavy italic grotesk type straight onto a busy particle field. The 'Lift to record.' line sits low and cramped at the bottom-left beside the device, and the logo is not locked to the window-light geometry it replaces.",
+        "The pair motion shows slow, even drifts and pans with no visible easing accent. Rows 1 and 3 change only by small, linear amounts."
+      ],
+      "gaps": [
+        "Choreography: the film is a set of slow camera drifts over one static light patch, plus a ripple effect that repeats. Nothing has weight, nothing overlaps, and no shot is built so that one element hands off to the next. The 'lift' in 'Lift to record' is never shown as a physical action. The peak should be the device being lifted and the light or dust reacting with real timing.",
+        "Sound: the sections are blocky and switch on and off (stutter at ~3.4 s, a noise riser at ~5 s, a dense bed from 7.5 to 10 s, a drop, a whoosh at 15 s). There is no recorded room tone and no close-mic foley of the device. For a product about recording, the sound should be the concept and is instead a generic electronic bed. The energy peaks early and again at the end instead of building to one climax at 60-80%.",
+        "Finish: the procedural particles and halftone rings lack depth falloff and bokeh, and the light geometry contradicts itself. A top studio would ground everything in one physically consistent light, with volumetric haze shaped by that light rather than uniform specks everywhere."
+      ]
+    },
+    "meta": {
+      "seconds": 24.0,
+      "cost_usd": 0.16771819999999998,
+      "tokens": 72453,
+      "models": [
+        "claude-opus-5-5"
+      ]
+    },
+    "pace": "pass1.mp4: 20.0s, 6 shots, median 2.50s, longest 5.00s\nper-second change: [13.9, 11.7, 69.4, 13.4, 53.6, 38.0, 7.3, 53.3, 10.8, 75.5, 35.7, 66.6, 52.2, 21.8, 34.1, 36.0, 12.0, 13.3, 13.4]\nPACE: FAIL \u2014 longest shot 5.0s > 2.5s; median shot 2.5s > 2.0s"
+  },
+  "full_scores": {
+    "idea": 4.0,
+    "composition": 3.5,
+    "typography": 3.0,
+    "colour": 4.5,
+    "light_texture": 4.0,
+    "motion": 4.0,
+    "craft": 4.0,
+    "originality": 3.0,
+    "sound": 5
+  },
+  "full_overall": 3.89,
+  "cost_usd": 0.502,
+  "judge_seconds": 87.2,
+  "verdict": "FAIL"
+}

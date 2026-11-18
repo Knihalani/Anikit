@@ -1,0 +1,392 @@
+{
+  "name": "pass2",
+  "tags": [
+    "product-launch",
+    "cg-3d"
+  ],
+  "refs": [
+    "wealthsimple-trade",
+    "tiffany-holiday",
+    "da-vincis-demons"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 3.0,
+      "composition": 3.0,
+      "typography": 2.0,
+      "colour": 4.5,
+      "light_texture": 4.0,
+      "motion": 4.0,
+      "craft": 3.0,
+      "originality": 2.0
+    },
+    "overall": 3.19,
+    "judged_professional": "0/2",
+    "pro_rate": 0.0,
+    "mean_rank": 4,
+    "gaps": [
+      "Needs an idea that connects the product (sound, listening, recording) to the imagery; the sea currently does nothing for the brand",
+      "Needs real typography: a chosen or custom face, scale contrast and type integrated into the scene instead of a pasted card with default grotesk and spec bullets",
+      "Needs controlled light and material: a designed grade, crisp focal planes and texture in place of the blurry procedural water and muddy surround",
+      "The product and the idea of 'lifting to record' need to be dramatised visually (sound captured from the sea, the tern bird, waveform as water) instead of a sunset plate and a text card.",
+      "The typography needs to be designed: a chosen or custom face, a relationship of scale to the image, and integration into the scene rather than a centred card.",
+      "It needs real light and material (photographed or properly rendered water, a physical object) and varied, choreographed shots instead of drifting blur."
+    ],
+    "tells": [
+      "The end card is a generic bold grotesk wordmark 'Tern' centred on a beige rounded rectangle, with a 'Lift to record.' tagline and a dot-separated spec line (4 mics \u00b7 32-bit float \u00b7 30 hours), which is textbook slide/AI layout",
+      "Procedural ocean and sun-glare shader with smeary, undefined geometry and murky blur in the opening frames; an effect with no subject",
+      "The muddy olive and brown framing around the water looks like an unresolved render rather than intentional depth of field",
+      "The idea is literal: water and horizon, then product name plus spec bullets, with no link between the image and an audio recorder",
+      "The final two frames repeat the same card with words added",
+      "Procedural shader water and a sun disc with a blur-smeared horizon: the effect has no real subject, and the first two frames are a muddy, out-of-focus abstraction",
+      "The product never appears; the reveal is a flat beige card with a centred default heavy grotesk wordmark 'Tern' that sits there like a slide",
+      "The tagline 'Lift to record.' plus a spec line separated by middots ('4 mics \u00b7 32-bit float \u00b7 30 hours') is boilerplate AI/startup copy with no typographic idea",
+      "The final two frames have the same layout with words added (slide-deck build)",
+      "The palette is pleasant but generic (dusk peach and violet), and the dotted outline artefacts along the wave edges show unfinished compositing"
+    ]
+  },
+  "refs_summary": {
+    "wealthsimple-trade": {
+      "overall": 3.5,
+      "judged_professional": "0/2",
+      "mean_rank": 3
+    },
+    "tiffany-holiday": {
+      "overall": 8.06,
+      "judged_professional": "2/2",
+      "mean_rank": 1
+    },
+    "da-vincis-demons": {
+      "overall": 7.44,
+      "judged_professional": "2/2",
+      "mean_rank": 2
+    }
+  },
+  "ref_mean": 6.33,
+  "delta": -3.14,
+  "trials": [
+    {
+      "key": {
+        "A": "da-vincis-demons",
+        "B": "wealthsimple-trade",
+        "C": "candidate",
+        "D": "tiffany-holiday"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.86,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 6,
+              "colour": 7,
+              "light_texture": 8,
+              "motion": 7,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "A coherent illustrated world built from the subject's own sources: Vitruvian Man, the St Peter's dome, Mona Lisa and codex pages are layered with hand-inked figures and mechanical drawings",
+              "Heavy texture on every frame (paper grain, ink spatter, vignetting, double exposure) and a consistent bruised violet and sepia palette that suits Renaissance parchment",
+              "Credits are placed differently in each frame (top centre, lower left, beside the portrait, lower right), so the type responds to the image rather than sitting in a fixed slide position",
+              "Variety of shot scale between frames (wide architecture, macro quill nib, portrait looking up, silhouetted rider) shows real choreography and transitions",
+              "Hand-drawn character work with a consistent line quality reads as authored illustration, not generated"
+            ],
+            "gaps": [
+              "The typography is a safe Trajan-like classical serif in small caps, the genre default for period drama; a face drawn from Leonardo's mirror-script or engineering lettering would give it a point of view",
+              "Leans on well-worn icons (Vitruvian Man, Mona Lisa) and a familiar grunge-overlay look; it needs one image that only this piece could have",
+              "The violet grade flattens everything to a similar value, so depth and focal contrast are less controlled than in D's lit, photographic frames"
+            ]
+          },
+          "B": {
+            "verdict": "not professional",
+            "confidence": 0.82,
+            "scores": {
+              "idea": 3,
+              "composition": 3,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 5,
+              "motion": 2,
+              "craft": 4,
+              "originality": 3
+            },
+            "tells": [
+              "The same composition in every frame: one centred, mostly circular object on a flat pastel or cream seamless ground with soft studio light",
+              "No connective idea: earbuds, a steering wheel with floating traffic-icon pills, a cannabis bud, a glowing plug socket, a chess CRT and a sci-fi reactor ring are unrelated subjects",
+              "Inconsistent aspect ratios and backgrounds between frames (square vs wide, cream vs teal vs navy) suggest separately generated stills rather than one designed film",
+              "Placeholder-UI-style icon circles around the steering wheel; the chess-board pieces are muddled glyphs, a typical generation artefact",
+              "No typography at all, and its absence leaves the piece with no subject, message or hierarchy",
+              "Little to suggest motion between frames: no shared camera, no transitions, nothing carried from one shot to the next"
+            ],
+            "gaps": [
+              "Needs a single idea that links the objects (a transformation, a shared form, a narrative) instead of a gallery of centred renders",
+              "Needs composition that varies scale, crop and camera across the sequence so the frames read as choreography rather than a product-catalogue grid",
+              "Needs a consistent material and art-direction system (one palette, one light rig, one format) and type or graphic language that gives the work authorship"
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 3,
+              "composition": 3,
+              "typography": 2,
+              "colour": 4,
+              "light_texture": 4,
+              "motion": 4,
+              "craft": 3,
+              "originality": 2
+            },
+            "tells": [
+              "The end card is a generic bold grotesk wordmark 'Tern' centred on a beige rounded rectangle, with a 'Lift to record.' tagline and a dot-separated spec line (4 mics \u00b7 32-bit float \u00b7 30 hours), which is textbook slide/AI layout",
+              "Procedural ocean and sun-glare shader with smeary, undefined geometry and murky blur in the opening frames; an effect with no subject",
+              "The muddy olive and brown framing around the water looks like an unresolved render rather than intentional depth of field",
+              "The idea is literal: water and horizon, then product name plus spec bullets, with no link between the image and an audio recorder",
+              "The final two frames repeat the same card with words added"
+            ],
+            "gaps": [
+              "Needs an idea that connects the product (sound, listening, recording) to the imagery; the sea currently does nothing for the brand",
+              "Needs real typography: a chosen or custom face, scale contrast and type integrated into the scene instead of a pasted card with default grotesk and spec bullets",
+              "Needs controlled light and material: a designed grade, crisp focal planes and texture in place of the blurry procedural water and muddy surround"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.88,
+            "scores": {
+              "idea": 8,
+              "composition": 9,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 9,
+              "originality": 7
+            },
+            "tells": [
+              "A recurring hero character (a jewelled, pav\u00e9-set bird brooch) carries a narrative through varied spaces: a clock face, a top-down NYC street with a yellow cab and dancers, a stage, brownstone windows, a dinner table",
+              "Sophisticated cinematography: macro shallow depth of field, a dramatic overhead miniature-style angle, theatrical backlit stage beams, practical candle and fairy-light bokeh",
+              "A sparkle trail used as a motion through-line that links shots, giving clear evidence of choreography between frames",
+              "A deliberate palette that moves between teal, amber and festive warmth while staying consistent; rich materials (glass, metal, brick, linen)",
+              "Every frame works as a poster, with distinct scale and composition in each shot",
+              "The final painterly Monument Valley frame introduces a shift in medium, which is surprising but slightly breaks consistency"
+            ],
+            "gaps": [
+              "No visible typography in the sampled frames; the absence works for an emotive brand film, but an integrated title or end-frame treatment would complete it",
+              "The painterly desert frame feels stylistically detached from the photoreal CG world; it needs a clearer bridge or motivation",
+              "The magic-sparkle-trail holiday-film trope is familiar from luxury Christmas spots; push one more unexpected beat to make it singular"
+            ]
+          }
+        },
+        "ranking": [
+          "D",
+          "A",
+          "B",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 34.2,
+        "cost_usd": 0.16266380000000003,
+        "tokens": 72186,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "da-vincis-demons",
+        "B": "wealthsimple-trade",
+        "C": "tiffany-holiday",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 7,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 8,
+              "originality": 8
+            },
+            "tells": [
+              "Each frame layers Leonardo's sketchbook (Vitruvian Man, mirror-script notes, machine schematics, the Mona Lisa) with painted figures and architecture, so the period source material is the visual language of the piece",
+              "Heavy, consistent texture throughout: ink spatter, parchment grain, aged-paper vignettes, and a muted violet/umber palette held across every frame",
+              "Composition changes from frame to frame: a wide on St Peter's dome, an extreme close-up of a quill nib, a low upturned portrait, a silhouette on a horizon line, an over-the-shoulder shot with the crossbow schematic",
+              "Credits are set in small caps with a hierarchy for role labels and placed so they work with each image instead of sitting on top like slide text",
+              "Implied camera moves through layered 2.5D planes, with images transitioning out of drawings, which suggests choreographed transitions"
+            ],
+            "gaps": [
+              "The serif small-caps credits are tasteful but quiet. Giving the type a role of its own, such as Leonardo's mirror-writing or ink-drawn letterforms, would raise it.",
+              "Some frames use similar dark vignettes and a centred hero, so the rhythm risks monotony; it needs one or two sharp changes in scale or palette.",
+              "The illustrated figures (the uplifted face, the rider) lean toward digital-painting gloss that is a little looser than the engraved source material; the rendering of figures and archive material could be unified."
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 8,
+              "composition": 9,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 9,
+              "craft": 9,
+              "originality": 7
+            },
+            "tells": [
+              "A narrative hero object (a jewelled bird) travels through connected spaces: past a station clock, over a top-down Manhattan corner with a yellow cab, across a ballet stage, along a brownstone fa\u00e7ade, over a candle-lit dinner table, into a painted desert. That is real choreography with a through-line.",
+              "Motivated, cinematic light: practical window glow, stage footlights, candle warmth, and shallow depth of field with real bokeh",
+              "Shots vary widely (macro, overhead, wide, mid, painted matte), which shows deliberate shot design rather than one repeated layout",
+              "Material rendering is rich: the faceted gemstones, the brick, and the porcelain and glassware on the table",
+              "Sparkle trails connect the frames, implying continuous camera moves between locations"
+            ],
+            "gaps": [
+              "No visible type idea; the end card or branding moment would need to match the craft of the imagery.",
+              "The jewel-creature on a magical holiday journey is an established luxury-advertising formula, so originality trails the images.",
+              "The final painted desert breaks the photoreal language without an obvious motivation; the shift between styles needs a clearer narrative reason."
+            ]
+          },
+          "B": {
+            "verdict": "not professional",
+            "confidence": 0.75,
+            "scores": {
+              "idea": 3,
+              "composition": 4,
+              "typography": 3,
+              "colour": 5,
+              "light_texture": 5,
+              "motion": 2,
+              "craft": 4,
+              "originality": 3
+            },
+            "tells": [
+              "The same composition repeats: one centred object on a flat pastel or cream ground with soft studio light, then the object is swapped (earbuds, steering wheel, cannabis bud, plug socket, spherical CRT, glowing portal)",
+              "The aspect ratio changes from frame to frame (16:9, 4:3, square), which suggests a collection of separate generations rather than one designed film",
+              "Generic UI pill icons (yield, no-entry, traffic light, arrow) are pasted around the steering wheel, like placeholder symbols",
+              "There is no connective idea, narrative, or transformation between the objects; the frames show no evidence of motion or choreography",
+              "Generic 'tasteful AI product render' look: smooth, plausible materials with no art-directed specificity, and the final blue reactor-ring frame breaks the palette for no reason"
+            ],
+            "gaps": [
+              "It needs a single idea that links the objects, plus actual transitions or morphs that show choreography rather than a carousel of hero renders.",
+              "The fixed centred-object, flat-ground template should give way to varied scale, cropping, and staging so that each frame is designed as a poster.",
+              "It needs a consistent, deliberate palette and lighting design (one aspect ratio, one world) instead of per-image defaults, and type with a point of view if it carries any message."
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 3,
+              "composition": 3,
+              "typography": 2,
+              "colour": 5,
+              "light_texture": 4,
+              "motion": 4,
+              "craft": 3,
+              "originality": 2
+            },
+            "tells": [
+              "Procedural shader water and a sun disc with a blur-smeared horizon: the effect has no real subject, and the first two frames are a muddy, out-of-focus abstraction",
+              "The product never appears; the reveal is a flat beige card with a centred default heavy grotesk wordmark 'Tern' that sits there like a slide",
+              "The tagline 'Lift to record.' plus a spec line separated by middots ('4 mics \u00b7 32-bit float \u00b7 30 hours') is boilerplate AI/startup copy with no typographic idea",
+              "The final two frames have the same layout with words added (slide-deck build)",
+              "The palette is pleasant but generic (dusk peach and violet), and the dotted outline artefacts along the wave edges show unfinished compositing"
+            ],
+            "gaps": [
+              "The product and the idea of 'lifting to record' need to be dramatised visually (sound captured from the sea, the tern bird, waveform as water) instead of a sunset plate and a text card.",
+              "The typography needs to be designed: a chosen or custom face, a relationship of scale to the image, and integration into the scene rather than a centred card.",
+              "It needs real light and material (photographed or properly rendered water, a physical object) and varied, choreographed shots instead of drifting blur."
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "A",
+          "B",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 31.5,
+        "cost_usd": 0.16043639999999998,
+        "tokens": 72077,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "critic": {
+    "answer": {
+      "scores": {
+        "motion": 4,
+        "sound": 4,
+        "craft": 5
+      },
+      "checks": {
+        "idea": false,
+        "invariant": true,
+        "arc": false,
+        "type_meaning": false,
+        "freeze_frame": false,
+        "ending": false,
+        "restraint": true,
+        "material": true,
+        "sync": false
+      },
+      "defects": [
+        "Opening frames are murky, heavily defocused brown-black mush. The horizon is a smeared lens-shaped sliver, and the subject doesn't read for the first ~4 s",
+        "Dutch-tilted horizon in the second frame looks like an unmotivated camera roll, not a designed move",
+        "The end card sits in a dark, blurred void with a stray blue band of horizon clipped along the top edge. The composition looks like an accident",
+        "Card is slightly skewed or keystoned with soft, low-contrast edges. The light-grey card on dark-brown background reads as muddy, not premium",
+        "Last ~4 s are nearly static (change per second 3.5\u20134.1): dead air on a type card",
+        "Water shader is procedural and repeats; ripple normals tile visibly at 100%, and the sun is a flat bloom disc with no atmospheric scattering detail",
+        "Faint speckle or dither noise floats over the dark frames in the opening shots and reads as a render artifact, not grain",
+        "Audio: a broadband click or transient at ~12.5 s that sits alone and doesn't line up with a visible cut. It looks like a pop",
+        "Audio: noise-burst whooshes repeat at a mechanical ~1.4 s interval (\u22481.0/3.5/5.0/5.5/14.2 s) like a generated preset, not designed hits",
+        "Product (a recorder, '4 mics \u00b7 32-bit float') is never shown; the seascape-to-card link is not made visually"
+      ],
+      "gaps": [
+        "No concept or arc. It's a generic sunset-over-water flythrough cut to a logo card. Energy peaks early at the reveal (~3\u20136 s), then decays into a static end card. Nothing builds to a 60\u201380% peak, and nothing ties 'listening' or 'recording' to the imagery (for example, sound visualised as the water surface, or the 'lift' gesture shown).",
+        "Motion is camera drift and defocus only: no choreographed elements, no overlap or follow-through, and no designed transitions. The card just appears. Shots run long (6.2 s), and the ending holds ~4 s with no settle animation or rhyme back to the horizon.",
+        "Sound is a thin, static synth pad with stacked harmonics, a few regularly spaced white-noise sweeps and one stray click. There is no foley (water, wind, a tern call, the device's mechanical 'lift' click), no low-end impact on the reveal, and no visible hit sync. It's nowhere near produced sound design."
+      ]
+    },
+    "meta": {
+      "seconds": 21.6,
+      "cost_usd": 0.1589136,
+      "tokens": 72002,
+      "models": [
+        "claude-opus-5-5"
+      ]
+    },
+    "pace": "pass2.mp4: 20.0s, 7 shots, median 2.50s, longest 6.23s\nper-second change: [17.7, 16.7, 35.8, 61.0, 19.5, 73.3, 11.0, 34.1, 15.8, 59.5, 11.4, 11.0, 62.7, 42.0, 9.5, 9.0, 4.1, 3.6, 3.5]\nPACE: FAIL \u2014 longest shot 6.2s > 2.5s; median shot 2.5s > 2.0s"
+  },
+  "full_scores": {
+    "idea": 3.0,
+    "composition": 3.0,
+    "typography": 2.0,
+    "colour": 4.5,
+    "light_texture": 4.0,
+    "motion": 4.0,
+    "craft": 4.0,
+    "originality": 2.0,
+    "sound": 4
+  },
+  "full_overall": 3.39,
+  "cost_usd": 0.482,
+  "judge_seconds": 87.3,
+  "verdict": "FAIL"
+}

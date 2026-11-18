@@ -1,0 +1,145 @@
+{
+ "size": "16:9",
+ "scenes": [
+  {
+   "duration": 2,
+   "background": "#000000",
+   "layers": [
+    {
+     "type": "shader",
+     "src": "../../room.glsl",
+     "uniforms": {
+      "zoom": 1.0,
+      "camx": 0.05,
+      "camy": 0.0,
+      "sx": -0.05,
+      "sy": -0.05,
+      "w0": 0.0,
+      "w1": -100,
+      "w2": -100,
+      "amp": 1.0,
+      "hold": 0.9,
+      "devx": -0.42,
+      "devy": -0.18,
+      "devs": 1.0,
+      "devsun": 1.0,
+      "pip": 1.0,
+      "ink": 1,
+      "name": 0,
+      "tscale": 1.0
+     },
+     "channels": [
+      {
+       "layers": [
+        {
+         "text": "already\nlistening.",
+         "font": "Bricolage Grotesque",
+         "weight": 800,
+         "size": "15vh",
+         "color": "#FFFFFF",
+         "x": "50%",
+         "y": "50%",
+         "anchor": "center"
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "duration": 2,
+   "background": "#000000",
+   "layers": [
+    {
+     "type": "shader",
+     "src": "../../room.glsl",
+     "uniforms": {
+      "zoom": 1.0,
+      "camx": 0.05,
+      "camy": 0.0,
+      "sx": -0.05,
+      "sy": -0.05,
+      "w0": 0.0,
+      "w1": -100,
+      "w2": -100,
+      "amp": 1.0,
+      "hold": 0.9,
+      "devx": -0.42,
+      "devy": -0.18,
+      "devs": 1.0,
+      "devsun": 1.0,
+      "pip": 1.0,
+      "ink": 0,
+      "name": 1,
+      "tscale": 1.0
+     },
+     "channels": [
+      {
+       "layers": [
+        {
+         "text": "already\nlistening.",
+         "font": "Bricolage Grotesque",
+         "weight": 800,
+         "size": "15vh",
+         "color": "#FFFFFF",
+         "x": "50%",
+         "y": "50%",
+         "anchor": "center"
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "duration": 2,
+   "background": "#000000",
+   "layers": [
+    {
+     "type": "shader",
+     "src": "../../room.glsl",
+     "uniforms": {
+      "zoom": 1.0,
+      "camx": 0.05,
+      "camy": 0.0,
+      "sx": -0.05,
+      "sy": -0.05,
+      "w0": 0.0,
+      "w1": -100,
+      "w2": -100,
+      "amp": 1.0,
+      "hold": 0.9,
+      "devx": -0.42,
+      "devy": -0.18,
+      "devs": 1.0,
+      "devsun": 1.0,
+      "pip": 1.0,
+      "ink": 1,
+      "name": 0,
+      "tscale": 1.0,
+      "warm": 0.8,
+      "sun": 1.2
+     },
+     "channels": [
+      {
+       "layers": [
+        {
+         "text": "already\nlistening.",
+         "font": "Bricolage Grotesque",
+         "weight": 800,
+         "size": "15vh",
+         "color": "#FFFFFF",
+         "x": "50%",
+         "y": "50%",
+         "anchor": "center"
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}
