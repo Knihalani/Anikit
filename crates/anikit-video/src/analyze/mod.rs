@@ -1,8 +1,8 @@
 //! `anikit-video analyze`: reverse-engineer a reference video.
 //!
 //! Decodes the clip through ffmpeg (MP4, WebM, GIF, MOV or a frame sequence)
-//! at 640 px wide, keeps scalar measures per frame, then fetches only the
-//! frames needed for shots and transitions in a second pass, and measures:
+//! at 640 px wide, spills the 160 px copies and quarter-second 640 px frames
+//! to temp files, and reads back only the frames shots and transitions need:
 //!
 //! - shots: hard cuts (colour-histogram jumps against a local median) and
 //!   gradual transitions (a long-range jump with no single-frame cut), each
@@ -31,10 +31,12 @@ pub use sheet::contact_sheet;
 use image_ops::*;
 use serde::Serialize;
 use std::collections::{BTreeMap, BTreeSet};
-use std::io::Read;
+use std::fs::{File, OpenOptions};
+use std::io::{BufWriter, Read, Seek, SeekFrom, Write};
 use std::ops::Range;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
+use std::time::{SystemTime, UNIX_EPOCH};
 
 /// Width of the stored key frames (and of the decode).
 pub const KEY_W: usize = 640;
@@ -302,6 +304,64 @@ struct Pending {
     pan: f32,
 }
 
+struct Spill {
+    keys: Option<BufWriter<File>>,
+    small: Option<BufWriter<File>>,
+    keys_path: PathBuf,
+    small_path: PathBuf,
+}
+
+impl Spill {
+    fn new() -> Result<Self, String> {
+        let nanos = SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default().as_nanos();
+        let prefix = format!("anikit-analyze-{}-{nanos}", std::process::id());
+        let dir = std::env::temp_dir();
+        let keys_path = dir.join(format!("{prefix}-keys.raw"));
+        let small_path = dir.join(format!("{prefix}-small.raw"));
+        let open = |path: &PathBuf| OpenOptions::new().write(true).create_new(true).open(path);
+        let keys = open(&keys_path).map_err(temp_error)?;
+        let small = match open(&small_path) {
+            Ok(file) => file,
+            Err(e) => {
+                drop(keys);
+                let _ = std::fs::remove_file(&keys_path);
+                return Err(temp_error(e));
+            }
+        };
+        Ok(Self { keys: Some(BufWriter::new(keys)), small: Some(BufWriter::new(small)), keys_path, small_path })
+    }
+
+    fn write_key(&mut self, bytes: &[u8]) -> Result<(), String> {
+        self.keys.as_mut().expect("key spill writer open").write_all(bytes).map_err(temp_error)
+    }
+
+    fn write_small(&mut self, bytes: &[u8]) -> Result<(), String> {
+        self.small.as_mut().expect("small spill writer open").write_all(bytes).map_err(temp_error)
+    }
+
+    fn flush(&mut self) -> Result<(), String> {
+        self.keys.as_mut().expect("key spill writer open").flush().map_err(temp_error)?;
+        self.small.as_mut().expect("small spill writer open").flush().map_err(temp_error)
+    }
+
+    fn close(&mut self) {
+        drop(self.keys.take());
+        drop(self.small.take());
+    }
+}
+
+impl Drop for Spill {
+    fn drop(&mut self) {
+        self.close();
+        let _ = std::fs::remove_file(&self.keys_path);
+        let _ = std::fs::remove_file(&self.small_path);
+    }
+}
+
+fn temp_error(e: std::io::Error) -> String {
+    format!("analyze temp file: {e}")
+}
+
 #[derive(Clone, Copy, Default)]
 struct Motion {
     tx: f32,
@@ -383,6 +443,9 @@ pub fn analyze(path: &Path, o: &Options) -> Result<Analysis, String> {
     let kh = (((KEY_W as f64 * p.h as f64 / p.w as f64) / 4.0).round() as usize * 4).max(8);
     let kw = KEY_W;
     let (sw, sh) = (kw / 4, kh / 4);
+    let fsz = kw * kh * 3;
+    let key_every = (fps / 4.0).round().max(1.0) as usize;
+    let mut spill = Spill::new()?;
     let mut child = Command::new("ffmpeg")
         .args(["-v", "error", "-threads", "0"])
         .args(&args)
@@ -397,27 +460,32 @@ pub fn analyze(path: &Path, o: &Options) -> Result<Analysis, String> {
         let a = args.clone();
         std::thread::spawn(move || decode_audio(&a))
     });
-    let fsz = kw * kh * 3;
     let mut buf = vec![0u8; fsz];
     let mut stats: Vec<FrameStat> = Vec::new();
     let mut px: Vec<f32> = Vec::new();
     let mut motion: Vec<Motion> = Vec::new();
-    let key_every = (fps / 4.0).round().max(1.0) as usize;
     let mut previous_l = None;
+    let mut n = 0usize;
     // Decode and reduce in batches so the per-frame maths runs in parallel.
     let mut batch: Vec<Vec<u8>> = Vec::new();
     while stdout.read_exact(&mut buf).is_ok() {
+        if n.is_multiple_of(key_every) {
+            spill.write_key(&buf)?;
+        }
         batch.push(buf.clone());
+        n += 1;
         if batch.len() == 64 {
-            append_batch(std::mem::take(&mut batch), kw, kh, sw, sh, &mut previous_l, &mut stats, &mut px, &mut motion);
+            append_batch(std::mem::take(&mut batch), kw, kh, sw, sh, &mut previous_l, &mut stats, &mut px, &mut motion, &mut spill)?;
         }
     }
-    append_batch(batch, kw, kh, sw, sh, &mut previous_l, &mut stats, &mut px, &mut motion);
+    append_batch(batch, kw, kh, sw, sh, &mut previous_l, &mut stats, &mut px, &mut motion, &mut spill)?;
     let st = child.wait_with_output().map_err(|e| e.to_string())?;
+    spill.flush()?;
+    spill.close();
     if stats.is_empty() {
         return Err(format!("ffmpeg decoded no frames: {}", String::from_utf8_lossy(&st.stderr).trim()));
     }
-    let mut t_decode = t0.elapsed().as_secs_f64();
+    let t_decode = t0.elapsed().as_secs_f64();
     let t1 = std::time::Instant::now();
 
     let (mut transitions, flashes, pending) = detect_transitions(&stats, &px, &motion, fps, sw);
@@ -449,75 +517,19 @@ pub fn analyze(path: &Path, o: &Options) -> Result<Analysis, String> {
     for (_, pending) in &pending {
         needed_rgb.extend([pending.c - pending.k, pending.c, pending.c + pending.k]);
     }
-    let mut needed = needed_rgb.clone();
-    needed.extend(needed_keys.iter().copied());
-    let needed: Vec<usize> = needed.into_iter().collect();
-    let mut frame_ranges = Vec::new();
-    for &idx in &needed {
-        if let Some((_, end)) = frame_ranges.last_mut() {
-            if idx == *end + 1 {
-                *end = idx;
-                continue;
-            }
-        }
-        frame_ranges.push((idx, idx));
-    }
-    let use_select = frame_ranges.len() <= 200;
-    let mut filter = format!("fps={fps}");
-    if use_select {
-        let expr = frame_ranges.iter().map(|(a, b)| format!("between(n\\,{a}\\,{b})")).collect::<Vec<_>>().join("+");
-        filter.push_str(&format!(",select='{expr}'"));
-    }
-    filter.push_str(&format!(",scale={kw}:{kh}:flags=area,format=rgb24"));
-
-    let pass2_start = std::time::Instant::now();
-    let mut second = Command::new("ffmpeg")
-        .args(["-v", "error", "-threads", "0"])
-        .args(&args)
-        .args(["-an", "-vf", &filter, "-vsync", "0", "-f", "rawvideo", "-pix_fmt", "rgb24", "-"])
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .spawn()
-        .map_err(|e| format!("analyze needs ffmpeg on PATH: {e}"))?;
-    let mut second_stdout = second.stdout.take().ok_or("no ffmpeg stdout")?;
-    let last_needed = *needed.last().expect("frames are needed for every shot");
+    let mut key_file = File::open(&spill.keys_path).map_err(temp_error)?;
+    let mut small_file = File::open(&spill.small_path).map_err(temp_error)?;
     let mut key_rgb = BTreeMap::new();
     let mut rgb160 = BTreeMap::new();
-    let mut input_index = 0usize;
-    let mut selected_count = 0usize;
-    let mut found_count = 0usize;
-    while second_stdout.read_exact(&mut buf).is_ok() {
-        let idx = if use_select {
-            let idx = needed[selected_count];
-            selected_count += 1;
-            idx
-        } else {
-            input_index
-        };
-        if needed_keys.contains(&idx) {
-            key_rgb.insert(idx, buf.clone());
-        }
-        if needed_rgb.contains(&idx) {
-            rgb160.insert(idx, downsample(&buf, kw, kh));
-        }
-        if needed.binary_search(&idx).is_ok() {
-            found_count += 1;
-        }
-        if idx == last_needed {
-            let _ = second.kill();
-            break;
-        }
-        if !use_select {
-            input_index += 1;
-        }
+    let ssz = sw * sh * 3;
+    for idx in needed_keys {
+        let key = read_spilled(&mut key_file, idx / key_every * fsz, fsz)?;
+        key_rgb.insert(idx, key);
     }
-    drop(second_stdout);
-    let _ = second.wait_with_output().map_err(|e| e.to_string())?;
-    if found_count < needed.len() {
-        return Err(format!("ffmpeg second pass returned {found_count} of {} frames", needed.len()));
+    for idx in needed_rgb {
+        let small = read_spilled(&mut small_file, idx * ssz, ssz)?;
+        rgb160.insert(idx, small);
     }
-    let pass2_time = pass2_start.elapsed().as_secs_f64();
-    t_decode += pass2_time;
 
     for (transition_idx, pending) in pending {
         let a = luma_of(rgb160.get(&(pending.c - pending.k)).expect("transition start frame fetched"));
@@ -548,7 +560,7 @@ pub fn analyze(path: &Path, o: &Options) -> Result<Analysis, String> {
             analyse_shot(i, bounds[i], bounds[i + 1], tin, range.clone(), palette, &stats, &motion, &rgb160, &key, fps, sw, sh)
         })
         .collect();
-    let t_analyse = t1.elapsed().as_secs_f64() - pass2_time;
+    let t_analyse = t1.elapsed().as_secs_f64();
 
     let t2 = std::time::Instant::now();
     let audio = match audio_job {
@@ -598,16 +610,23 @@ fn shot_range(start: f64, end: f64, pad_a: f64, pad_b: f64, n: usize, fps: f64) 
     fa..fb
 }
 
-fn reduce_batch(batch: Vec<Vec<u8>>, kw: usize, kh: usize) -> Vec<(FrameStat, Vec<f32>)> {
+fn read_spilled(file: &mut File, offset: usize, size: usize) -> Result<Vec<u8>, String> {
+    file.seek(SeekFrom::Start(offset as u64)).map_err(temp_error)?;
+    let mut bytes = vec![0u8; size];
+    file.read_exact(&mut bytes).map_err(temp_error)?;
+    Ok(bytes)
+}
+
+fn reduce_batch(batch: Vec<Vec<u8>>, kw: usize, kh: usize) -> Vec<(FrameStat, Vec<f32>, Vec<u8>)> {
     use rayon::prelude::*;
     batch.into_par_iter().map(|px| reduce(&px, kw, kh)).collect()
 }
 
 #[allow(clippy::too_many_arguments)]
-fn append_batch(batch: Vec<Vec<u8>>, kw: usize, kh: usize, sw: usize, sh: usize, previous_l: &mut Option<Vec<f32>>, stats: &mut Vec<FrameStat>, px: &mut Vec<f32>, motion: &mut Vec<Motion>) {
+fn append_batch(batch: Vec<Vec<u8>>, kw: usize, kh: usize, sw: usize, sh: usize, previous_l: &mut Option<Vec<f32>>, stats: &mut Vec<FrameStat>, px: &mut Vec<f32>, motion: &mut Vec<Motion>, spill: &mut Spill) -> Result<(), String> {
     use rayon::prelude::*;
     if batch.is_empty() {
-        return;
+        return Ok(());
     }
     let reduced = reduce_batch(batch, kw, kh);
     let prev = previous_l.as_deref();
@@ -623,9 +642,13 @@ fn append_batch(batch: Vec<Vec<u8>>, kw: usize, kh: usize, sw: usize, sh: usize,
     }).collect();
     px.extend(measures.iter().map(|(value, _)| *value));
     motion.extend(measures.into_iter().map(|(_, value)| value));
-    let last_l = reduced.last().map(|(_, l)| l.clone());
-    stats.extend(reduced.into_iter().map(|(stat, _)| stat));
+    let last_l = reduced.last().map(|(_, l, _)| l.clone());
+    for (stat, _, rgb160) in reduced {
+        spill.write_small(&rgb160)?;
+        stats.push(stat);
+    }
     *previous_l = last_l;
+    Ok(())
 }
 
 fn downsample(px: &[u8], kw: usize, kh: usize) -> Vec<u8> {
@@ -654,7 +677,7 @@ fn luma_of(rgb: &[u8]) -> Vec<f32> {
     rgb.chunks_exact(3).map(|c| (0.2126 * c[0] as f32 + 0.7152 * c[1] as f32 + 0.0722 * c[2] as f32) / 255.0).collect()
 }
 
-fn reduce(px: &[u8], kw: usize, kh: usize) -> (FrameStat, Vec<f32>) {
+fn reduce(px: &[u8], kw: usize, kh: usize) -> (FrameStat, Vec<f32>, Vec<u8>) {
     let (sw, sh) = (kw / 4, kh / 4);
     let rgb = downsample(px, kw, kh);
     let l = luma_of(&rgb);
@@ -684,7 +707,7 @@ fn reduce(px: &[u8], kw: usize, kh: usize) -> (FrameStat, Vec<f32>) {
     }
     let sharp = mean_abs_laplacian(&l, sw, sh);
     let vig = vignette(&l, sw, sh);
-    (FrameStat { hist, luma: sum / n, sharp, vig }, l)
+    (FrameStat { hist, luma: sum / n, sharp, vig }, l, rgb)
 }
 
 fn hist_dist(a: &[f32; 64], b: &[f32; 64]) -> f32 {
