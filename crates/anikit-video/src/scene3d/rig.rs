@@ -138,6 +138,52 @@ fn text_gobo_at(id: u32, p: V3, dir: V3, t: f32) -> f32 {
     }
 }
 
+fn box_blur(mask: &mut [f32], w: usize, h: usize, r: usize) {
+    if w == 0 || h == 0 {
+        return;
+    }
+
+    let mut tmp = vec![0.0f32; w * h];
+    let mut prefix = vec![0.0f64; w + 1];
+    for y in 0..h {
+        let row = y * w;
+        prefix[0] = 0.0;
+        for x in 0..w {
+            prefix[x + 1] = prefix[x] + mask[row + x] as f64;
+        }
+        for x in 0..w {
+            let (a, b) = (x.saturating_sub(r), x.saturating_add(r).min(w - 1));
+            tmp[row + x] = ((prefix[b + 1] - prefix[a]) / (b - a + 1) as f64) as f32;
+        }
+    }
+
+    let mut col = vec![0.0f64; w];
+    for y in 0..=r.min(h - 1) {
+        for x in 0..w {
+            col[x] += tmp[y * w + x] as f64;
+        }
+    }
+    for y in 0..h {
+        let (a, b) = (y.saturating_sub(r), y.saturating_add(r).min(h - 1));
+        let divisor = (b - a + 1) as f64;
+        let row = y * w;
+        for x in 0..w {
+            mask[row + x] = (col[x] / divisor) as f32;
+        }
+        if let Some(next) = y.checked_add(r).and_then(|next| next.checked_add(1)).filter(|&next| next < h) {
+            for x in 0..w {
+                col[x] += tmp[next * w + x] as f64;
+            }
+        }
+        if y >= r {
+            let leaving = (y - r) * w;
+            for x in 0..w {
+                col[x] -= tmp[leaving + x] as f64;
+            }
+        }
+    }
+}
+
 /// Parse `"gobo": {"text", "font", "weight", "tracking", "size", "at": [x, z], "height", "strength", "invert", "softness", "from": [dx, dz], "start", "settle"}`
 /// and register it; returns a [`Gobo`] for the key direction `dir`.
 pub fn text_gobo(v: &Value, dir: V3, path: &str) -> Res<Gobo> {
@@ -217,19 +263,7 @@ pub fn text_gobo(v: &Value, dir: V3, path: &str) -> Res<Gobo> {
     let soft = g("softness", 0.0015)?.max(0.0);
     let r = ((soft / sw * w as f32).round() as usize).min(64);
     if r > 0 {
-        let mut tmp = vec![0f32; w * h];
-        for y in 0..h {
-            for x in 0..w {
-                let (a, b) = (x.saturating_sub(r), (x + r).min(w - 1));
-                tmp[y * w + x] = mask[y * w + a..=y * w + b].iter().sum::<f32>() / (b - a + 1) as f32;
-            }
-        }
-        for y in 0..h {
-            for x in 0..w {
-                let (a, b) = (y.saturating_sub(r), (y + r).min(h - 1));
-                mask[y * w + x] = (a..=b).map(|yy| tmp[yy * w + x]).sum::<f32>() / (b - a + 1) as f32;
-            }
-        }
+        box_blur(&mut mask, w, h, r);
     }
     for c in &mut mask {
         *c = c.clamp(0.0, 1.0);
@@ -542,6 +576,61 @@ impl Rig {
 mod tests {
     use super::*;
     use serde_json::json;
+
+    fn naive_box_blur(mask: &mut [f32], w: usize, h: usize, r: usize) {
+        let mut tmp = vec![0f32; w * h];
+        for y in 0..h {
+            for x in 0..w {
+                let (a, b) = (x.saturating_sub(r), (x + r).min(w - 1));
+                tmp[y * w + x] = mask[y * w + a..=y * w + b].iter().sum::<f32>() / (b - a + 1) as f32;
+            }
+        }
+        for y in 0..h {
+            for x in 0..w {
+                let (a, b) = (y.saturating_sub(r), (y + r).min(h - 1));
+                mask[y * w + x] = (a..=b).map(|yy| tmp[yy * w + x]).sum::<f32>() / (b - a + 1) as f32;
+            }
+        }
+    }
+
+    #[test]
+    fn box_blur_is_bit_identical_across_runs_and_thread_counts() {
+        let pools: Vec<_> = [1, 4].into_iter().map(|n| rayon::ThreadPoolBuilder::new().num_threads(n).build().unwrap()).collect();
+        for (w, h, r) in [(0, 0, 1), (0, 9, 3), (9, 0, 3), (1, 1, 0), (37, 23, 0), (37, 23, 5), (8, 8, 64), (1, 9, 3), (64, 1, 3), (2400, 80, 64)] {
+            let original: Vec<f32> = (0..w * h).map(|i| ((i * 7919 % 65521) as f32) / 65521.0).collect();
+            let mut expected = original.clone();
+            box_blur(&mut expected, w, h, r);
+            let expected: Vec<_> = expected.iter().map(|v| v.to_bits()).collect();
+            for pool in &pools {
+                for _ in 0..3 {
+                    let actual = pool.install(|| {
+                        let mut actual = original.clone();
+                        box_blur(&mut actual, w, h, r);
+                        actual.iter().map(|v| v.to_bits()).collect::<Vec<_>>()
+                    });
+                    assert_eq!(actual, expected, "box_blur({w}, {h}, {r}), {} threads", pool.current_num_threads());
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn box_blur_matches_naive_reference() {
+        for (w, h, r) in [(37, 23, 1), (37, 23, 5), (37, 23, 40), (8, 8, 64), (1, 9, 3), (64, 1, 3)] {
+            let mut state = 1u32;
+            let original: Vec<f32> = (0..w * h)
+                .map(|_| {
+                    state = state.wrapping_mul(1_664_525).wrapping_add(1_013_904_223);
+                    (state >> 8) as f32 / 16_777_215.0
+                })
+                .collect();
+            let (mut actual, mut expected) = (original.clone(), original);
+            box_blur(&mut actual, w, h, r);
+            naive_box_blur(&mut expected, w, h, r);
+            let max_diff = actual.iter().zip(expected).map(|(a, b)| (a - b).abs()).fold(0.0f32, f32::max);
+            assert!(max_diff < 1e-5, "box_blur({w}, {h}, {r}) max diff: {max_diff}");
+        }
+    }
 
     #[test]
     fn rigs_hold_their_ratio_and_face_the_camera() {
