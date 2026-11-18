@@ -83,6 +83,18 @@ pub const PACKS: &[Pack] = &[
         derive: &[],
     },
     Pack {
+        name: "vsco-winds",
+        description: "VS Chamber Orchestra 2 CE, winds and more: horn, trumpet, trombone, tuba (sustain and \
+                      staccato), flute, piccolo, oboe, clarinet, bassoon, harp and timpani (SFZ, WAV)",
+        license: "CC0 1.0 (public domain dedication)",
+        size: "≈520 MB download, ≈1.2 GB on disk",
+        url: "https://github.com/sgossner/VSCO-2-CE",
+        branch: "SFZ",
+        credit: "",
+        sparse: &["/*.sfz", "/LICENSE", "/README.md", "/Brass/F Horn/", "/Brass/Trumpet/", "/Brass/Tenor Trombone/", "/Brass/Tuba/", "/Woodwinds/", "/Strings/Harp/", "/Percussion/Timpani/"],
+        derive: &[],
+    },
+    Pack {
         name: "salamander",
         description: "Salamander Grand Piano V3 — Yamaha C5, 16 velocity layers, 48 kHz/24-bit, \
                       release and string-resonance layers (SFZ, FLAC)",
@@ -263,6 +275,9 @@ pub const INSTRUMENTS: &[(&str, &str, &str)] = &[
     ("vsco-horn", "vsco2-ce", "FHornSus.sfz"),
     ("vsco-horn-stac", "vsco2-ce", "FHornStac.sfz"),
     ("vsco-trumpet", "vsco2-ce", "TrumpetSus.sfz"),
+    ("vsco-trumpet-stac", "vsco2-ce", "TrumpetStac.sfz"),
+    ("vsco-trombone-stac", "vsco2-ce", "TromboneStac.sfz"),
+    ("vsco-tuba-stac", "vsco2-ce", "TubaStac.sfz"),
     ("vsco-trombone", "vsco2-ce", "TromboneSus.sfz"),
     ("vsco-tuba", "vsco2-ce", "TubaSus.sfz"),
     ("vsco-flute", "vsco2-ce", "FluteSusVib.sfz"),
@@ -283,7 +298,7 @@ pub const INSTRUMENTS: &[(&str, &str, &str)] = &[
 
 /// A pack whose files are also in a smaller pack (a sparse subset of the same
 /// repository): looked up there when the full pack is not cached.
-const ALSO_IN: &[(&str, &str)] = &[("vsco2-ce", "vsco-strings")];
+const ALSO_IN: &[(&str, &str)] = &[("vsco2-ce", "vsco-strings"), ("vsco2-ce", "vsco-winds")];
 
 /// Section instruments: one name, each register played by its own section
 /// (lowest key of each part, ascending).
@@ -291,6 +306,8 @@ pub const SECTIONS: &[(&str, &[(&str, i32)])] = &[
     ("vsco-strings-section", &[("vsco-contrabass", 0), ("vsco-cellos", 36), ("vsco-violas", 52), ("vsco-violins", 62)]),
     ("vsco-strings-spiccato", &[("vsco-contrabass-spiccato", 0), ("vsco-cellos-spiccato", 36), ("vsco-violas-spiccato", 52), ("vsco-violins-spiccato", 62)]),
     ("vsco-strings-pizz", &[("vsco-contrabass-pizz", 0), ("vsco-cello-pizz", 36), ("vsco-violas-pizz", 52), ("vsco-violins-pizz", 62)]),
+    ("vsco-brass-section", &[("vsco-tuba", 0), ("vsco-trombone", 40), ("vsco-horn", 52), ("vsco-trumpet", 65)]),
+    ("vsco-brass-staccato", &[("vsco-tuba-stac", 0), ("vsco-trombone-stac", 40), ("vsco-horn-stac", 52), ("vsco-trumpet-stac", 65)]),
     ("vsco-strings-tremolo", &[("vsco-contrabass-tremolo", 0), ("vsco-cellos-tremolo", 36), ("vsco-violas-tremolo", 52), ("vsco-violins-tremolo", 62)]),
 ];
 
@@ -404,36 +421,40 @@ pub fn pack_instrument(name: &str) -> Option<Arc<dyn Instrument>> {
             (p.to_string(), f.to_string())
         }
     };
-    let mut pack = pack;
+    // The full pack, then smaller packs holding parts of it (the first that
+    // actually plays: sparse packs share the SFZ files but not the samples).
+    let mut candidates = vec![pack.clone()];
     if !is_cached(&pack) {
-        if let Some((_, sub)) = ALSO_IN.iter().find(|a| a.0 == pack) {
-            if is_cached(sub) {
-                pack = sub.to_string();
-            }
-        }
+        candidates.extend(ALSO_IN.iter().filter(|a| a.0 == pack && is_cached(a.1)).map(|a| a.1.to_string()));
     }
-    let path = pack_dir(&pack).join(&file);
-    if !path.is_file() && is_cached(&pack) {
+    candidates.into_iter().find_map(|pk| load_pack_file(&pk, &file))
+}
+
+fn load_pack_file(pack: &str, file: &str) -> Option<Arc<dyn Instrument>> {
+    let path = pack_dir(pack).join(file);
+    if !path.is_file() && is_cached(pack) {
         if let Some(p) = PACKS.iter().find(|k| k.name == pack) {
-            derive_files(p, &pack_dir(&pack));
+            derive_files(p, &pack_dir(pack));
         }
     }
     if !path.is_file() {
         return None;
     }
-    static CACHE: OnceLock<Mutex<HashMap<PathBuf, Arc<dyn Instrument>>>> = OnceLock::new();
+    static CACHE: OnceLock<Mutex<HashMap<PathBuf, Option<Arc<dyn Instrument>>>>> = OnceLock::new();
     let cache = CACHE.get_or_init(|| Mutex::new(HashMap::new()));
     if let Some(i) = cache.lock().ok()?.get(&path) {
-        return Some(i.clone());
+        return i.clone();
     }
     // Lenient: a sparse or partial checkout still plays what it has.
-    let opt = SfzOptions { skip_missing: true, extend: EXTEND.contains(&pack.as_str()) };
-    let sfz = SfzInstrument::load_with(&path, opt).ok()?;
-    let trim = TRIM_MS.iter().find(|t| t.0 == pack).map_or(0, |t| (t.1 * 48.0) as usize);
-    let width = WIDTH.iter().find(|t| t.0 == pack).map_or(1.0, |t| t.1);
-    let inst: Arc<dyn Instrument> = if trim > 0 || width != 1.0 { Arc::new(PackVoice { inner: sfz, trim, width }) } else { Arc::new(sfz) };
+    let opt = SfzOptions { skip_missing: true, extend: EXTEND.contains(&pack) };
+    let inst = SfzInstrument::load_with(&path, opt).ok().map(|sfz| {
+        let trim = TRIM_MS.iter().find(|t| t.0 == pack).map_or(0, |t| (t.1 * 48.0) as usize);
+        let width = WIDTH.iter().find(|t| t.0 == pack).map_or(1.0, |t| t.1);
+        let i: Arc<dyn Instrument> = if trim > 0 || width != 1.0 { Arc::new(PackVoice { inner: sfz, trim, width }) } else { Arc::new(sfz) };
+        i
+    });
     cache.lock().ok()?.insert(path, inst.clone());
-    Some(inst)
+    inst
 }
 
 #[cfg(test)]
@@ -505,12 +526,12 @@ mod tests {
     #[ignore]
     fn sf2_packs_load_cached_instruments() {
         use crate::sf2::tests::{measure_freq, note, render};
-        for name in ["vsco-violins", "vsco-timpani", "salamander-piano", "splendid-piano", "wurlitzer", "finger-bass-yr", "picked-bass-yr", "nylon-guitar-fp", "clean-guitar-fsbs", "virtuosity-kit", "vsco-strings-section", "vsco-strings-spiccato"] {
+        for name in ["vsco-violins", "vsco-timpani", "salamander-piano", "splendid-piano", "wurlitzer", "finger-bass-yr", "picked-bass-yr", "nylon-guitar-fp", "clean-guitar-fsbs", "virtuosity-kit", "vsco-strings-section", "vsco-strings-spiccato", "vsco-brass-section", "vsco-flute"] {
             let Some(inst) = pack_instrument(name) else {
                 eprintln!("{name}: pack not cached, skipped");
                 continue;
             };
-            let key = if name.contains("timpani") || name.contains("bass") { 43.0 } else if name.contains("kit") { 38.0 } else if name.contains("strings") { 67.0 } else { 69.0 };
+            let key = if name.contains("timpani") || name.contains("bass") { 43.0 } else if name.contains("brass") { 57.0 } else if name.contains("kit") { 38.0 } else if name.contains("strings") { 67.0 } else { 69.0 };
             let mut v = inst.voice(&note(key, 0.7));
             let (l, r, _) = render(v.as_mut(), 2.0, 1.5, 128);
             let m: Vec<f32> = l.iter().zip(&r).map(|(a, b)| a + b).collect();
