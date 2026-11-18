@@ -45,9 +45,42 @@ fn components_reach_compositions_through_assets() {
     let info = ev.assets.composition_info("film").unwrap();
     assert_eq!((info.width, info.height, info.duration, info.looped), (64, 36, 2.0, false));
     let a = ev.assets.composition_frame("film", 0.5, 1).unwrap();
-    let b = CompTextures::new(usize::MAX).get(ev.composition("film").unwrap(), 0.5, 1);
+    // Components (3D textures, particle atlases) see a frame as its whole interval: sampled mid-frame.
+    let b = CompTextures::new(usize::MAX).get_mid(ev.composition("film").unwrap(), 0.5, 1);
     assert_eq!(a.data_as_u8_slice(), b.data_as_u8_slice());
     assert!(ev.assets.composition_info("nope").is_none());
+}
+
+/// A glyph atlas: frame f of a composition shows one letter, timed inside the
+/// frame's interval `[f/fps + ε, (f+1)/fps − ε]`. Every frame a component asks
+/// for must show its letter. Regression: frames were evaluated at their start,
+/// `f/fps`, so inset windows (anything not straddling `f/fps`) were silently empty.
+#[test]
+fn glyph_atlas_frames_with_inset_windows() {
+    use anikit_video::components::Assets;
+    let fps = 30.0;
+    let letters = ["A", "B", "C", "D", "E", "F"];
+    let layers: Vec<serde_json::Value> = letters
+        .iter()
+        .enumerate()
+        .map(|(f, l)| {
+            let f = f as f64;
+            serde_json::json!({ "text": l, "size": 40, "color": "#ffffff",
+                "start": (f / fps + 0.002), "end": ((f + 1.0) / fps - 0.002) })
+        })
+        .collect();
+    let spec = serde_json::json!({ "fps": 30, "compositions": { "atlas": { "size": [48, 48], "duration": 0.2, "background": "#000000", "layers": layers } },
+        "scenes": [ "x" ] });
+    let p = parse_json(&spec.to_string()).unwrap();
+    let ev = Evaluator::new(&p.spec, Options::default()).unwrap();
+    for f in 0..letters.len() {
+        // scene3d asks for frame f at (f + 0.25) / fps; particles at f / fps. Both must show the letter.
+        for t in [f as f32 / 30.0, (f as f32 + 0.25) / 30.0] {
+            let pm = ev.assets.composition_frame("atlas", t, 0).unwrap();
+            let lit = pm.data_as_u8_slice().chunks_exact(4).filter(|px| px[0] > 128).count();
+            assert!(lit > 20, "frame {f} (t = {t}) is empty: its letter was dropped");
+        }
+    }
 }
 
 /// A composition made of a shader layer, used as a texture on a 3D pane, must
