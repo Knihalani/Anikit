@@ -1,0 +1,1547 @@
+{
+ "size": "9:16",
+ "fps": 30,
+ "music": {
+  "style": "acoustic",
+  "bpm": 96,
+  "key": "D",
+  "mood": "warm bright",
+  "sections": [
+   {
+    "name": "a",
+    "bars": 3,
+    "energy": 0.55
+   },
+   {
+    "name": "b",
+    "bars": 1,
+    "energy": 0.8
+   },
+   {
+    "name": "c",
+    "bars": 2,
+    "energy": 0.9,
+    "stop": 2
+   }
+  ],
+  "hits": [
+   "@bar5"
+  ],
+  "end": "ring"
+ },
+ "sound": "auto",
+ "scenes": [
+  {
+   "duration": 1.875,
+   "background": "#6F8F86",
+   "layers": [
+    {
+     "component": "scene3d",
+     "props": {
+      "resolution": 0.7,
+      "env": {
+       "preset": "interior"
+      },
+      "rig": {
+       "preset": "window",
+       "angle": 60,
+       "height": 24,
+       "warmth": 0.4,
+       "ratio": 8,
+       "key": 1.6,
+       "softness": 0.01
+      },
+      "floor": {
+       "color": "#EEEAE2",
+       "roughness": 0.5
+      },
+      "camera": {
+       "lens": "portrait85",
+       "shake": "breath",
+       "keys": [
+        {
+         "t": 0,
+         "pos": [
+          0.05,
+          0.5,
+          1.55
+         ],
+         "target": [
+          -0.05,
+          0.22,
+          0
+         ],
+         "focus": "arrow",
+         "fstop": 5.6
+        },
+        {
+         "t": 1.875,
+         "pos": [
+          0.03,
+          0.46,
+          1.38
+         ],
+         "target": [
+          -0.05,
+          0.22,
+          0
+         ],
+         "focus": "arrow",
+         "fstop": 5.6
+        }
+       ]
+      },
+      "objects": [
+       {
+        "type": "box",
+        "name": "wall",
+        "size": [
+         6,
+         3,
+         0.05
+        ],
+        "pos": [
+         0,
+         1.5,
+         -0.4
+        ],
+        "material": {
+         "texture": "polyhaven:texture/beige_wall_001",
+         "color": "#8FB5AA"
+        }
+       },
+       {
+        "type": "model",
+        "name": "succ",
+        "src": "polyhaven:model/potted_plant_04",
+        "pos": [
+         0.42,
+         0,
+         -0.05
+        ]
+       },
+       {
+        "type": "model",
+        "name": "arrow",
+        "src": "polyhaven:model/potted_plant_02",
+        "pos": [
+         -0.05,
+         0,
+         -0.08
+        ],
+        "scale": 0.55
+       },
+       {
+        "type": "model",
+        "name": "ped",
+        "src": "polyhaven:model/potted_plant_01",
+        "pos": [
+         -0.6,
+         0,
+         -0.1
+        ],
+        "scale": 0.5
+       },
+       {
+        "type": "particles",
+        "name": "rain",
+        "count": 2200,
+        "life": 0.6,
+        "seed": 3,
+        "start": -2.6,
+        "emit": {
+         "shape": "disc",
+         "pos": [
+          -0.05,
+          1.0,
+          -0.08
+         ],
+         "radius": 0.1
+        },
+        "velocity": [
+         0,
+         -2.2,
+         0
+        ],
+        "gravity": -1.0,
+        "drag": 0.0,
+        "size": 0.0011,
+        "stretch": 3.5,
+        "color": "#E4F0F5",
+        "blend": "over",
+        "lit": true,
+        "glint": {
+         "amount": 2,
+         "sharpness": 80
+        },
+        "opacity": "=((t - age*0.6) > -2 && (t - age*0.6) < 99 && y > 0.165) ? 0.75 : 0"
+       },
+       {
+        "type": "cylinder",
+        "name": "stem",
+        "radius": 0.004,
+        "height": 0.06,
+        "pos": [
+         -0.07,
+         0.16,
+         0.035
+        ],
+        "material": {
+         "extends": "plastic",
+         "base": "#F2F0EA",
+         "roughness": 0.3
+        }
+       },
+       {
+        "type": "lathe",
+        "name": "sensor",
+        "segments": 64,
+        "points": [
+         [
+          0,
+          0
+         ],
+         [
+          0.012,
+          0.0005
+         ],
+         [
+          0.0175,
+          0.004
+         ],
+         [
+          0.019,
+          0.009
+         ],
+         [
+          0.0165,
+          0.0145
+         ],
+         [
+          0.009,
+          0.0175
+         ],
+         [
+          0,
+          0.018
+         ]
+        ],
+        "pos": [
+         -0.07,
+         0.19,
+         0.035
+        ],
+        "material": {
+         "extends": "plastic",
+         "base": "#F5F3EE",
+         "roughness": 0.22,
+         "imperfections": 0.15
+        }
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "duration": 1.875,
+   "background": "#6F8F86",
+   "layers": [
+    {
+     "component": "scene3d",
+     "props": {
+      "resolution": 0.7,
+      "env": {
+       "preset": "interior"
+      },
+      "rig": {
+       "preset": "window",
+       "angle": 25,
+       "height": 24,
+       "warmth": 0.4,
+       "ratio": 8,
+       "key": 1.6,
+       "softness": 0.01
+      },
+      "floor": {
+       "color": "#EEEAE2",
+       "roughness": 0.5
+      },
+      "camera": {
+       "lens": "portrait85",
+       "shake": "breath",
+       "keys": [
+        {
+         "t": 0,
+         "pos": [
+          0.95,
+          0.2,
+          0.75
+         ],
+         "target": [
+          0.25,
+          0.16,
+          -0.1
+         ],
+         "focus": "succ",
+         "fstop": 3.2
+        },
+        {
+         "t": 1.875,
+         "pos": [
+          0.9,
+          0.19,
+          0.7
+         ],
+         "target": [
+          0.25,
+          0.16,
+          -0.1
+         ],
+         "focus": "succ",
+         "fstop": 3.2
+        }
+       ]
+      },
+      "objects": [
+       {
+        "type": "box",
+        "name": "wall",
+        "size": [
+         6,
+         3,
+         0.05
+        ],
+        "pos": [
+         0,
+         1.5,
+         -0.4
+        ],
+        "material": {
+         "texture": "polyhaven:texture/beige_wall_001",
+         "color": "#8FB5AA"
+        }
+       },
+       {
+        "type": "model",
+        "name": "succ",
+        "src": "polyhaven:model/potted_plant_04",
+        "pos": [
+         0.42,
+         0,
+         -0.05
+        ]
+       },
+       {
+        "type": "model",
+        "name": "arrow",
+        "src": "polyhaven:model/potted_plant_02",
+        "pos": [
+         -0.05,
+         0,
+         -0.08
+        ],
+        "scale": 0.55
+       },
+       {
+        "type": "model",
+        "name": "ped",
+        "src": "polyhaven:model/potted_plant_01",
+        "pos": [
+         -0.6,
+         0,
+         -0.1
+        ],
+        "scale": 0.5
+       },
+       {
+        "type": "particles",
+        "name": "rain",
+        "count": 2200,
+        "life": 0.6,
+        "seed": 3,
+        "start": -2.6,
+        "emit": {
+         "shape": "disc",
+         "pos": [
+          -0.05,
+          1.0,
+          -0.08
+         ],
+         "radius": 0.1
+        },
+        "velocity": [
+         0,
+         -2.2,
+         0
+        ],
+        "gravity": -1.0,
+        "drag": 0.0,
+        "size": 0.0011,
+        "stretch": 3.5,
+        "color": "#E4F0F5",
+        "blend": "over",
+        "lit": true,
+        "glint": {
+         "amount": 2,
+         "sharpness": 80
+        },
+        "opacity": "=((t - age*0.6) > -2 && (t - age*0.6) < 99 && y > 0.165) ? 0.75 : 0"
+       },
+       {
+        "type": "cylinder",
+        "name": "stem",
+        "radius": 0.004,
+        "height": 0.06,
+        "pos": [
+         -0.07,
+         0.16,
+         0.035
+        ],
+        "material": {
+         "extends": "plastic",
+         "base": "#F2F0EA",
+         "roughness": 0.3
+        }
+       },
+       {
+        "type": "lathe",
+        "name": "sensor",
+        "segments": 64,
+        "points": [
+         [
+          0,
+          0
+         ],
+         [
+          0.012,
+          0.0005
+         ],
+         [
+          0.0175,
+          0.004
+         ],
+         [
+          0.019,
+          0.009
+         ],
+         [
+          0.0165,
+          0.0145
+         ],
+         [
+          0.009,
+          0.0175
+         ],
+         [
+          0,
+          0.018
+         ]
+        ],
+        "pos": [
+         -0.07,
+         0.19,
+         0.035
+        ],
+        "material": {
+         "extends": "plastic",
+         "base": "#F5F3EE",
+         "roughness": 0.22,
+         "imperfections": 0.15
+        }
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "duration": 2.5,
+   "background": "#6F8F86",
+   "layers": [
+    {
+     "component": "scene3d",
+     "props": {
+      "resolution": 0.7,
+      "env": {
+       "preset": "interior"
+      },
+      "rig": {
+       "preset": "window",
+       "angle": 60,
+       "height": 24,
+       "warmth": 0.4,
+       "ratio": 8,
+       "key": 1.6,
+       "softness": 0.01
+      },
+      "floor": {
+       "color": "#EEEAE2",
+       "roughness": 0.5
+      },
+      "camera": {
+       "lens": "macro100",
+       "shake": "breath",
+       "keys": [
+        {
+         "t": 0,
+         "pos": [
+          0.02,
+          0.3,
+          0.42
+         ],
+         "target": [
+          -0.07,
+          0.195,
+          0.035
+         ],
+         "focus": "sensor",
+         "fstop": 5.6
+        },
+        {
+         "t": 2.5,
+         "pos": [
+          0.01,
+          0.28,
+          0.37
+         ],
+         "target": [
+          -0.07,
+          0.195,
+          0.035
+         ],
+         "focus": "sensor",
+         "fstop": 5.6
+        }
+       ]
+      },
+      "objects": [
+       {
+        "type": "box",
+        "name": "wall",
+        "size": [
+         6,
+         3,
+         0.05
+        ],
+        "pos": [
+         0,
+         1.5,
+         -0.4
+        ],
+        "material": {
+         "texture": "polyhaven:texture/beige_wall_001",
+         "color": "#8FB5AA"
+        }
+       },
+       {
+        "type": "model",
+        "name": "succ",
+        "src": "polyhaven:model/potted_plant_04",
+        "pos": [
+         0.42,
+         0,
+         -0.05
+        ]
+       },
+       {
+        "type": "model",
+        "name": "arrow",
+        "src": "polyhaven:model/potted_plant_02",
+        "pos": [
+         -0.05,
+         0,
+         -0.08
+        ],
+        "scale": 0.55
+       },
+       {
+        "type": "model",
+        "name": "ped",
+        "src": "polyhaven:model/potted_plant_01",
+        "pos": [
+         -0.6,
+         0,
+         -0.1
+        ],
+        "scale": 0.5
+       },
+       {
+        "type": "particles",
+        "name": "rain",
+        "count": 2200,
+        "life": 0.6,
+        "seed": 3,
+        "start": -2.6,
+        "emit": {
+         "shape": "disc",
+         "pos": [
+          -0.05,
+          1.0,
+          -0.08
+         ],
+         "radius": 0.1
+        },
+        "velocity": [
+         0,
+         -2.2,
+         0
+        ],
+        "gravity": -1.0,
+        "drag": 0.0,
+        "size": 0.0011,
+        "stretch": 3.5,
+        "color": "#E4F0F5",
+        "blend": "over",
+        "lit": true,
+        "glint": {
+         "amount": 2,
+         "sharpness": 80
+        },
+        "opacity": "=((t - age*0.6) > -2 && (t - age*0.6) < 1.3 && y > 0.165) ? 0.75 : 0"
+       },
+       {
+        "type": "cylinder",
+        "name": "stem",
+        "radius": 0.004,
+        "height": 0.06,
+        "pos": [
+         -0.07,
+         0.16,
+         0.035
+        ],
+        "material": {
+         "extends": "plastic",
+         "base": "#F2F0EA",
+         "roughness": 0.3
+        }
+       },
+       {
+        "type": "lathe",
+        "name": "sensor",
+        "segments": 64,
+        "points": [
+         [
+          0,
+          0
+         ],
+         [
+          0.012,
+          0.0005
+         ],
+         [
+          0.0175,
+          0.004
+         ],
+         [
+          0.019,
+          0.009
+         ],
+         [
+          0.0165,
+          0.0145
+         ],
+         [
+          0.009,
+          0.0175
+         ],
+         [
+          0,
+          0.018
+         ]
+        ],
+        "pos": [
+         -0.07,
+         0.19,
+         0.035
+        ],
+        "material": {
+         "extends": "plastic",
+         "base": "#F5F3EE",
+         "roughness": 0.22,
+         "imperfections": 0.15
+        }
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "duration": 1.25,
+   "background": "#6F8F86",
+   "layers": [
+    {
+     "component": "scene3d",
+     "props": {
+      "resolution": 0.7,
+      "env": {
+       "preset": "interior"
+      },
+      "rig": {
+       "preset": "window",
+       "angle": 60,
+       "height": 24,
+       "warmth": 0.4,
+       "ratio": 8,
+       "key": 1.6,
+       "softness": 0.01
+      },
+      "floor": {
+       "color": "#EEEAE2",
+       "roughness": 0.5
+      },
+      "camera": {
+       "lens": "portrait85",
+       "shake": "breath",
+       "keys": [
+        {
+         "t": 0,
+         "pos": [
+          -0.3,
+          0.55,
+          1.35
+         ],
+         "target": [
+          -0.6,
+          0.3,
+          -0.1
+         ],
+         "focus": "ped",
+         "fstop": 4
+        },
+        {
+         "t": 1.25,
+         "pos": [
+          -0.44,
+          0.55,
+          1.35
+         ],
+         "target": [
+          -0.62,
+          0.3,
+          -0.1
+         ],
+         "focus": "ped",
+         "fstop": 4
+        }
+       ]
+      },
+      "objects": [
+       {
+        "type": "box",
+        "name": "wall",
+        "size": [
+         6,
+         3,
+         0.05
+        ],
+        "pos": [
+         0,
+         1.5,
+         -0.4
+        ],
+        "material": {
+         "texture": "polyhaven:texture/beige_wall_001",
+         "color": "#8FB5AA"
+        }
+       },
+       {
+        "type": "model",
+        "name": "succ",
+        "src": "polyhaven:model/potted_plant_04",
+        "pos": [
+         0.42,
+         0,
+         -0.05
+        ]
+       },
+       {
+        "type": "model",
+        "name": "arrow",
+        "src": "polyhaven:model/potted_plant_02",
+        "pos": [
+         -0.05,
+         0,
+         -0.08
+        ],
+        "scale": 0.55
+       },
+       {
+        "type": "model",
+        "name": "ped",
+        "src": "polyhaven:model/potted_plant_01",
+        "pos": [
+         -0.6,
+         0,
+         -0.1
+        ],
+        "scale": 0.5
+       },
+       {
+        "type": "particles",
+        "name": "drizzle",
+        "count": 5000,
+        "life": 0.6,
+        "seed": 3,
+        "start": -1.6,
+        "emit": {
+         "shape": "disc",
+         "pos": [
+          -0.6,
+          1.2,
+          -0.1
+         ],
+         "radius": 0.13
+        },
+        "velocity": [
+         0,
+         -1.4,
+         0
+        ],
+        "gravity": -1.0,
+        "drag": 0.0,
+        "size": 0.0007,
+        "stretch": 3.5,
+        "color": "#E4F0F5",
+        "blend": "over",
+        "lit": true,
+        "glint": {
+         "amount": 2,
+         "sharpness": 80
+        },
+        "opacity": "=((t - age*0.6) > -1 && (t - age*0.6) < 99 && y > 0.3) ? 0.6 : 0"
+       },
+       {
+        "type": "cylinder",
+        "name": "stem",
+        "radius": 0.004,
+        "height": 0.06,
+        "pos": [
+         -0.07,
+         0.16,
+         0.035
+        ],
+        "material": {
+         "extends": "plastic",
+         "base": "#F2F0EA",
+         "roughness": 0.3
+        }
+       },
+       {
+        "type": "lathe",
+        "name": "sensor",
+        "segments": 64,
+        "points": [
+         [
+          0,
+          0
+         ],
+         [
+          0.012,
+          0.0005
+         ],
+         [
+          0.0175,
+          0.004
+         ],
+         [
+          0.019,
+          0.009
+         ],
+         [
+          0.0165,
+          0.0145
+         ],
+         [
+          0.009,
+          0.0175
+         ],
+         [
+          0,
+          0.018
+         ]
+        ],
+        "pos": [
+         -0.07,
+         0.19,
+         0.035
+        ],
+        "material": {
+         "extends": "plastic",
+         "base": "#F5F3EE",
+         "roughness": 0.22,
+         "imperfections": 0.15
+        }
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "duration": 1.25,
+   "background": "#6F8F86",
+   "layers": [
+    {
+     "component": "scene3d",
+     "props": {
+      "resolution": 0.7,
+      "env": {
+       "preset": "interior"
+      },
+      "rig": {
+       "preset": "window",
+       "angle": 60,
+       "height": 24,
+       "warmth": 0.4,
+       "ratio": 8,
+       "key": 1.6,
+       "softness": 0.01
+      },
+      "floor": {
+       "color": "#EEEAE2",
+       "roughness": 0.5
+      },
+      "camera": {
+       "lens": "normal50",
+       "shake": "breath",
+       "keys": [
+        {
+         "t": 0,
+         "pos": [
+          0.35,
+          0.95,
+          1.9
+         ],
+         "target": [
+          -0.1,
+          0.18,
+          -0.05
+         ],
+         "fstop": 8
+        },
+        {
+         "t": 1.25,
+         "pos": [
+          0.25,
+          0.92,
+          1.85
+         ],
+         "target": [
+          -0.1,
+          0.18,
+          -0.05
+         ],
+         "fstop": 8
+        }
+       ]
+      },
+      "objects": [
+       {
+        "type": "box",
+        "name": "wall",
+        "size": [
+         6,
+         3,
+         0.05
+        ],
+        "pos": [
+         0,
+         1.5,
+         -0.4
+        ],
+        "material": {
+         "texture": "polyhaven:texture/beige_wall_001",
+         "color": "#8FB5AA"
+        }
+       },
+       {
+        "type": "model",
+        "name": "succ",
+        "src": "polyhaven:model/potted_plant_04",
+        "pos": [
+         0.42,
+         0,
+         -0.05
+        ]
+       },
+       {
+        "type": "model",
+        "name": "arrow",
+        "src": "polyhaven:model/potted_plant_02",
+        "pos": [
+         -0.05,
+         0,
+         -0.08
+        ],
+        "scale": 0.55
+       },
+       {
+        "type": "model",
+        "name": "ped",
+        "src": "polyhaven:model/potted_plant_01",
+        "pos": [
+         -0.6,
+         0,
+         -0.1
+        ],
+        "scale": 0.5
+       },
+       {
+        "type": "particles",
+        "name": "drizzle",
+        "count": 5000,
+        "life": 0.6,
+        "seed": 3,
+        "start": -2.6,
+        "emit": {
+         "shape": "disc",
+         "pos": [
+          -0.6,
+          1.2,
+          -0.1
+         ],
+         "radius": 0.13
+        },
+        "velocity": [
+         0,
+         -1.4,
+         0
+        ],
+        "gravity": -1.0,
+        "drag": 0.0,
+        "size": 0.0009,
+        "stretch": 3.5,
+        "color": "#E4F0F5",
+        "blend": "over",
+        "lit": true,
+        "glint": {
+         "amount": 2,
+         "sharpness": 80
+        },
+        "opacity": "=((t - age*0.6) > -2 && (t - age*0.6) < 99 && y > 0.3) ? 0.7 : 0"
+       },
+       {
+        "type": "cylinder",
+        "name": "stem",
+        "radius": 0.004,
+        "height": 0.06,
+        "pos": [
+         -0.07,
+         0.16,
+         0.035
+        ],
+        "material": {
+         "extends": "plastic",
+         "base": "#F2F0EA",
+         "roughness": 0.3
+        }
+       },
+       {
+        "type": "lathe",
+        "name": "sensor",
+        "segments": 64,
+        "points": [
+         [
+          0,
+          0
+         ],
+         [
+          0.012,
+          0.0005
+         ],
+         [
+          0.0175,
+          0.004
+         ],
+         [
+          0.019,
+          0.009
+         ],
+         [
+          0.0165,
+          0.0145
+         ],
+         [
+          0.009,
+          0.0175
+         ],
+         [
+          0,
+          0.018
+         ]
+        ],
+        "pos": [
+         -0.07,
+         0.19,
+         0.035
+        ],
+        "material": {
+         "extends": "plastic",
+         "base": "#F5F3EE",
+         "roughness": 0.22,
+         "imperfections": 0.15
+        }
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "duration": 1.25,
+   "background": "#6F8F86",
+   "layers": [
+    {
+     "component": "scene3d",
+     "props": {
+      "resolution": 0.7,
+      "env": {
+       "preset": "interior"
+      },
+      "rig": {
+       "preset": "window",
+       "angle": 60,
+       "height": 24,
+       "warmth": 0.4,
+       "ratio": 8,
+       "key": 1.6,
+       "softness": 0.01
+      },
+      "floor": {
+       "color": "#EEEAE2",
+       "roughness": 0.5
+      },
+      "camera": {
+       "lens": "macro100",
+       "shake": "breath",
+       "keys": [
+        {
+         "t": 0,
+         "pos": [
+          -0.2,
+          0.2,
+          0.42
+         ],
+         "target": [
+          -0.07,
+          0.19,
+          0.035
+         ],
+         "focus": "sensor",
+         "fstop": 4
+        },
+        {
+         "t": 1.25,
+         "pos": [
+          -0.195,
+          0.2,
+          0.4
+         ],
+         "target": [
+          -0.07,
+          0.19,
+          0.035
+         ],
+         "focus": "sensor",
+         "fstop": 4
+        }
+       ]
+      },
+      "objects": [
+       {
+        "type": "box",
+        "name": "wall",
+        "size": [
+         6,
+         3,
+         0.05
+        ],
+        "pos": [
+         0,
+         1.5,
+         -0.4
+        ],
+        "material": {
+         "texture": "polyhaven:texture/beige_wall_001",
+         "color": "#8FB5AA"
+        }
+       },
+       {
+        "type": "model",
+        "name": "succ",
+        "src": "polyhaven:model/potted_plant_04",
+        "pos": [
+         0.42,
+         0,
+         -0.05
+        ]
+       },
+       {
+        "type": "model",
+        "name": "arrow",
+        "src": "polyhaven:model/potted_plant_02",
+        "pos": [
+         -0.05,
+         0,
+         -0.08
+        ],
+        "scale": 0.55
+       },
+       {
+        "type": "model",
+        "name": "ped",
+        "src": "polyhaven:model/potted_plant_01",
+        "pos": [
+         -0.6,
+         0,
+         -0.1
+        ],
+        "scale": 0.5
+       },
+       {
+        "type": "cylinder",
+        "name": "stem",
+        "radius": 0.004,
+        "height": 0.06,
+        "pos": [
+         -0.07,
+         0.16,
+         0.035
+        ],
+        "material": {
+         "extends": "plastic",
+         "base": "#F2F0EA",
+         "roughness": 0.3
+        }
+       },
+       {
+        "type": "lathe",
+        "name": "sensor",
+        "segments": 64,
+        "points": [
+         [
+          0,
+          0
+         ],
+         [
+          0.012,
+          0.0005
+         ],
+         [
+          0.0175,
+          0.004
+         ],
+         [
+          0.019,
+          0.009
+         ],
+         [
+          0.0165,
+          0.0145
+         ],
+         [
+          0.009,
+          0.0175
+         ],
+         [
+          0,
+          0.018
+         ]
+        ],
+        "pos": [
+         -0.07,
+         0.19,
+         0.035
+        ],
+        "material": {
+         "extends": "plastic",
+         "base": "#F5F3EE",
+         "roughness": 0.22,
+         "imperfections": 0.15
+        }
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "duration": 5.0,
+   "background": "#6F8F86",
+   "layers": [
+    {
+     "component": "scene3d",
+     "props": {
+      "resolution": 0.7,
+      "env": {
+       "preset": "interior"
+      },
+      "rig": {
+       "preset": "window",
+       "angle": 60,
+       "height": 24,
+       "warmth": 0.4,
+       "ratio": 8,
+       "key": 1.6,
+       "softness": 0.01
+      },
+      "floor": {
+       "color": "#EEEAE2",
+       "roughness": 0.5
+      },
+      "camera": {
+       "lens": "portrait85",
+       "shake": "breath",
+       "keys": [
+        {
+         "t": 0,
+         "pos": [
+          -0.05,
+          0.42,
+          1.75
+         ],
+         "target": [
+          -0.08,
+          0.38,
+          0
+         ],
+         "fstop": 8
+        },
+        {
+         "t": 5.0,
+         "pos": [
+          -0.05,
+          0.42,
+          1.55
+         ],
+         "target": [
+          -0.08,
+          0.38,
+          0
+         ],
+         "fstop": 8
+        }
+       ]
+      },
+      "objects": [
+       {
+        "type": "box",
+        "name": "wall",
+        "size": [
+         6,
+         3,
+         0.05
+        ],
+        "pos": [
+         0,
+         1.5,
+         -0.4
+        ],
+        "material": {
+         "texture": "polyhaven:texture/beige_wall_001",
+         "color": "#8FB5AA"
+        }
+       },
+       {
+        "type": "model",
+        "name": "succ",
+        "src": "polyhaven:model/potted_plant_04",
+        "pos": [
+         0.42,
+         0,
+         -0.05
+        ]
+       },
+       {
+        "type": "model",
+        "name": "arrow",
+        "src": "polyhaven:model/potted_plant_02",
+        "pos": [
+         -0.05,
+         0,
+         -0.08
+        ],
+        "scale": 0.55
+       },
+       {
+        "type": "model",
+        "name": "ped",
+        "src": "polyhaven:model/potted_plant_01",
+        "pos": [
+         -0.6,
+         0,
+         -0.1
+        ],
+        "scale": 0.5
+       },
+       {
+        "type": "cylinder",
+        "name": "stem",
+        "radius": 0.004,
+        "height": 0.06,
+        "pos": [
+         -0.07,
+         0.16,
+         0.035
+        ],
+        "material": {
+         "extends": "plastic",
+         "base": "#F2F0EA",
+         "roughness": 0.3
+        }
+       },
+       {
+        "type": "lathe",
+        "name": "sensor",
+        "segments": 64,
+        "points": [
+         [
+          0,
+          0
+         ],
+         [
+          0.012,
+          0.0005
+         ],
+         [
+          0.0175,
+          0.004
+         ],
+         [
+          0.019,
+          0.009
+         ],
+         [
+          0.0165,
+          0.0145
+         ],
+         [
+          0.009,
+          0.0175
+         ],
+         [
+          0,
+          0.018
+         ]
+        ],
+        "pos": [
+         -0.07,
+         0.19,
+         0.035
+        ],
+        "material": {
+         "extends": "plastic",
+         "base": "#F5F3EE",
+         "roughness": 0.22,
+         "imperfections": 0.15
+        }
+       },
+       {
+        "type": "particles",
+        "name": "name",
+        "count": 60000,
+        "seed": 7,
+        "emit": {
+         "shape": "box",
+         "pos": [
+          -0.08,
+          0.6,
+          0.15
+         ],
+         "size": [
+          1.0,
+          0.9,
+          0.9
+         ]
+        },
+        "velocity": [
+         0,
+         -0.05,
+         0
+        ],
+        "spread": 0.02,
+        "drag": 0.6,
+        "flow": {
+         "strength": 0.02,
+         "scale": 0.05,
+         "evolve": 0.3
+        },
+        "target": {
+         "text": "loam",
+         "font": "Bricolage Grotesque",
+         "weight": 800,
+         "height": 0.16,
+         "depth": 0.01,
+         "pos": [
+          -0.08,
+          0.6,
+          0.12
+         ],
+         "from": 0.15,
+         "to": 1.6
+        },
+        "size": 0.0011,
+        "color": "#EAF4F8",
+        "blend": "over",
+        "lit": true,
+        "glint": {
+         "amount": 1.5,
+         "sharpness": 60
+        },
+        "opacity": "=0.06 + 0.89*clamp((t - 1.35)/0.35, 0, 1)"
+       },
+       {
+        "type": "particles",
+        "name": "line",
+        "count": 18000,
+        "seed": 9,
+        "emit": {
+         "shape": "box",
+         "pos": [
+          -0.08,
+          0.5,
+          0.05
+         ],
+         "size": [
+          0.4,
+          0.2,
+          0.2
+         ]
+        },
+        "velocity": [
+         0,
+         -0.05,
+         0
+        ],
+        "spread": 0.02,
+        "drag": 0.6,
+        "start": 1.6,
+        "target": {
+         "text": "Out now.",
+         "font": "Bricolage Grotesque",
+         "weight": 700,
+         "height": 0.035,
+         "depth": 0.004,
+         "pos": [
+          -0.08,
+          0.48,
+          0.12
+         ],
+         "from": 1.7,
+         "to": 2.3
+        },
+        "size": 0.0006,
+        "color": "#EAF4F8",
+        "blend": "over",
+        "lit": true,
+        "opacity": "=0.95*clamp((t - 2.3)/0.3, 0, 1)"
+       }
+      ]
+     }
+    }
+   ]
+  }
+ ]
+}

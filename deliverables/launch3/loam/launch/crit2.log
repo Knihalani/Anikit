@@ -1,0 +1,4 @@
+judging pass2 vs ['wealthsimple-trade', 'tiffany-holiday', 'da-vincis-demons']
+  trial 0: {'A': 'da-vincis-demons', 'B': 'wealthsimple-trade', 'C': 'candidate', 'D': 'tiffany-holiday'}  ranking=['A', 'D', 'C', 'B']  34.0s $0.1632548
+  trial 1: {'A': 'da-vincis-demons', 'B': 'wealthsimple-trade', 'C': 'tiffany-holiday', 'D': 'candidate'}  ranking=['A', 'C', 'D', 'B']  31.9s $0.1605204
+{"name": "pass2", "verdict": "FAIL", "ref_mean": 5.94, "delta": -1.82, "cost_usd": 0.512, "cand_overall": 4.12, "judged_pro": "0/2"}

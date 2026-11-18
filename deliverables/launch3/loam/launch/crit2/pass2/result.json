@@ -1,0 +1,388 @@
+{
+  "name": "pass2",
+  "tags": [
+    "product-launch",
+    "cg-3d"
+  ],
+  "refs": [
+    "wealthsimple-trade",
+    "tiffany-holiday",
+    "da-vincis-demons"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 4.0,
+      "composition": 4.5,
+      "typography": 3.0,
+      "colour": 5.0,
+      "light_texture": 6.0,
+      "motion": 4.0,
+      "craft": 3.5,
+      "originality": 3.0
+    },
+    "overall": 4.12,
+    "judged_professional": "0/2",
+    "pro_rate": 0.0,
+    "mean_rank": 3,
+    "gaps": [
+      "Find a specific idea: make the soil, roots or moisture the visual world instead of filming a pot being rained on",
+      "Typography needs a point of view, with a custom or chosen face, scale and integration with the image instead of a centred wordmark plus a default tagline",
+      "Build depth and material: dense, layered frames with real soil, terracotta and leaf texture, as in A, and varied shot design instead of one repeated set-up",
+      "It needs an idea beyond literal watering: a point of view on what the sensor means (time, care, the plant's perspective).",
+      "Model consistency and craft need work: the pot, soil and sensor should be one coherent, detailed asset across every shot, with real material response to the water.",
+      "The typography needs a designed logotype and integration with the image instead of a centred default grotesk with a particle effect."
+    ],
+    "tells": [
+      "The same set-up repeats: one terracotta pot, one plant, one diagonal window shadow, with the camera only pushing in and out",
+      "The idea is literal: water falls on the plant, a sensor sits in the soil, the product name appears. Nothing would be remembered or shared",
+      "Rain and spray are default particle emitters with no designed shape or weight",
+      "'loam / Out now.' is set in a generic bold grotesk, centred like a slide, with a particle-dissolve effect standing in for a typographic idea",
+      "Window-shadow light is the one real asset, but it is the standard hobbyist 3D lighting trick, and the materials (pot, soil, sensor) read as untextured defaults",
+      "One idea stated literally: a smart plant sensor, falling water, then the product name. It amounts to the product plus a diagram of what it does.",
+      "Nearly the same wide shot of the pot against a green wall with window-shadow stripes repeats in four of six frames.",
+      "The pot's shape and decoration are inconsistent between frames, and in frame 3 the pot warps. That looks like an automated or generative inconsistency.",
+      "The end card is a generic bold sans 'loam' with a particle-dissolve effect and a default 'Out now.' line placed centrally, like a slide.",
+      "The window-shadow light is the one considered element, and it is a stock trope."
+    ]
+  },
+  "refs_summary": {
+    "wealthsimple-trade": {
+      "overall": 2.88,
+      "judged_professional": "0/2",
+      "mean_rank": 4
+    },
+    "tiffany-holiday": {
+      "overall": 7.19,
+      "judged_professional": "2/2",
+      "mean_rank": 2
+    },
+    "da-vincis-demons": {
+      "overall": 7.75,
+      "judged_professional": "2/2",
+      "mean_rank": 1
+    }
+  },
+  "ref_mean": 5.94,
+  "delta": -1.82,
+  "trials": [
+    {
+      "key": {
+        "A": "da-vincis-demons",
+        "B": "wealthsimple-trade",
+        "C": "candidate",
+        "D": "tiffany-holiday"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 7,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "Title sequence made like a Renaissance notebook: the Vitruvian Man, St Peter's dome, the Mona Lisa and machine schematics are layered with ink-wash illustration, so the visual language is specific to its subject",
+              "Dense, multiply-layered frames: mirror-written notebook script, perspective construction lines, ink spatter, parchment grain and painted clouds all sit at different depths",
+              "Deliberate muted palette of violet, sepia and bruised umber, consistent across every frame and unusual for the genre",
+              "Composition changes every frame (sky, architecture, macro hand and pen, a split face over a horizon, an upturned portrait with an orbit arc, a figure over blueprints), which implies real choreography and transitions",
+              "Credits are set in a classical small-caps serif that is placed to fit each composition instead of being locked to one position"
+            ],
+            "gaps": [
+              "The typography is the safe, expected Trajan-style title-card serif and is never integrated into the image; it could carry its own idea, such as mirror-writing or ink-drawn construction",
+              "Some illustration, especially the upturned portrait and the hand with the pen, leans on a digital-painting look that is less refined than the archival layers around it",
+              "The dark-over-texture grade is applied evenly, so frames lack a single striking colour or graphic beat that would make the sequence instantly recognisable"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.7,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 8,
+              "motion": 8,
+              "craft": 7,
+              "originality": 6
+            },
+            "tells": [
+              "Has a narrative device: a jewelled bird travels through the city as a guide (clock face, overhead taxi corner, theatre stage, brownstone facade, dinner table), which implies a real story and continuity of motion",
+              "Varied, cinematic camera grammar: macro shallow focus, a top-down overhead, a wide stage shot, an architectural mid shot and an interior shot",
+              "Motivated light: a stage rim, warm window practicals, string lights and candle bokeh",
+              "No visible type, which suits a brand-film narrative where the jewel itself is the logo",
+              "Signs of weakness: the final painted desert frame breaks the style abruptly, and the sparkle trails are generic particle effects"
+            ],
+            "gaps": [
+              "Style consistency: the painterly desert frame clashes with the photoreal CG and reads as a different production, or an unmotivated jump",
+              "The sparkle-trail motif is a stock particle effect; A's layered, subject-specific texture shows how a signature visual device could replace it",
+              "The idea is luxury-holiday familiar (magic object flies through New York at night) and needs a stranger, more ownable turn"
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.7,
+            "scores": {
+              "idea": 4,
+              "composition": 5,
+              "typography": 3,
+              "colour": 5,
+              "light_texture": 6,
+              "motion": 4,
+              "craft": 4,
+              "originality": 3
+            },
+            "tells": [
+              "The same set-up repeats: one terracotta pot, one plant, one diagonal window shadow, with the camera only pushing in and out",
+              "The idea is literal: water falls on the plant, a sensor sits in the soil, the product name appears. Nothing would be remembered or shared",
+              "Rain and spray are default particle emitters with no designed shape or weight",
+              "'loam / Out now.' is set in a generic bold grotesk, centred like a slide, with a particle-dissolve effect standing in for a typographic idea",
+              "Window-shadow light is the one real asset, but it is the standard hobbyist 3D lighting trick, and the materials (pot, soil, sensor) read as untextured defaults"
+            ],
+            "gaps": [
+              "Find a specific idea: make the soil, roots or moisture the visual world instead of filming a pot being rained on",
+              "Typography needs a point of view, with a custom or chosen face, scale and integration with the image instead of a centred wordmark plus a default tagline",
+              "Build depth and material: dense, layered frames with real soil, terracotta and leaf texture, as in A, and varied shot design instead of one repeated set-up"
+            ]
+          },
+          "B": {
+            "verdict": "not professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 2,
+              "composition": 3,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 4,
+              "motion": 2,
+              "craft": 3,
+              "originality": 2
+            },
+            "tells": [
+              "Every frame has the same composition: a single centred object on a flat pastel seamless (cream, mint, blush, grey), the tasteful-AI product-render look",
+              "The subjects are unconnected (earbuds, a steering wheel with clip-art traffic icons, a cannabis bud ball, a plug in a glowing port, a retro chess TV, a sci-fi core), so no idea or narrative links them",
+              "Inconsistent frame aspect ratios and an abrupt navy final frame suggest assembled generator outputs, not a designed film",
+              "Flat, even studio light with soft AI-typical sheen; icon pills on the steering wheel read as placeholder UI",
+              "No typography; its absence leaves the piece with no message or identity, so it does not serve the work",
+              "There is almost no implied motion: each frame is a static hero object, with no choreography between them"
+            ],
+            "gaps": [
+              "Needs a single idea that ties the objects together and gives a reason to watch, unlike A's subject-specific world",
+              "Break the one centred-object-on-pastel layout: use varied scale, cropping, depth and layered frames",
+              "Motivated light, real material and actual motion design (transforms, transitions, choreography) instead of a sequence of still renders"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "D",
+          "C",
+          "B"
+        ]
+      },
+      "meta": {
+        "seconds": 34.0,
+        "cost_usd": 0.1632548,
+        "tokens": 72210,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "da-vincis-demons",
+        "B": "wealthsimple-trade",
+        "C": "tiffany-holiday",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 7,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "A specific conceit: Leonardo's notebooks (Vitruvian Man, mechanical sketches, mirror-script pages) become the world the cast lives in. Only this piece could use it.",
+              "Dense, layered frames: hand-drawn linework over painted skies, ink splatter, parchment grain and engraved architecture, all in a coherent bruised violet and umber palette.",
+              "Compositions change every shot: an extreme close-up of a quill, the Mona Lisa split by a horizon with a rider silhouetted on it, an upturned face framed by a compass arc, a figure aiming a device.",
+              "Credits are set in small caps in a classical serif and placed into the negative space of each image, not centred like a slide.",
+              "Material texture throughout (smoke, ink bloom, aged paper) and directional light that is motivated."
+            ],
+            "gaps": [
+              "Typography is safe: one Trajan-like small-caps treatment at one size. Letting the credits interact with the drawn construction lines or the mirror-writing would give the type its own idea.",
+              "The violet grade sits over every shot evenly. A stronger tonal arc across the sequence (parchment warmth giving way to night-blue) would add dramatic shape.",
+              "Some sources are quoted too literally (the Mona Lisa, the Vitruvian Man). A more surprising reading of the notebooks would lift its originality to award level."
+            ]
+          },
+          "B": {
+            "verdict": "not professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 3,
+              "composition": 2,
+              "typography": 2,
+              "colour": 4,
+              "light_texture": 4,
+              "motion": 2,
+              "craft": 4,
+              "originality": 2
+            },
+            "tells": [
+              "Every frame repeats one composition: a single round object dead centre on a flat pastel or cream ground, mostly empty frame.",
+              "The subjects share no concept (earbuds, a steering wheel with traffic-sign pills, a cannabis bud, a socket, a retro chess TV, a glowing reactor ring), which suggests unrelated generated prompts rather than a film.",
+              "The traffic-sign icons floating around the steering wheel look like placeholder UI badges.",
+              "Soft, even studio light and plasticky surfaces read as generic 'tasteful AI' product rendering. The aspect ratio also changes between frames.",
+              "No type and no implied choreography between frames. The absence of type adds nothing here."
+            ],
+            "gaps": [
+              "There is no unifying idea. It needs a premise linking the objects (a transformation, a story, a product truth) so each frame follows from the last.",
+              "The centred-object-on-pastel layout never varies. It needs real composition: scale changes, cropping, environments, camera movement implied between frames.",
+              "Lighting and material are generic. Motivated, characterful light and real surface imperfection would give the renders weight and authorship."
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.7,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 5,
+              "colour": 8,
+              "light_texture": 8,
+              "motion": 8,
+              "craft": 7,
+              "originality": 6
+            },
+            "tells": [
+              "A clear narrative device: a jewelled bird and its sparkle trail carry the viewer across a city at night, from a clock face to a top-down street corner, a stage, a brownstone facade and a dinner table.",
+              "Strong shot variety (overhead, macro with shallow focus, wide stage, architectural) shows choreographed travel and real cinematography.",
+              "Lighting is motivated and rich: practical window glow, string lights, candlelight and stage floods. The palette is warm and teal with gold accents.",
+              "The final painted desert frame breaks the visual language. It is either a deliberate dream shift or a seam in the piece, and it costs some consistency.",
+              "No type is visible. That suits a brand film, but it leaves the identity work unproven."
+            ],
+            "gaps": [
+              "The jump in style to the painterly Monument Valley frame is not set up. Either commit to that dream logic or keep one rendering language.",
+              "The idea of a magical bird delivering festive wonder is close to holiday-advert convention. It needs a sharper twist.",
+              "The sparkle-trail effect is overused as connective tissue. Finding more inventive transitions would show more authorship."
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.75,
+            "scores": {
+              "idea": 4,
+              "composition": 4,
+              "typography": 3,
+              "colour": 5,
+              "light_texture": 6,
+              "motion": 4,
+              "craft": 3,
+              "originality": 3
+            },
+            "tells": [
+              "One idea stated literally: a smart plant sensor, falling water, then the product name. It amounts to the product plus a diagram of what it does.",
+              "Nearly the same wide shot of the pot against a green wall with window-shadow stripes repeats in four of six frames.",
+              "The pot's shape and decoration are inconsistent between frames, and in frame 3 the pot warps. That looks like an automated or generative inconsistency.",
+              "The end card is a generic bold sans 'loam' with a particle-dissolve effect and a default 'Out now.' line placed centrally, like a slide.",
+              "The window-shadow light is the one considered element, and it is a stock trope."
+            ],
+            "gaps": [
+              "It needs an idea beyond literal watering: a point of view on what the sensor means (time, care, the plant's perspective).",
+              "Model consistency and craft need work: the pot, soil and sensor should be one coherent, detailed asset across every shot, with real material response to the water.",
+              "The typography needs a designed logotype and integration with the image instead of a centred default grotesk with a particle effect."
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "C",
+          "D",
+          "B"
+        ]
+      },
+      "meta": {
+        "seconds": 31.9,
+        "cost_usd": 0.1605204,
+        "tokens": 72086,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "critic": {
+    "answer": {
+      "scores": {
+        "motion": 5,
+        "sound": 6,
+        "craft": 5
+      },
+      "checks": {
+        "idea": true,
+        "invariant": false,
+        "arc": true,
+        "type_meaning": false,
+        "freeze_frame": false,
+        "ending": true,
+        "restraint": true,
+        "material": false,
+        "sync": false
+      },
+      "defects": [
+        "Rain is drawn as rows of evenly spaced dots instead of motion-blurred streaks, so each drop reads as a stepped stack of samples (very visible in the close-up shots).",
+        "The rain looks pasted on as a flat 2D layer: it doesn't pick up the scene's depth of field, it sits in front of the leaves without proper depth sorting, and it leaves no splashes or wet spots on leaves or soil.",
+        "The pot changes design between shots, from a round pot with a lip to a footed urn, with no motivation, which breaks continuity.",
+        "The wide three-pot shot has a large, flat, unlit dark-grey area of floor in the lower half that reads as an empty render void.",
+        "The 'l' of the 'loam' logo forms more sparsely and raggedly than the other letters, so the wordmark looks unfinished when it settles; the tagline 'Out now.' uses a generic bold sans that doesn't relate to the particle logo.",
+        "In the burst shot the particle field looks uniform, with no clear direction, focal point or variation in density; at 100% the particles are soft, with no light falloff or interaction with the scene.",
+        "There is a 5.0 s shot with low change per second, which is dead air for a 15 s piece."
+      ],
+      "gaps": [
+        "Motion: the rain is the only device and it moves linearly with no weight. Drops don't speed up, hit anything or splash, and the burst-to-logo move has no anticipation, overshoot or settle. Top studio work would make water touching the sensor the cause that sets off the burst.",
+        "Finish: the photoreal CG plant and pot are mixed with flat 2D dotted particles that ignore depth of field, lighting and shadow. The two never share one material world, so the hero moment (rain turning into the logo) looks like a plug-in preset instead of a crafted, lit simulation.",
+        "Sound: the track looks produced, with a rhythmic pulse, a high-frequency riser from about 5.6 to 7.5 s, a drop-out from about 8.5 to 10 s and a re-entry at about 10.2 s. But nothing shows the cuts or the particle burst landing on those transients, and there is no evidence of specific sound design (drips, soil, the sensor) beyond the music."
+      ]
+    },
+    "meta": {
+      "seconds": 24.8,
+      "cost_usd": 0.1877694,
+      "tokens": 75084,
+      "models": [
+        "claude-opus-5-5"
+      ]
+    },
+    "pace": "pass2.mp4: 15.0s, 7 shots, median 1.87s, longest 5.00s\nper-second change: [19.3, 41.6, 12.7, 58.3, 11.0, 40.8, 10.4, 49.2, 50.4, 51.6, 32.0, 29.1, 16.2, 15.3]\nPACE: FAIL \u2014 longest shot 5.0s > 2.5s"
+  },
+  "full_scores": {
+    "idea": 4.0,
+    "composition": 4.5,
+    "typography": 3.0,
+    "colour": 5.0,
+    "light_texture": 6.0,
+    "motion": 4.5,
+    "craft": 4.25,
+    "originality": 3.0,
+    "sound": 6
+  },
+  "full_overall": 4.47,
+  "cost_usd": 0.512,
+  "judge_seconds": 90.7,
+  "verdict": "FAIL"
+}

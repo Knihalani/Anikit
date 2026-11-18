@@ -1,0 +1,392 @@
+{
+  "name": "pass1",
+  "tags": [
+    "product-launch",
+    "cg-3d"
+  ],
+  "refs": [
+    "wealthsimple-trade",
+    "tiffany-holiday",
+    "da-vincis-demons"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 4.0,
+      "composition": 3.5,
+      "typography": 2.5,
+      "colour": 3.5,
+      "light_texture": 3.5,
+      "motion": 3.5,
+      "craft": 2.5,
+      "originality": 3.0
+    },
+    "overall": 3.25,
+    "judged_professional": "0/2",
+    "pro_rate": 0.0,
+    "mean_rank": 3.5,
+    "gaps": [
+      "It needs a real typographic point of view. Treat 'loam' as a designed wordmark, with scale contrast and type that interacts with soil, light or growth, instead of a default sans pasted on the floor.",
+      "The lighting and materials need to be rebuilt. Terracotta, soil and leaves deserve real texture, subsurface translucency on the leaves, and a motivated light that changes over time to sell the passing days.",
+      "It needs a less literal idea and more cinematography. Vary scale and camera (macro roots, a time-lapse arc, a surprising reveal) so the film has a memorable image like A's or D's.",
+      "It needs an idea beyond 'plants appear plus tagline'. Give the passage of time or growth a specific visual metaphor",
+      "The typography needs a point of view: a chosen face, real scale contrast, and type that interacts with soil, light or shadow",
+      "The materials and light need real craft. Use richer soil, ceramic and leaf texture and dramatic, motivated light rather than a flat beige set"
+    ],
+    "tells": [
+      "Stock 3D assets (pots and houseplants) sit on a flat grey floor against a drab olive wall. The materials are basic, the textures are low detail and the shadows are soft and generic.",
+      "Typography uses default bold or italic grotesk text ('Not yet.', 'Sunday.', 'loam', 'Out now.') laid flat on the floor plane with no scale idea, kerning care or integration with the scene.",
+      "The camera and composition barely change: a centred pot, then three pots in a row. The 'window light' frame is a single gobo plane.",
+      "The central idea (plants growing until launch day) is literal and obvious, with a product name and 'Out now.' as the payoff, like a template.",
+      "The muddy beige-olive palette has no accent and no intent. Light is flat and unmotivated except for one window cookie.",
+      "A literal, obvious idea: plants grow, 'Not yet.', 'Sunday.', then 'loam / Out now.' It is a product launch reduced to a caption sequence",
+      "Default bold grotesk set in perspective on the floor like a slide. 'loam' is cropped mid-frame. There is no typographic idea or scale system",
+      "Stock 3D assets: generic pot and plant models, a bland stucco wall and a beige floor. The pot in frame 2 has an odd modelling artefact",
+      "Muted, single-note beige and olive palette. The window-light gobo is the only lighting idea, and it is a stock move",
+      "The same tabletop set repeats with little change. The motion amounts to a camera push and objects appearing"
+    ]
+  },
+  "refs_summary": {
+    "wealthsimple-trade": {
+      "overall": 3.56,
+      "judged_professional": "0/2",
+      "mean_rank": 3.5
+    },
+    "tiffany-holiday": {
+      "overall": 7.88,
+      "judged_professional": "2/2",
+      "mean_rank": 2
+    },
+    "da-vincis-demons": {
+      "overall": 7.88,
+      "judged_professional": "2/2",
+      "mean_rank": 1
+    }
+  },
+  "ref_mean": 6.44,
+  "delta": -3.19,
+  "trials": [
+    {
+      "key": {
+        "A": "da-vincis-demons",
+        "B": "wealthsimple-trade",
+        "C": "candidate",
+        "D": "tiffany-holiday"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.93,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 7,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 8,
+              "originality": 8
+            },
+            "tells": [
+              "A specific idea tied to its subject: Leonardo's notebooks (Vitruvian Man, flying machines, mirror-script pages, the Mona Lisa) are layered with ink-drawn figures. Only this show could have this opening.",
+              "Dense, layered frames: hand-inked line work over painted skies, paper grain, ink spatter and vellum texture, with real depth between the layers.",
+              "Deliberate palette of bruised violet, sepia and bone, with tone shifting from frame to frame instead of a single accent colour.",
+              "Composition changes in every frame: a centred figure, an architectural elevation with perspective lines, an extreme close-up of a pen nib, a horizon split with a tiny rider, a face looking upward framed by a circle, a diagonal figure with a crossbow. This shows choreography, not a repeated template.",
+              "Credits are set in small caps in a classical serif that fits the period. They sit in the negative space of each composition rather than at a fixed position."
+            ],
+            "gaps": [
+              "The typography is fitting but conservative. The credits never interact with the ink, the geometry or the mirror script, so the type has less of an idea than the image does.",
+              "Some frames lean on familiar 'grunge illustration' textures and a purple grade that dates the piece. A more restrained or surprising grade would set it apart.",
+              "The central idea (the da Vinci sketchbook come to life) is apt but expected. There is no single image as surprising or emotionally charged as D's jewelled bird crossing New York."
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 9,
+              "craft": 9,
+              "originality": 7
+            },
+            "tells": [
+              "A clear narrative device: a jewelled, articulated bird and its particle trail carry the viewer through connected worlds (a clock face, an overhead street with a yellow cab, a ballet stage, brownstone windows, a dinner table, a painted desert mesa).",
+              "Real cinematic light: practical bokeh, candle and window glow, volumetric stage beams, specular sparkle on the jewelled metal. Materials read as precious metal, brick, porcelain and paint.",
+              "Strong variety in camera and scale (an overhead plan, a close-up through a clock, a wide stage, a balcony view), and the recurring sparkle trail links the shots, which suggests choreographed transitions.",
+              "A bold shift in style to a painterly desert in the final frame shows confidence and an element of surprise.",
+              "No type is visible. Its absence serves a brand film that relies on image alone."
+            ],
+            "gaps": [
+              "The vocabulary is luxury-holiday-campaign familiar: a magical sparkle trail, a New York taxi, a ballerina. The idea is executed superbly but is not new.",
+              "No typographic idea is visible. A considered end-frame or title integrated with the bird's trail would make it complete as a piece of motion design.",
+              "The tonal range jumps between photoreal CG and painted illustration without visible logic in the sampled frames. The bridge needs to be clearer to read as one authored world."
+            ]
+          },
+          "B": {
+            "verdict": "not professional",
+            "confidence": 0.7,
+            "scores": {
+              "idea": 3,
+              "composition": 3,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 5,
+              "motion": 3,
+              "craft": 5,
+              "originality": 3
+            },
+            "tells": [
+              "The same composition repeats: one centred circular object on a flat cream, pastel or blue seamless ground, with the object swapped out each time (earbuds case, steering wheel, a ball of cannabis, a plug socket, a ball-shaped CRT, a turbine ring).",
+              "A generic 'tasteful AI render' look: soft, even studio light, pastel backdrops, clean product-shot finish and no environment or narrative.",
+              "Placeholder UI-style icon bubbles (a yield sign, a no-entry sign, a traffic light, an arrow) float around the steering wheel like stock iconography.",
+              "Objects are chosen with no visible connecting idea, and the logic in the details is off (a chess board with nonsensical pieces, a plug merging into a glowing porthole). This is typical of image-generator output.",
+              "The frames show no choreography. Each one is an isolated still with no implied camera move, transition or build.",
+              "No type is visible, and nothing replaces it to carry meaning."
+            ],
+            "gaps": [
+              "There is no concept connecting the objects. It needs an idea, a narrative or a transformation logic that would make these specific things belong in one film.",
+              "Every frame is a centred hero object on a seamless backdrop. It needs compositional variety, scale contrast, environment and depth.",
+              "There is no evidence of motion design. It needs transitions, morphs or camera choreography that link one object to the next, as A and D do."
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 4,
+              "composition": 3,
+              "typography": 2,
+              "colour": 3,
+              "light_texture": 3,
+              "motion": 3,
+              "craft": 2,
+              "originality": 3
+            },
+            "tells": [
+              "Stock 3D assets (pots and houseplants) sit on a flat grey floor against a drab olive wall. The materials are basic, the textures are low detail and the shadows are soft and generic.",
+              "Typography uses default bold or italic grotesk text ('Not yet.', 'Sunday.', 'loam', 'Out now.') laid flat on the floor plane with no scale idea, kerning care or integration with the scene.",
+              "The camera and composition barely change: a centred pot, then three pots in a row. The 'window light' frame is a single gobo plane.",
+              "The central idea (plants growing until launch day) is literal and obvious, with a product name and 'Out now.' as the payoff, like a template.",
+              "The muddy beige-olive palette has no accent and no intent. Light is flat and unmotivated except for one window cookie."
+            ],
+            "gaps": [
+              "It needs a real typographic point of view. Treat 'loam' as a designed wordmark, with scale contrast and type that interacts with soil, light or growth, instead of a default sans pasted on the floor.",
+              "The lighting and materials need to be rebuilt. Terracotta, soil and leaves deserve real texture, subsurface translucency on the leaves, and a motivated light that changes over time to sell the passing days.",
+              "It needs a less literal idea and more cinematography. Vary scale and camera (macro roots, a time-lapse arc, a surprising reveal) so the film has a memorable image like A's or D's."
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "D",
+          "B",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 35.3,
+        "cost_usd": 0.1799232,
+        "tokens": 72401,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "da-vincis-demons",
+        "B": "wealthsimple-trade",
+        "C": "tiffany-holiday",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 7,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "A specific idea that only this piece could have: Renaissance codex drawings (Vitruvian Man, flying-machine sketches, mirror-script notes) are layered and composited with painted figures and architecture, so the subject's notebooks become the visual language",
+              "Dense, layered frames: ink linework over painted skies, parchment stains, ink spatter, a construction circle cutting through a portrait",
+              "Deliberate split-tone palette of bruised violet, sepia and umber, carried consistently across every frame",
+              "Real texture and motivated light: paper grain, a glow behind the Vitruvian figure, chiaroscuro on the upturned face",
+              "Credits set in classical small caps that suit the period, placed in the negative space of each composition rather than in a fixed slot",
+              "Choreography is implied by changing scale and subject: cosmic diagram, then city, then hand and pen, then portrait, then machine"
+            ],
+            "gaps": [
+              "The type is tasteful but conventional. It never plays with the codex itself (mirror writing, ink being drawn on) and doesn't link up with the drawn lines",
+              "A few frames lean on familiar icons (Mona Lisa, Vitruvian Man) in a way that feels close to illustrated clich\u00e9",
+              "The heavy grunge and spatter overlays flatten the depth in places. More restraint in the texture layer would let the drawings breathe"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "A clear narrative device carries the film: a jewelled bird and its sparkle trail travel through a city, past a clock face, a stage and a dinner table, then into a painted desert",
+              "Cinematic lighting with real intent: practical window glow, string lights, footlights on the ballerina, candlelight at the table, and real shallow depth of field",
+              "The camera language varies: macro, a top-down street view, a wide stage shot, an over-the-shoulder shot. That suggests deliberate choreography between beats",
+              "The palette moves with the story, from teal and gold night tones to warm candlelight to the terracotta desert",
+              "The final frame changes medium from CG to painterly, which is a genuine surprise",
+              "No type is visible in these frames. Its absence serves the piece: the image carries it as a branded film, and an end card is probably out of frame"
+            ],
+            "gaps": [
+              "The festive luxury vocabulary (magic sparkle trail, yellow cab, snowy city) is very familiar from the genre. It needs a less expected idea at its core",
+              "The jump from the CG city to the painted desert looks unmotivated in the sampled frames. That transition needs stronger connective logic",
+              "Type is missing or generic. The best entry ties its type into the image, and this one could make the brand mark part of the world"
+            ]
+          },
+          "B": {
+            "verdict": "not professional",
+            "confidence": 0.7,
+            "scores": {
+              "idea": 3,
+              "composition": 3,
+              "typography": 3,
+              "colour": 5,
+              "light_texture": 5,
+              "motion": 2,
+              "craft": 4,
+              "originality": 3
+            },
+            "tells": [
+              "Every frame uses the same composition: one centred, roughly circular object on a flat pastel or cream seamless ground",
+              "The subjects don't connect (earbuds, a steering wheel with traffic-sign UI badges, a cannabis bud, a plug socket, a chess CRT, a stadium chip), which suggests a batch of generated images, not a designed film",
+              "Placeholder UI icons float around the steering wheel, and the final frame's glowing tech-chip is generic",
+              "Soft, uniform studio light with no motivation. The materials read as 'tasteful AI render'",
+              "Aspect ratios vary from frame to frame, and nothing shows choreography or a transformation from one object to the next",
+              "No type is visible, and its absence doesn't help: nothing tells the viewer what the piece is about"
+            ],
+            "gaps": [
+              "There is no single idea. It needs one concept that links the objects, such as a morph sequence or a narrative, rather than a gallery of renders",
+              "The frames repeat one centred layout. It needs varied scale, cropping and camera, and real transitions",
+              "The light is neutral and anonymous. It needs a light and material point of view like A's painted chiaroscuro"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 4,
+              "composition": 4,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 4,
+              "motion": 4,
+              "craft": 3,
+              "originality": 3
+            },
+            "tells": [
+              "A literal, obvious idea: plants grow, 'Not yet.', 'Sunday.', then 'loam / Out now.' It is a product launch reduced to a caption sequence",
+              "Default bold grotesk set in perspective on the floor like a slide. 'loam' is cropped mid-frame. There is no typographic idea or scale system",
+              "Stock 3D assets: generic pot and plant models, a bland stucco wall and a beige floor. The pot in frame 2 has an odd modelling artefact",
+              "Muted, single-note beige and olive palette. The window-light gobo is the only lighting idea, and it is a stock move",
+              "The same tabletop set repeats with little change. The motion amounts to a camera push and objects appearing"
+            ],
+            "gaps": [
+              "It needs an idea beyond 'plants appear plus tagline'. Give the passage of time or growth a specific visual metaphor",
+              "The typography needs a point of view: a chosen face, real scale contrast, and type that interacts with soil, light or shadow",
+              "The materials and light need real craft. Use richer soil, ceramic and leaf texture and dramatic, motivated light rather than a flat beige set"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "C",
+          "D",
+          "B"
+        ]
+      },
+      "meta": {
+        "seconds": 30.8,
+        "cost_usd": 0.1614678,
+        "tokens": 72131,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "critic": {
+    "answer": {
+      "scores": {
+        "motion": 4,
+        "sound": 5,
+        "craft": 4
+      },
+      "checks": {
+        "idea": true,
+        "invariant": true,
+        "arc": false,
+        "type_meaning": false,
+        "freeze_frame": false,
+        "ending": true,
+        "restraint": true,
+        "material": true,
+        "sync": false
+      },
+      "defects": [
+        "100% crop: the wall/floor horizon line shows hard stair-step aliasing; it reads as a raw real-time render edge, not a resolved one",
+        "Plant foliage has cutout or alpha-card edges with hard dark fringes and no soft self-shadowing, so the leaves look like pasted textures against the softly lit wall",
+        "Contact shadows are weak or missing: pots seem to float on the table (frame 2 close-up, frame 3 urn), and the large blurry wall shadows aren't anchored to any object",
+        "The white pot carries an odd melted-looking tag or spout attachment that reads as a modelling artefact at close-up",
+        "Floor type ('Not yet.', 'Sunday.', 'A splash.') is a generic heavy sans with soft, blurry perspective rendering, and the 'loam' wordmark is cropped at the frame edge mid-move",
+        "Pairs show almost no change 1/6 s apart in every row: the shots are slow, uneased camera drifts over static sets, which counts as dead air",
+        "There is a 5.0 s hold, and 3/14 seconds look the same as the previous second; the end tag sits static for about 4 s with only a light change",
+        "End card: 'Out now.' is set in a second, smaller green type treatment that clashes with the grey floor-projected system"
+      ],
+      "gaps": [
+        "Motion: no real choreography. Nothing grows, gets watered, sways or reacts, and the 'splash' moment shows no splash. The idea (the plant's answer written on the floor) needs a physical event in each shot: soil darkening, leaves lifting, a shadow sweeping across as time passes. Instead it's a camera dolly over still life. Top studios would also use the window-light shadow sweep as the transition between shots rather than hard cuts.",
+        "Sound: the spectrogram shows one repeated pluck or percussion loop with a flat, static wideband noise bed (5.6\u20137.6 s) and a dropout to silence (~9\u201310 s). That's the only dynamic gesture, and it isn't clearly tied to a cut or to the reveal. There's no foley (water, soil, ceramic) and no sound design selling the material world, and nothing visible lands on the transients.",
+        "Finish: real-time-engine quality, with an aliased horizon, cutout foliage, floating pots and soft, low-contrast floor type. The wall texture and light falloff are pleasant, but the render needs AA, proper contact occlusion, leaf subsurface and crisper projected type to reach studio level. The energy curve is also flat, with no build to a peak before the logo."
+      ]
+    },
+    "meta": {
+      "seconds": 28.1,
+      "cost_usd": 0.19298,
+      "tokens": 75409,
+      "models": [
+        "claude-opus-5-5"
+      ]
+    },
+    "pace": "pass1.mp4: 15.0s, 6 shots, median 2.20s, longest 5.00s\nper-second change: [4.6, 34.7, 9.4, 51.4, 9.6, 51.9, 8.3, 40.7, 25.9, 28.5, 6.3, 6.8, 4.7, 4.6]\nPACE: FAIL \u2014 longest shot 5.0s > 2.5s; median shot 2.2s > 2.0s; 3/14 seconds look like the previous second"
+  },
+  "full_scores": {
+    "idea": 4.0,
+    "composition": 3.5,
+    "typography": 2.5,
+    "colour": 3.5,
+    "light_texture": 3.5,
+    "motion": 3.75,
+    "craft": 3.25,
+    "originality": 3.0,
+    "sound": 5
+  },
+  "full_overall": 3.56,
+  "cost_usd": 0.534,
+  "judge_seconds": 94.2,
+  "verdict": "FAIL"
+}

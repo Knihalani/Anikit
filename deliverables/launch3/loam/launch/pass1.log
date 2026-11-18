@@ -1,0 +1,6 @@
+estimate: ~133 s (1075.1 ms/frame × 450 changing frames on 4 threads); heaviest: scenes[2].layers[0] (component:scene3d) ~0% of a frame. Faster: --quality draft, or --from/--to for a range.
+render 1/450 frames  0 fps  319.7s  ETA 143553s
+
+render cache: reused 0/16 chunks (--no-cache renders everything)
+wrote launch/pass1.mp4 — 1080×1920 30 fps, 450 frames (22 deduped), 15.00 s video in 324.49 s (1 fps), 4992.8 KB
+sheet: launch/pass1.png (16 frames spread over the video)

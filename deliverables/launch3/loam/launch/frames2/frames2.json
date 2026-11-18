@@ -1,0 +1,395 @@
+{
+ "size": "9:16",
+ "scenes": [
+  {
+   "duration": 2,
+   "background": "#6F8F86",
+   "layers": [
+    {
+     "component": "scene3d",
+     "props": {
+      "env": {
+       "preset": "interior"
+      },
+      "rig": {
+       "preset": "window",
+       "angle": 60,
+       "height": 24,
+       "warmth": 0.4,
+       "ratio": 8,
+       "key": 1.6,
+       "softness": 0.01
+      },
+      "floor": {
+       "color": "#EEEAE2",
+       "roughness": 0.5
+      },
+      "camera": {
+       "lens": "portrait85",
+       "shake": "breath",
+       "keys": [
+        {
+         "t": 0,
+         "pos": [
+          0.0,
+          0.5,
+          1.5
+         ],
+         "target": [
+          -0.05,
+          0.2,
+          0
+         ],
+         "focus": "arrow",
+         "fstop": 5.6
+        }
+       ]
+      },
+      "objects": [
+       {
+        "type": "box",
+        "name": "wall",
+        "size": [
+         6,
+         3,
+         0.05
+        ],
+        "pos": [
+         0,
+         1.5,
+         -0.4
+        ],
+        "material": {
+         "texture": "polyhaven:texture/beige_wall_001",
+         "color": "#8FB5AA"
+        }
+       },
+       {
+        "type": "model",
+        "name": "succ",
+        "src": "polyhaven:model/potted_plant_04",
+        "pos": [
+         0.42,
+         0,
+         -0.05
+        ]
+       },
+       {
+        "type": "model",
+        "name": "arrow",
+        "src": "polyhaven:model/potted_plant_02",
+        "pos": [
+         -0.05,
+         0,
+         -0.08
+        ],
+        "scale": 0.55
+       },
+       {
+        "type": "model",
+        "name": "ped",
+        "src": "polyhaven:model/potted_plant_01",
+        "pos": [
+         -0.6,
+         0,
+         -0.1
+        ],
+        "scale": 0.5
+       },
+       {
+        "type": "particles",
+        "count": 2200,
+        "life": 0.9,
+        "seed": 3,
+        "emit": {
+         "shape": "disc",
+         "pos": [
+          -0.05,
+          1.0,
+          -0.08
+         ],
+         "radius": 0.12
+        },
+        "velocity": [
+         0,
+         -2.2,
+         0
+        ],
+        "gravity": 1,
+        "size": 0.0011,
+        "stretch": 3.5,
+        "color": "#DDEBF2",
+        "blend": "over",
+        "opacity": 0.75,
+        "lit": true,
+        "glint": {
+         "amount": 2,
+         "sharpness": 80
+        },
+        "collide": true
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "duration": 2,
+   "background": "#9DB8AF",
+   "layers": [
+    {
+     "component": "scene3d",
+     "props": {
+      "env": {
+       "preset": "interior"
+      },
+      "rig": {
+       "preset": "high-key",
+       "warmth": 0.1
+      },
+      "floor": {
+       "color": "#EEEAE2",
+       "roughness": 0.5
+      },
+      "camera": {
+       "lens": "portrait85",
+       "shake": "breath",
+       "keys": [
+        {
+         "t": 0,
+         "pos": [
+          0.0,
+          0.5,
+          1.5
+         ],
+         "target": [
+          -0.05,
+          0.2,
+          0
+         ],
+         "focus": "arrow",
+         "fstop": 5.6
+        }
+       ]
+      },
+      "objects": [
+       {
+        "type": "box",
+        "name": "wall",
+        "size": [
+         6,
+         3,
+         0.05
+        ],
+        "pos": [
+         0,
+         1.5,
+         -0.4
+        ],
+        "material": {
+         "texture": "polyhaven:texture/beige_wall_001",
+         "color": "#8FB5AA"
+        }
+       },
+       {
+        "type": "model",
+        "name": "succ",
+        "src": "polyhaven:model/potted_plant_04",
+        "pos": [
+         0.42,
+         0,
+         -0.05
+        ]
+       },
+       {
+        "type": "model",
+        "name": "arrow",
+        "src": "polyhaven:model/potted_plant_02",
+        "pos": [
+         -0.05,
+         0,
+         -0.08
+        ],
+        "scale": 0.55
+       },
+       {
+        "type": "model",
+        "name": "ped",
+        "src": "polyhaven:model/potted_plant_01",
+        "pos": [
+         -0.6,
+         0,
+         -0.1
+        ],
+        "scale": 0.5
+       },
+       {
+        "type": "particles",
+        "count": 2200,
+        "life": 0.9,
+        "seed": 3,
+        "emit": {
+         "shape": "disc",
+         "pos": [
+          -0.05,
+          1.0,
+          -0.08
+         ],
+         "radius": 0.12
+        },
+        "velocity": [
+         0,
+         -2.2,
+         0
+        ],
+        "gravity": 1,
+        "size": 0.0011,
+        "stretch": 3.5,
+        "color": "#DDEBF2",
+        "blend": "over",
+        "opacity": 0.75,
+        "lit": true,
+        "glint": {
+         "amount": 2,
+         "sharpness": 80
+        },
+        "collide": true
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "duration": 2,
+   "background": "#6F8F86",
+   "layers": [
+    {
+     "component": "scene3d",
+     "props": {
+      "env": {
+       "preset": "interior"
+      },
+      "rig": {
+       "preset": "golden",
+       "angle": 75,
+       "height": 12,
+       "warmth": 0.8,
+       "gobo": false,
+       "ratio": 6
+      },
+      "floor": {
+       "color": "#EEEAE2",
+       "roughness": 0.5
+      },
+      "camera": {
+       "lens": "portrait85",
+       "shake": "breath",
+       "keys": [
+        {
+         "t": 0,
+         "pos": [
+          0.0,
+          0.5,
+          1.5
+         ],
+         "target": [
+          -0.05,
+          0.2,
+          0
+         ],
+         "focus": "arrow",
+         "fstop": 5.6
+        }
+       ]
+      },
+      "objects": [
+       {
+        "type": "box",
+        "name": "wall",
+        "size": [
+         6,
+         3,
+         0.05
+        ],
+        "pos": [
+         0,
+         1.5,
+         -0.4
+        ],
+        "material": {
+         "texture": "polyhaven:texture/beige_wall_001",
+         "color": "#8FB5AA"
+        }
+       },
+       {
+        "type": "model",
+        "name": "succ",
+        "src": "polyhaven:model/potted_plant_04",
+        "pos": [
+         0.42,
+         0,
+         -0.05
+        ]
+       },
+       {
+        "type": "model",
+        "name": "arrow",
+        "src": "polyhaven:model/potted_plant_02",
+        "pos": [
+         -0.05,
+         0,
+         -0.08
+        ],
+        "scale": 0.55
+       },
+       {
+        "type": "model",
+        "name": "ped",
+        "src": "polyhaven:model/potted_plant_01",
+        "pos": [
+         -0.6,
+         0,
+         -0.1
+        ],
+        "scale": 0.5
+       },
+       {
+        "type": "particles",
+        "count": 2200,
+        "life": 0.9,
+        "seed": 3,
+        "emit": {
+         "shape": "disc",
+         "pos": [
+          -0.05,
+          1.0,
+          -0.08
+         ],
+         "radius": 0.12
+        },
+        "velocity": [
+         0,
+         -2.2,
+         0
+        ],
+        "gravity": 1,
+        "size": 0.0011,
+        "stretch": 3.5,
+        "color": "#DDEBF2",
+        "blend": "over",
+        "opacity": 0.75,
+        "lit": true,
+        "glint": {
+         "amount": 2,
+         "sharpness": 80
+        },
+        "collide": true
+       }
+      ]
+     }
+    }
+   ]
+  }
+ ]
+}
