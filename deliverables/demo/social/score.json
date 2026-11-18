@@ -28,7 +28,8 @@
  "history": {
   "pass1": 3.0,
   "pass2": 2.88,
-  "pass3": 3.88
+  "pass3": 3.88,
+  "pass4": 3.62
  },
  "gaps": [
   "Make the type physical: carve, steam, pour or stain it so it shares light and perspective with the scene",
@@ -71,5 +72,16 @@
    "Pace and dead air: the median shot is 2.5 s and the longest 5 s, with near-static holds. Top work would compress the tasting-note shots to about 1 s, let the word arrive as an event (light flaring into the grain), and save the long hold for the 'Guji' reveal only.",
    "Integration of type and sound: the projected type has no light behaviour (no bloom, no falloff varying with the grain, no occlusion by steam), and nothing about the type is mapped to meaning (note intensity, origin). The percussive score has clear transients and a good drop-out at about 9.7 s, but the picture doesn't use that drop for a visual beat, and the score's 20 kHz ceiling and repeating hit pattern suggest a library loop rather than bespoke sound design (no pour, clink or room tone)."
   ]
- }
+ },
+ "decision_run_6_trials": {
+  "pass3": {
+   "overall": 3.69,
+   "full": 4.06
+  },
+  "pass4": {
+   "overall": 3.62,
+   "full": 3.94
+  }
+ },
+ "note": "Plateau: pass 4 (more motion, sharper type, new end card) did not beat pass 3 in a 6-trial run; final = pass 3."
 }

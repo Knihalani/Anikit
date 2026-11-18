@@ -35,8 +35,8 @@ CUP = [
     {"type": "lathe", "points": [[0.0, 0.0065], [0.03, 0.0065], [0.036, 0.012], [0.05, 0.03], [0.058, 0.056], [0.06, 0.062], [0.057, 0.063], [0.055, 0.056], [0.046, 0.03], [0.032, 0.016], [0.0, 0.016]],
      "segments": 128, "pos": [0, 0, 0], "material": {"base": "#E9E2D6", "roughness": 0.35, "clearcoat": 0.4}},
     # The coffee: a dark mirror with a crema ring.
-    {"type": "cylinder", "radius": 0.0545, "height": 0.001, "pos": [0, 0.053, 0], "material": {"base": "#1E0E06", "roughness": 0.14, "clearcoat": 0.35, "specular": 0.8}},
-    {"type": "model", "src": "polyhaven:model/wooden_spoon", "height": 0.012, "scale": 1, "pos": [0.085, 0.002, 0.0], "rot": [0, 160, 0]},
+    {"type": "cylinder", "radius": 0.0545, "height": 0.001, "pos": [0, 0.053, 0], "material": {"base": "#1E0E06", "roughness": 0.38, "clearcoat": 0.25, "specular": 0.6}},
+    {"type": "model", "src": "polyhaven:model/wooden_spoon", "height": 0.012, "scale": 1, "pos": [0.02, 0.009, 0.085], "rot": [0, 70, 0]},
 ]
 
 def steam(seed):
@@ -55,13 +55,13 @@ def cam(t, az, dist, el, focal, fs=4.0, tgt=(0.0, 0.03, 0.06)):
 # 0.9 s and holds; the light takes the note's colour, the camera never repeats.
 # (start, word, size, light colour, sun az/el, camera az0→az1, dist, elevation, focal, target, word centre)
 SHOTS = [
-    # Scale contrast as a system: placed small, then bleeding off both edges (on purpose), then placed again.
-    (0.0, "bergamot", 0.04, "#F4EBA0", (200, 40), (-16, -2), 0.38, 62, 50, (0.0, 0.02, 0.06), (0.0, 0.12)),
-    (2.5, "peach", 0.24, "#FFB89A", (206, 38), (6, 16), 0.46, 76, 50, (0.0, 0.0, 0.05), (0.0, 0.05)),
-    (5.0, "black tea", 0.05, "#F09048", (212, 34), (-26, -10), 0.52, 86, 45, (0.06, 0.0, 0.09), (0.07, 0.15)),
-    (7.5, "washed", 0.2, "#E4ECF4", (196, 44), (18, 32), 0.42, 66, 50, (0.0, 0.0, 0.1), (0.0, 0.12)),
-    (10.0, "Ethiopia Guji", 0.06, "#FFD69A", (204, 36), (-8, 6), 0.46, 70, 50, (0.0, 0.02, 0.08), (0.0, 0.14)),
-    (12.5, "Out Friday.", 0.075, "#FFBE74", (214, 32), (4, 12), 0.62, 72, 45, (0.0, 0.02, 0.1), (0.0, 0.17)),
+    # Scale contrast: small and placed, then huge and cropped by the frame, words running over the bowl.
+    (0.0, "bergamot", 0.04, "#F4EBA0", (200, 40), (-14, -6), 0.36, 62, 50, (0.0, 0.02, 0.06), (0.0, 0.12)),
+    (2.5, "peach", 0.16, "#FFB89A", (206, 38), (8, 14), 0.42, 74, 50, (0.0, 0.0, 0.04), (0.0, 0.03)),
+    (5.0, "black tea", 0.05, "#F09048", (212, 34), (-24, -14), 0.5, 86, 45, (0.06, 0.0, 0.09), (0.07, 0.15)),
+    (7.5, "washed", 0.11, "#E4ECF4", (196, 44), (22, 30), 0.3, 58, 50, (0.0, 0.0, 0.12), (0.0, 0.14)),
+    (10.0, "Ethiopia", 0.03, "#FFD69A", (204, 36), (-6, 2), 0.22, 66, 60, (0.0, 0.02, 0.07), (0.0, 0.11)),
+    (12.5, "Guji", 0.2, "#FFBE74", (214, 32), (6, 10), 0.72, 68, 45, (0.0, 0.02, 0.12), (0.0, 0.2)),
 ]
 scenes = []
 for i, (t0, word, h, col, (az, el), (c0, c1), dist, cel, focal, tgt, at) in enumerate(SHOTS):
@@ -73,16 +73,16 @@ for i, (t0, word, h, col, (az, el), (c0, c1), dist, cel, focal, tgt, at) in enum
         "lights": [{"dir": d, "size": 1.0, "color": col, "intensity": 20000, "key": True}],
         # The sun through a cut-out: the note is written in light across the table, sliding in and settling.
         "gobo": {"text": word, "font": SERIF, "weight": 600, "size": h, "at": list(at), "height": 0.3, "invert": True,
-                 "strength": 0.9, "softness": 0.0007, "from": [-(0.25 + h * 2) * (1 if i % 2 == 0 else -1), 0.0], "start": 0.0, "settle": 0.9},
+                 "strength": 0.9, "softness": 0.0016, "from": [-(0.25 + h * 2) * (1 if i % 2 == 0 else -1), 0.0], "start": 0.0, "settle": 0.9},
         "floor": False,
-        "camera": {"keys": [cam(0, c0, dist * 1.12, cel, focal, 4.0, tgt), cam(dur, c1, dist * 0.94, cel, focal, 4.0, tgt)]},
+        "camera": {"keys": [cam(0, c0, dist * 1.03, cel, focal, 4.0, tgt), cam(dur, c1, dist, cel, focal, 4.0, tgt)]},
         "objects": objs,
     }
     scenes.append({"duration": dur, "transition": "cut", "layers": [{"component": "scene3d", "props": props}]})
 
-# The brand once, in the same face as the light, large enough for a phone.
-scenes[-1]["layers"].append({"text": "Halde & Sons", "font": SERIF, "size": "7.4vw", "color": "#F3E7D3", "x": "50%", "y": "11%", "anchor": "center", "start": 0.7, "enter": "mask by line up"})
-scenes[-1]["layers"].append({"text": "Ethiopia Guji · washed", "font": SERIF, "size": "3.6vw", "color": "#F3E7D3B3", "x": "50%", "y": "15.5%", "anchor": "center", "start": 0.95, "enter": "fadeUp"})
+# The brand, small and once, over the last shot's open wood.
+scenes[-1]["layers"].append({"text": "Ethiopia Guji, washed. Out Friday.", "font": SERIF, "size": "4.4vw", "color": "#F3E7D3", "x": "50%", "y": "90%", "anchor": "center", "start": 0.9, "enter": "fadeUp"})
+scenes[-1]["layers"].append({"text": "HALDE & SONS", "font": "Inter", "weight": 600, "size": "2vw", "letterSpacing": "0.3em", "color": "#F3E7D3B3", "x": "50%", "y": "8%", "anchor": "center", "start": 1.1, "enter": "fadeUp"})
 
 spec = {
     "size": [1080, 1920], "fps": 30, "background": "#1A120C",
