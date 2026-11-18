@@ -33,12 +33,13 @@ Every judged output, best first within each category. Score = median blind score
 
 | # | Score | Verdict | Judged pro | Refs | Full | Engine | Source | Piece | Result |
 |---|---|---|---|---|---|---|---|---|---|
-| 1 | 3.12 | FAIL | 0/3 | 8.12 | 3.61 | Anikit | demo | graphic_pieces_fold-identity | `docs/video/judge/demos/results/graphic_pieces_fold-identity` |
-| 2 | 3.12 | FAIL | 0/3 | 8.0 | 3.38 | Anikit | demo | mograph_rainwell-fluid | `docs/video/judge/demos/results/mograph_rainwell-fluid` |
-| 3 | 2.88 | FAIL | 0/3 | 8.42 | 3.56 | Anikit | r2 | h-ident | `docs/video/judge/rounds/r2/results/h-ident` |
-| 4 | 2.75 | FAIL | 0/3 | 8.67 | 3.17 | Anikit | r1 | h-ident | `docs/video/judge/rounds/r1/results/h-ident` |
-| 5 | 2.5 | FAIL | 0/3 | 7.0 | 2.62 | Anikit | demo | graphic_brush | `docs/video/judge/demos/results/graphic_brush` |
-| 6 | 2.25 | FAIL | 0/3 | 7.17 | 2.38 | Anikit | demo | type_6-seventies | `docs/video/judge/demos/results/type_6-seventies` |
+| 1 | 3.31 | FAIL | 0/6 | 8.54 | 3.53 | Anikit | demo | h-ident-demo | `docs/video/judge/demos/rebuilds/h-ident-demo` |
+| 2 | 3.12 | FAIL | 0/3 | 8.12 | 3.61 | Anikit | demo | graphic_pieces_fold-identity | `docs/video/judge/demos/results/graphic_pieces_fold-identity` |
+| 3 | 3.12 | FAIL | 0/3 | 8.0 | 3.38 | Anikit | demo | mograph_rainwell-fluid | `docs/video/judge/demos/results/mograph_rainwell-fluid` |
+| 4 | 2.88 | FAIL | 0/3 | 8.42 | 3.56 | Anikit | r2 | h-ident | `docs/video/judge/rounds/r2/results/h-ident` |
+| 5 | 2.75 | FAIL | 0/3 | 8.67 | 3.17 | Anikit | r1 | h-ident | `docs/video/judge/rounds/r1/results/h-ident` |
+| 6 | 2.5 | FAIL | 0/3 | 7.0 | 2.62 | Anikit | demo | graphic_brush | `docs/video/judge/demos/results/graphic_brush` |
+| 7 | 2.25 | FAIL | 0/3 | 7.17 | 2.38 | Anikit | demo | type_6-seventies | `docs/video/judge/demos/results/type_6-seventies` |
 
 ## data story
 
