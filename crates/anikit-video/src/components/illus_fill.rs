@@ -220,6 +220,7 @@ impl Prepare for Hatch {
             return Err(Error("hatch spacing must be > 0.5 px".into()));
         }
         self.path = parse_d(&self.d)?;
+        *self.cache.get_mut().unwrap_or_else(|e| e.into_inner()) = None;
         Ok(())
     }
 }
@@ -953,5 +954,23 @@ mod hatch_tests {
                 assert_eq!(actual, expected, "style {style:?} at t={t}");
             }
         }
+    }
+
+    #[test]
+    fn hatch_strokes_refresh_after_reprepare() {
+        let theme = Theme::default();
+        let assets = preview::host();
+        let ctx = Ctx { width: 400.0, height: 300.0, fps: 60.0, theme: &theme, assets };
+        let mut hatch = Hatch::default();
+        hatch.prepare().unwrap();
+        hatch.eval(1.0, &ctx);
+
+        hatch.tone = 0.2;
+        hatch.style = "crosshatch".into();
+        hatch.prepare().unwrap();
+
+        let mut fresh = Hatch { tone: 0.2, style: "crosshatch".into(), ..Hatch::default() };
+        fresh.prepare().unwrap();
+        assert_eq!(hatch.eval(1.0, &ctx), fresh.eval(1.0, &ctx));
     }
 }
