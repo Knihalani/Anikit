@@ -1,0 +1,939 @@
+{
+  "name": "i-explainer",
+  "tags": [
+    "explainer-2d",
+    "editorial-data",
+    "illustration",
+    "motion-design"
+  ],
+  "refs": [
+    "kurzgesagt-climate",
+    "kurzgesagt-short",
+    "cosmos-spacetime-odyssey"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 4.5,
+      "composition": 4.0,
+      "typography": 3.5,
+      "colour": 4.0,
+      "light_texture": 3.5,
+      "motion": 4.0,
+      "craft": 5.0,
+      "originality": 3.0
+    },
+    "overall": 3.94,
+    "judged_professional": "0/6",
+    "pro_rate": 0.0,
+    "mean_rank": 4,
+    "gaps": [
+      "It needs a concept beyond the diagram, a physical or emotional metaphor for silence that a viewer would remember, as A uses matter to stand in for the cosmos",
+      "Typography needs a point of view: expressive scale, type that is itself displaced or cancelled by the wave, and a chosen face rather than a default grotesk",
+      "Composition and choreography need variety (camera, scale, depth, transitions between states) instead of one repeated slide layout",
+      "Find a specific idea beyond the diagram: show silence as a physical, spatial or human experience, not a plot",
+      "Break the repeated slide layout. Vary scale, framing and camera, and let the waves become the typography or the environment",
+      "Replace the default grotesk and monospace labels with a typographic point of view and a less predictable palette, and add real light and material",
+      "No image idea. Find a metaphor or a world (as C's scale rhymes do) instead of drawing the textbook diagram of the feature",
+      "The typography is a default grotesk plus mono labels set like slide titles. It needs scale contrast and expressive setting, with type that physically interacts with the waves (cancelled, inverted, silenced)",
+      "Every frame repeats one composition. Vary camera, framing and density across shots, and give the ending a surprising payoff in place of a caption on a sine wave",
+      "Find an image-based idea for destructive interference (real space, bodies, objects going silent) instead of a chart of two sine waves",
+      "Break the repeated slide template: vary scale, camera and framing so the frames show choreography, not caption swaps",
+      "Bring in light, material and a typographic point of view (custom or expressive type that reacts to the wave) to match the tactile depth of the best entry",
+      "It needs a world or a metaphor rather than a chart: D turns abstract emissions into a dense, inhabited isometric city",
+      "Break the repeated slide layout. Each beat needs its own composition, scale and camera, as D's cutaways, split screens and tile-maps do",
+      "Commit to a palette and typographic voice of its own instead of the cream/pink/blue preset with a grotesk/mono pairing",
+      "Find a visual metaphor that only this piece could have, not the wave diagram, for example sound shown physically in a real space or with real objects. That is the kind of image-led idea D builds from a nautilus or a crater.",
+      "Build a typographic system with real scale contrast, and let the type interact with the waves (be cancelled by them, flattened, inverted) instead of sitting like slide titles.",
+      "Vary the composition and camera from frame to frame, and add depth and light. Right now the flat cream plane and centred horizontal band never change."
+    ],
+    "tells": [
+      "The textbook 'tasteful AI' recipe: cream paper ground, bold grotesk headline top-left, small tracked monospace caps label, one or two accent colours, mostly empty frame",
+      "Slide-deck structure: every frame is headline plus one waveform, with only the words swapped",
+      "The idea is literal and obvious, a diagram of phase-inversion noise cancelling with the textbook sentence as the headline",
+      "Typography is a default bold sans with no scale contrast, no integration with the waveforms and no layout idea",
+      "The halftone fill and paper texture are the only material gesture, and they are applied as a uniform effect rather than motivated by the subject",
+      "A textbook generic-tasteful ground: cream paper ground, small tracked monospace caps labels, a bold grotesk headline, and two accent colours (pink and blue)",
+      "Slide-deck structure: headline top-left, waveform across the middle, repeated in nearly every frame with the words swapped",
+      "The idea is a literal diagram of noise cancellation (wave, inverted wave, sum). Nothing memorable beyond the textbook explanation",
+      "Default-feeling typography with no scale contrast, no type and image integration, and sentence-fragment headlines like 'Silence, made of sound.'",
+      "The halftone fill and paper grain are the only texture, applied as a filter rather than as material",
+      "A textbook 'tasteful AI' look: a cream paper ground, a bold generic grotesk headline top-left, small tracked monospace caps labels, two accent colours, and mostly empty frames",
+      "Slide-deck structure: the same layout of headline plus waveform repeats across all four frames with the words swapped ('Noise is a wave.' / 'A chip turns it upside down.' / 'Peak meets trough. Silence.' / 'Silence, made of sound.')",
+      "The idea is literal and obvious: noise cancellation explained as a textbook diagram of phase-inverted waves, with nothing a viewer would remember",
+      "The halftone fill and paper grain are a surface effect applied uniformly; there is no light, depth or material in the subject",
+      "Motion inferred from the frames amounts to waves sliding and merging inside a static layout; the type does not take part in the choreography",
+      "The textbook 'tasteful AI' explainer kit: a cream ground, a bold grotesk headline top-left, a small tracked monospace caps label, and a single pink/blue accent pair",
+      "The same layout repeats across frames, headline plus one waveform across the middle, so it reads like slides with the words swapped",
+      "Literal, diagrammatic idea (noise wave + inverted wave = silence); the payoff line 'Silence, made of sound' is the only flourish",
+      "Halftone fill on the waves is the single texture move; there is no light, depth or material beyond it",
+      "Typography is default-feeling (generic grotesk + generic mono) with no scale play or integration with the image",
+      "It has the textbook 'tasteful AI' look: a cream ground, a small tracked monospace caps label, a bold grotesk headline top-left, and one or two accent colours",
+      "Three of four frames use the same layout (headline top-left, waveform across the middle), so it reads like slides with the words swapped",
+      "The idea is a literal diagram of the feature (noise wave + inverted wave = silence). It is clean, but anyone explaining ANC would draw it",
+      "The type is a default-looking grotesk paired with a default mono, with no scale play and no interaction between type and image",
+      "The halftone wave fill is the only texture. There is no light, depth or material, and the frames are mostly empty",
+      "Matches the generic 'tasteful AI' recipe: cream ground, a bold grotesk headline top-left, small tracked monospace caps labels, and two accent colours (pink and blue) on a mostly empty frame.",
+      "The type is default and slide-like. Every frame is a headline plus a label in the same top-left position, with no scale idea and no link between the type and the image.",
+      "The same layout repeats across all four frames: headline, then a horizontal waveform across the middle. It plays like a slide deck with the words swapped.",
+      "The idea is the literal textbook diagram of noise cancellation: a wave, its inverted wave, and the sum. 'Silence, made of sound' is the only line with any wit.",
+      "The halftone or mesh fill inside the waveforms is the one sign of texture, but it reads as a filter preset, not a material.",
+      "Motion is implied only as waveforms translating and flattening, with no camera, depth or choreography beyond the diagram."
+    ]
+  },
+  "refs_summary": {
+    "kurzgesagt-climate": {
+      "overall": 7.5,
+      "judged_professional": "6/6",
+      "mean_rank": 1.83
+    },
+    "kurzgesagt-short": {
+      "overall": 6.56,
+      "judged_professional": "6/6",
+      "mean_rank": 3
+    },
+    "cosmos-spacetime-odyssey": {
+      "overall": 8.0,
+      "judged_professional": "6/6",
+      "mean_rank": 1.17
+    }
+  },
+  "ref_mean": 7.35,
+  "delta": -3.41,
+  "trials": [
+    {
+      "key": {
+        "A": "cosmos-spacetime-odyssey",
+        "B": "kurzgesagt-climate",
+        "C": "candidate",
+        "D": "kurzgesagt-short"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.93,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "Cosmic scale is rhymed through physical matter: a nebula seen in a rock crater, a nautilus on sand, an accretion disc, and a Helix-nebula iris. That is a real conceptual through-line (we are made of star-stuff), not decoration",
+              "Photoreal light and material everywhere: wet rock, sand grain, backlit translucent shell, volumetric dust in the accretion disc",
+              "Frames move between macro and cosmic scales, which implies match-cut choreography from earth to galaxy to eye",
+              "Credits sit small and lower-right in a broadcast convention that stays out of the image; the wide-tracked title over the iris has a clear point of view, with the pupil standing in for the O",
+              "Palette moves from cold slate to warm sand to deep space and ends on a saturated orange/blue complementary climax"
+            ],
+            "gaps": [
+              "The eye-as-nebula reveal and the 'everything is cosmic' montage are well-worn tropes. It needs one image nobody has seen before",
+              "Typography is generic broadcast credit type with tracked caps; the title treatment is the only typographic idea",
+              "Some CG elements (comet streaks, the disc) lean toward stock VFX and are less authored than the crater and shell shots"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.92,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 6,
+              "colour": 9,
+              "light_texture": 7,
+              "motion": 8,
+              "craft": 9,
+              "originality": 7
+            },
+            "tells": [
+              "A coherent, ownable illustration system: recurring bird characters, isometric diorama tiles and a highly saturated, deliberate palette (violet, cyan, magenta, acid green)",
+              "Frames are dense and layered, such as the traffic jam with smog blobs and a city in the background, and the network of energy tiles with characters acting in it",
+              "Formats vary from frame to frame (wide street, isometric map, split-screen character grid, product shot with a UI side panel), which suggests choreographed transitions rather than one repeated layout",
+              "Rim lights, soft cast shadows and grain-free but considered shading give volume without breaking the flat style"
+            ],
+            "gaps": [
+              "The idea is a fairly literal explainer (emissions lead to clean energy lead to an EV with a checkmark) with no single memorable conceptual turn",
+              "Type is nearly absent, and the UI panel (sliders, check icon) drifts toward generic app-icon language",
+              "The house style is very recognisable but now widely imitated, so originality depends on the studio's own signature rather than on something new in this piece"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 6,
+              "composition": 7,
+              "typography": 5,
+              "colour": 8,
+              "light_texture": 6,
+              "motion": 7,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "The same highly finished studio illustration language as B (character design, saturated gradients, glow on the alarm lights), adapted to vertical format",
+              "Varied staging across frames: a villain at a control console, a thermal-map title card, a character gag at a memory-card game, a mammoth in snow",
+              "The title card integrates heavy rounded type with a contoured heat-map, which is a modest but real type\u2013image idea",
+              "Character acting, such as the speech bubble 'They're the same!', implies narrative beats and timing rather than a slide deck"
+            ],
+            "gaps": [
+              "Burned-in social captions in a default small sans sit on top of the art and break every frame as a poster",
+              "The vertical crop leaves compositions cramped and centred, without the layered depth of B or A",
+              "It is a short-form explainer with a familiar premise and lacks a distinctive visual concept beyond the house style"
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.82,
+            "scores": {
+              "idea": 4,
+              "composition": 4,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 4,
+              "motion": 4,
+              "craft": 5,
+              "originality": 3
+            },
+            "tells": [
+              "The textbook 'tasteful AI' recipe: cream paper ground, bold grotesk headline top-left, small tracked monospace caps label, one or two accent colours, mostly empty frame",
+              "Slide-deck structure: every frame is headline plus one waveform, with only the words swapped",
+              "The idea is literal and obvious, a diagram of phase-inversion noise cancelling with the textbook sentence as the headline",
+              "Typography is a default bold sans with no scale contrast, no integration with the waveforms and no layout idea",
+              "The halftone fill and paper texture are the only material gesture, and they are applied as a uniform effect rather than motivated by the subject"
+            ],
+            "gaps": [
+              "It needs a concept beyond the diagram, a physical or emotional metaphor for silence that a viewer would remember, as A uses matter to stand in for the cosmos",
+              "Typography needs a point of view: expressive scale, type that is itself displaced or cancelled by the wave, and a chosen face rather than a default grotesk",
+              "Composition and choreography need variety (camera, scale, depth, transitions between states) instead of one repeated slide layout"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "B",
+          "D",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 28.5,
+        "cost_usd": 0.14125479999999999,
+        "tokens": 70114,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "cosmos-spacetime-odyssey",
+        "B": "kurzgesagt-climate",
+        "C": "kurzgesagt-short",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.93,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 7,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 9,
+              "originality": 7
+            },
+            "tells": [
+              "Clear conceptual through-line: geological crater, nautilus shell, protoplanetary disc, then the Helix Nebula as an eye. It moves from the scale of Earth to the scale of the cosmos and ends on the act of seeing",
+              "Physically motivated light everywhere: raking light on the sand, translucency and subsurface glow in the shell, a bright core in the accretion disc",
+              "Real material and depth: sand grain, rock crust, volumetric nebula, depth-of-field falloff",
+              "The title lockup sets widely tracked caps around the pupil, so the O in COSMOS becomes the eye. Type and image work as one idea",
+              "Credits sit quietly in the lower third and never fight the image. Every frame works as a poster"
+            ],
+            "gaps": [
+              "The Helix-Nebula-as-eye is a well-known image. The finale reveal is expected rather than surprising",
+              "The credit typography is a safe, generic tracked sans. It could carry more of the film's character",
+              "The cosmic-photoreal look is familiar from science documentaries. Push toward a less conventional palette or treatment to stand apart"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.88,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 6,
+              "motion": 7,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "A disciplined house illustration system: consistent bird characters, isometric diorama, controlled saturated palette (violet, cyan, magenta, lime)",
+              "Every frame is a dense, layered scene: a traffic jam with pollution blobs, an isometric energy grid with routed paths, a four-up split screen, a car with a UI panel",
+              "Variety of framing (wide isometric, split grid, hero object with panel) shows planned choreography, not one layout repeated",
+              "Pollution is drawn as dark blob particles, so the abstract concept gets a recurring visual motif"
+            ],
+            "gaps": [
+              "The visual language closely follows a well-established explainer house style. Little here is unique to this piece",
+              "Light is flat cel shading with a few glows. Add atmosphere, rim light or texture to give it depth like A",
+              "No typographic idea visible, and the UI panel is close to generic. Integrate type and data more expressively"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 6,
+              "composition": 7,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 5,
+              "motion": 6,
+              "craft": 7,
+              "originality": 5
+            },
+            "tells": [
+              "The same mature illustration system as B, adapted to vertical: a villain at a control desk, a stylised heat-map Europe, bird characters at a card game, a purple mammoth",
+              "Bold title type with a dimensional outline, built into the map plate",
+              "Character acting and props (the STOP button, the matching cards) carry the narrative gags",
+              "Burned-in social captions in a default sans weaken the frame. That is a platform-format compromise, not designed type"
+            ],
+            "gaps": [
+              "The burned-in subtitle captions are default and centred. Design them into the frame or drop them",
+              "A social cut-down of a house style. Compositions are crowded centre-weighted verticals without a strong poster moment",
+              "No light or texture beyond flat fills. Add the atmospheric depth and material sense of A"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.78,
+            "scores": {
+              "idea": 4,
+              "composition": 4,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 3,
+              "motion": 4,
+              "craft": 5,
+              "originality": 3
+            },
+            "tells": [
+              "A textbook generic-tasteful ground: cream paper ground, small tracked monospace caps labels, a bold grotesk headline, and two accent colours (pink and blue)",
+              "Slide-deck structure: headline top-left, waveform across the middle, repeated in nearly every frame with the words swapped",
+              "The idea is a literal diagram of noise cancellation (wave, inverted wave, sum). Nothing memorable beyond the textbook explanation",
+              "Default-feeling typography with no scale contrast, no type and image integration, and sentence-fragment headlines like 'Silence, made of sound.'",
+              "The halftone fill and paper grain are the only texture, applied as a filter rather than as material"
+            ],
+            "gaps": [
+              "Find a specific idea beyond the diagram: show silence as a physical, spatial or human experience, not a plot",
+              "Break the repeated slide layout. Vary scale, framing and camera, and let the waves become the typography or the environment",
+              "Replace the default grotesk and monospace labels with a typographic point of view and a less predictable palette, and add real light and material"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "B",
+          "C",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 27.6,
+        "cost_usd": 0.1378222,
+        "tokens": 69940,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "kurzgesagt-short",
+        "B": "kurzgesagt-climate",
+        "C": "cosmos-spacetime-odyssey",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 6,
+              "motion": 7,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "A recognisable, mature house illustration system: rounded geometric characters, consistent line-free shapes and a saturated palette of magenta, cyan and violet held across very different scenes",
+              "Each frame is a different staged scene (villain control room, bird characters playing a memory game, a title card over a stylised heat-map, a mammoth in snow), so the edit is built on narrative variety, not a repeated layout",
+              "Visual jokes carry the explanation (a 'STOP' button on a climate console, the memory-card game standing for a 'misconception'), so the idea is turned into images instead of shown as a diagram",
+              "Glow on the title card, soft rim light on the mammoth and ambient gradient skies show light used deliberately within a flat style",
+              "Weaknesses: a vertical social cut with burned-in default captions, a title in a chunky, bevel-like display face, and the villain leans on a familiar archetype"
+            ],
+            "gaps": [
+              "Captions are set in a small default sans at the bottom centre with no hierarchy. Typography should be designed into the frame the way C integrates its credits, not added as subtitles",
+              "The house style is so well established that the piece contains no surprise. It needs one image or transition that breaks the system, as C's eye/nebula reveal does",
+              "Light and texture stay decorative. Adding atmospheric depth (cold haze, volumetric snow, real scale cues for the ice age) would give the subject weight and scale"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 7,
+              "motion": 8,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "Dense, layered frames: a traffic jam with drifting soot particles, an isometric world-system board linking meat, flights, solar, wind and forests, a four-up split screen of characters and a car with a UI-style energy gauge",
+              "Choreography shifts between camera languages (street-level perspective, isometric diorama, flat split-screen, graphic panel), which shows planned shot-to-shot variety",
+              "A deliberate, unusual palette: ultraviolet road, cyan floor, and black pollution blobs used as a recurring graphic motif that ties the scenes together",
+              "Soft glows, cast shadows and particle smoke give depth inside a flat vector idiom; the character designs carry personality",
+              "No visible typography; the piece leans entirely on icons and images, which serves an explainer but is a missed chance for authorship"
+            ],
+            "gaps": [
+              "The idea is still an explainer convention (cars \u2192 emissions \u2192 renewables \u2192 green car with a check mark). It needs a sharper conceptual hook that only this film could have",
+              "No typographic voice. Introduce type as a designed element integrated with the world, as C does with its title over the eye",
+              "The final frame lands on a generic UI checkmark and slider gauge, close to placeholder UI. Resolve it with a more cinematic or surprising image"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 9,
+              "composition": 9,
+              "typography": 8,
+              "colour": 9,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 9,
+              "originality": 8
+            },
+            "tells": [
+              "A specific organising idea: scale-jumping visual rhymes between the terrestrial and the cosmic (a crater pool holding a nebula, a nautilus spiral echoing a protoplanetary disc, a human iris inside the Helix Nebula)",
+              "Real light and material: wet rock, raking sun on sand and the nautilus' translucent pearlescent shell, against volumetric dust and backlit accretion-disc glare",
+              "Typography with a point of view: a widely tracked, light-weight 'COSMOS' whose letters frame the iris pupil, plus small, restrained credits that sit inside the plate's composition without fighting it",
+              "A deliberate palette that moves from cold slate through warm sand and cosmic grey to fire-orange and iris-blue, so colour itself builds to the climax",
+              "Every frame works as a poster, and the sequence builds toward the title reveal as its payoff"
+            ],
+            "gaps": [
+              "Several of the space images (comets, accretion disc) rely on familiar science-documentary iconography, which slightly dilutes originality",
+              "The credit typography is near-default in weight and placement. It could be integrated more physically into each world, like the title is",
+              "The final eye/nebula image is famous and close to an existing NASA photograph, so the climax is borrowed rather than invented"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 4,
+              "composition": 4,
+              "typography": 4,
+              "colour": 5,
+              "light_texture": 4,
+              "motion": 3,
+              "craft": 5,
+              "originality": 3
+            },
+            "tells": [
+              "A textbook 'tasteful AI' look: a cream paper ground, a bold generic grotesk headline top-left, small tracked monospace caps labels, two accent colours, and mostly empty frames",
+              "Slide-deck structure: the same layout of headline plus waveform repeats across all four frames with the words swapped ('Noise is a wave.' / 'A chip turns it upside down.' / 'Peak meets trough. Silence.' / 'Silence, made of sound.')",
+              "The idea is literal and obvious: noise cancellation explained as a textbook diagram of phase-inverted waves, with nothing a viewer would remember",
+              "The halftone fill and paper grain are a surface effect applied uniformly; there is no light, depth or material in the subject",
+              "Motion inferred from the frames amounts to waves sliding and merging inside a static layout; the type does not take part in the choreography"
+            ],
+            "gaps": [
+              "No image idea. Find a metaphor or a world (as C's scale rhymes do) instead of drawing the textbook diagram of the feature",
+              "The typography is a default grotesk plus mono labels set like slide titles. It needs scale contrast and expressive setting, with type that physically interacts with the waves (cancelled, inverted, silenced)",
+              "Every frame repeats one composition. Vary camera, framing and density across shots, and give the ending a surprising payoff in place of a caption on a sine wave"
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "B",
+          "A",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 33.2,
+        "cost_usd": 0.1482224,
+        "tokens": 70464,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "cosmos-spacetime-odyssey",
+        "B": "kurzgesagt-climate",
+        "C": "kurzgesagt-short",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 7,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 9,
+              "originality": 7
+            },
+            "tells": [
+              "Photoreal, physically lit CG: the nebula pooled in a cracked rock crater, a translucent nautilus with subsurface scattering on sand that has real footprints and grain",
+              "A clear visual through-line: cosmic matter shows up inside earthly objects (crater, shell, the spiral of the accretion disc), ending on an eye/Helix Nebula hybrid. That is a specific idea, not decoration",
+              "Scale moves from the very small (shell) to planetary to cosmic, which implies choreographed transitions and camera travel",
+              "Credits are small and sit inside the composition rather than on top of it, and the widely tracked wordmark is set over the pupil so the type and the image lock together",
+              "Varied lens language across frames: macro shallow depth of field, a wide establishing shot of the disc, a frontal symmetrical end card"
+            ],
+            "gaps": [
+              "The eye-nebula end card is a well-worn space-documentary trope; the title reveal could be as surprising as the crater/nebula inversion",
+              "Credit typography is a safe grotesk set very small; it plays no expressive part in the piece",
+              "The palette sits close to genre defaults (teal/orange nebula); a less expected grade would make it more its own"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 6,
+              "colour": 9,
+              "light_texture": 7,
+              "motion": 8,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "A saturated, deliberately non-naturalistic palette (violet roads, cyan grid, lime/teal split) that holds as a system across very different scenes",
+              "Dense, layered frames: a traffic jam with emission clouds, an isometric energy-system board with characters, a four-panel character grid, a car with a UI meter. Every frame has a different structure",
+              "A recurring bird mascot cast, each with personality props (headphones, sunglasses, glasses), shows real character design rather than clip-art",
+              "Smoke blobs drift across frames, implying continuity and object choreography; changes of perspective (oblique, isometric, flat panels) show planned variety",
+              "Consistent rim lights, inner shadows and cast shadows give the flat vector form depth"
+            ],
+            "gaps": [
+              "The idea is on the literal side (emissions \u2192 renewables \u2192 electric car with a battery gauge); it lacks one memorable conceptual turn",
+              "Almost no typography is visible, and the UI panel uses generic icon and slider vocabulary that could be pushed into a distinctive graphic language",
+              "The house style is so close to an established studio idiom that its originality reads as a known look, not a new one"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.75,
+            "scores": {
+              "idea": 6,
+              "composition": 6,
+              "typography": 5,
+              "colour": 8,
+              "light_texture": 6,
+              "motion": 7,
+              "craft": 7,
+              "originality": 6
+            },
+            "tells": [
+              "Hand-crafted characters with expressive poses (villain at a STOP button, birds trading cards, a stylised mammoth) and a strong, consistent palette with gradient atmospheres",
+              "The topographic map title card integrates bold, outlined type with the heat-map illustration in a way that suits the piece",
+              "Each frame is a different scene and setting, so the narrative is clearly illustrated beat by beat and does not reuse a layout",
+              "Vertical short-form format; burned-in caption subtitles are small white defaults, a platform concession that weakens the frames"
+            ],
+            "gaps": [
+              "Default caption subtitles cut through the frame; design the kinetic type into the illustration the way the best entry places its credits",
+              "The compositions are centred and safe for the vertical format; more depth layering and scale contrast would make each frame a poster",
+              "Visual metaphors are illustrative rather than conceptual (mammoth = ice age, map = Europe); it needs one surprising image idea that only this film could have"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.7,
+            "scores": {
+              "idea": 5,
+              "composition": 4,
+              "typography": 4,
+              "colour": 4,
+              "light_texture": 3,
+              "motion": 4,
+              "craft": 5,
+              "originality": 3
+            },
+            "tells": [
+              "The textbook 'tasteful AI' explainer kit: a cream ground, a bold grotesk headline top-left, a small tracked monospace caps label, and a single pink/blue accent pair",
+              "The same layout repeats across frames, headline plus one waveform across the middle, so it reads like slides with the words swapped",
+              "Literal, diagrammatic idea (noise wave + inverted wave = silence); the payoff line 'Silence, made of sound' is the only flourish",
+              "Halftone fill on the waves is the single texture move; there is no light, depth or material beyond it",
+              "Typography is default-feeling (generic grotesk + generic mono) with no scale play or integration with the image"
+            ],
+            "gaps": [
+              "Find an image-based idea for destructive interference (real space, bodies, objects going silent) instead of a chart of two sine waves",
+              "Break the repeated slide template: vary scale, camera and framing so the frames show choreography, not caption swaps",
+              "Bring in light, material and a typographic point of view (custom or expressive type that reacts to the wave) to match the tactile depth of the best entry"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "B",
+          "C",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 30.4,
+        "cost_usd": 0.1432508,
+        "tokens": 70221,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "cosmos-spacetime-odyssey",
+        "B": "candidate",
+        "C": "kurzgesagt-short",
+        "D": "kurzgesagt-climate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 6,
+              "colour": 7,
+              "light_texture": 8,
+              "motion": 7,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "The CG has real photographic material: a crater filled with a nebula, a nautilus shell lit from behind on wet sand, and an accretion disk with comets streaking past",
+              "The scale journey from micro to macro (shell to planet formation to the Helix-nebula eye) is choreographed and ends on a reveal that matches the image to the subject",
+              "The wide-tracked caps title sits across the iris, so the type is built into the key image rather than placed on top of it",
+              "Each frame uses a different setting and material, so there is no repeated layout"
+            ],
+            "gaps": [
+              "Several images are genre conventions of space documentaries (a nebula eye, an accretion disk), so it surprises less than D's world-building",
+              "The credit typography is a generic tracked sans set small in corners, with no typographic idea beyond the main title",
+              "The palette is the expected NASA orange and blue. It is not owned the way D's saturated violet, cyan and lime system is"
+            ]
+          },
+          "B": {
+            "verdict": "not professional",
+            "confidence": 0.75,
+            "scores": {
+              "idea": 5,
+              "composition": 4,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 3,
+              "motion": 4,
+              "craft": 5,
+              "originality": 3
+            },
+            "tells": [
+              "It has the textbook 'tasteful AI' look: a cream ground, a small tracked monospace caps label, a bold grotesk headline top-left, and one or two accent colours",
+              "Three of four frames use the same layout (headline top-left, waveform across the middle), so it reads like slides with the words swapped",
+              "The idea is a literal diagram of the feature (noise wave + inverted wave = silence). It is clean, but anyone explaining ANC would draw it",
+              "The type is a default-looking grotesk paired with a default mono, with no scale play and no interaction between type and image",
+              "The halftone wave fill is the only texture. There is no light, depth or material, and the frames are mostly empty"
+            ],
+            "gaps": [
+              "It needs a world or a metaphor rather than a chart: D turns abstract emissions into a dense, inhabited isometric city",
+              "Break the repeated slide layout. Each beat needs its own composition, scale and camera, as D's cutaways, split screens and tile-maps do",
+              "Commit to a palette and typographic voice of its own instead of the cream/pink/blue preset with a grotesk/mono pairing"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 6,
+              "composition": 6,
+              "typography": 5,
+              "colour": 8,
+              "light_texture": 6,
+              "motion": 7,
+              "craft": 7,
+              "originality": 6
+            },
+            "tells": [
+              "It uses a consistent, owned house style of character illustration: rounded birds, a villain at a control desk and a stylised mammoth, all with deliberate rim light and gradients",
+              "The palette is saturated and coordinated (a contour-map Europe in cyan, green and yellow, and a magenta mammoth against a lilac sky)",
+              "Every frame is a new set-up with characters acting, which shows real choreography between beats",
+              "The vertical-short format is designed for, not cropped"
+            ],
+            "gaps": [
+              "The burned-in caption subtitles in a generic sans are platform furniture and weaken every frame",
+              "The vertical format thins out the layered density that makes D's frames read as posters",
+              "The title card ('Europe's Next Ice Age') uses a stock bubbly outlined treatment with less typographic intent than the illustration around it"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 7,
+              "colour": 9,
+              "light_texture": 7,
+              "motion": 8,
+              "craft": 9,
+              "originality": 7
+            },
+            "tells": [
+              "The isometric frames are dense and layered: traffic in smog, and an emissions tile-map with planes, a steak, solar panels and wind turbines connected by paths",
+              "An unusual, owned palette (electric violet, cyan, lime and magenta) is held consistently across very different scenes",
+              "The compositions vary widely (a perspective street, an isometric map, a four-panel split screen, a single object with a UI side-panel), which suggests strong choreography and transitions",
+              "Black smoke blobs work as one graphic idea across the scenes, and the bird characters give the piece continuity and personality",
+              "There is almost no type. Icons and gauges carry the information, and that absence serves the explainer"
+            ],
+            "gaps": [
+              "The flat vector rendering limits light and texture. A grain, lighting pass or material layer would lift it toward A's depth",
+              "The bird mascots and isometric explainer grammar are well known in the genre, which caps originality",
+              "The single-object frame (car + gauge) is thinner than the rest and drifts toward infographic UI"
+            ]
+          }
+        },
+        "ranking": [
+          "D",
+          "A",
+          "C",
+          "B"
+        ]
+      },
+      "meta": {
+        "seconds": 28.9,
+        "cost_usd": 0.139266,
+        "tokens": 70013,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "candidate",
+        "B": "kurzgesagt-climate",
+        "C": "kurzgesagt-short",
+        "D": "cosmos-spacetime-odyssey"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "not professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 5,
+              "composition": 4,
+              "typography": 4,
+              "colour": 5,
+              "light_texture": 4,
+              "motion": 4,
+              "craft": 5,
+              "originality": 3
+            },
+            "tells": [
+              "Matches the generic 'tasteful AI' recipe: cream ground, a bold grotesk headline top-left, small tracked monospace caps labels, and two accent colours (pink and blue) on a mostly empty frame.",
+              "The type is default and slide-like. Every frame is a headline plus a label in the same top-left position, with no scale idea and no link between the type and the image.",
+              "The same layout repeats across all four frames: headline, then a horizontal waveform across the middle. It plays like a slide deck with the words swapped.",
+              "The idea is the literal textbook diagram of noise cancellation: a wave, its inverted wave, and the sum. 'Silence, made of sound' is the only line with any wit.",
+              "The halftone or mesh fill inside the waveforms is the one sign of texture, but it reads as a filter preset, not a material.",
+              "Motion is implied only as waveforms translating and flattening, with no camera, depth or choreography beyond the diagram."
+            ],
+            "gaps": [
+              "Find a visual metaphor that only this piece could have, not the wave diagram, for example sound shown physically in a real space or with real objects. That is the kind of image-led idea D builds from a nautilus or a crater.",
+              "Build a typographic system with real scale contrast, and let the type interact with the waves (be cancelled by them, flattened, inverted) instead of sitting like slide titles.",
+              "Vary the composition and camera from frame to frame, and add depth and light. Right now the flat cream plane and centred horizontal band never change."
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 7,
+              "motion": 8,
+              "craft": 9,
+              "originality": 6
+            },
+            "tells": [
+              "The frames are dense and richly populated: an isometric traffic jam with smoke plumes, and an isometric world map of emission sources linked by paths.",
+              "The palette is deliberate and saturated: violet traffic, cyan world, a pink, yellow and teal split screen, and lime green. Each scene has its own colour key, but they read as one system.",
+              "Shapes are confidently stylised and the light is carefully handled, with rim lights, glows, soft shadows and a lit bulb. The vehicles carry consistent detail.",
+              "There is a recurring bird mascot cast with distinct characters, accessories and acting.",
+              "Choreography varies across frames: a wide street, an isometric diorama, a four-up split screen, and a hero object with a UI panel.",
+              "This is a polished explainer house style rather than a singular idea. The type is minimal or absent, and the UI insert (sliders, checkmark) is fairly generic."
+            ],
+            "gaps": [
+              "Push the concept beyond a well-made carbon or EV explainer with charts and sliders, toward one surprising central metaphor.",
+              "Give the type a point of view. Where it appears it should be integrated and expressive, not a generic UI overlay.",
+              "Move away from the established flat-isometric explainer house style toward a look as specific to its subject as D's photoreal macro-to-cosmic language."
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 6,
+              "composition": 7,
+              "typography": 5,
+              "colour": 8,
+              "light_texture": 7,
+              "motion": 7,
+              "craft": 8,
+              "originality": 5
+            },
+            "tells": [
+              "The illustration language is mature: stylised characters with expressive acting (a villain at a control desk with a STOP button, birds playing a memory card game) and a woolly mammoth with rich purple shading and glow.",
+              "The colour is bold and deliberate, from saturated blue and violet interiors to a heat-map Europe and pink-to-snow gradients. Gradients are used with purpose, not as filler.",
+              "The title card 'Europe's Next Ice Age' is integrated over a stylised temperature map, a real image-plus-type moment.",
+              "Weaknesses: this is a vertical social cut with burned-in small default captions ('completely due', 'misconception', 'ice age,') sitting on top of the art. The scenes are visual gags illustrating narration rather than a standalone film idea.",
+              "Shapes and texture are consistent and finished, and the gags imply varied staging between shots."
+            ],
+            "gaps": [
+              "Replace the default burned-in subtitle captions with designed kinetic type that belongs to the world, or remove them.",
+              "Compose natively for vertical with layered depth. Several frames feel like reframed horizontal scenes, with characters cropped and empty top or bottom bands.",
+              "Anchor the piece in one memorable visual idea rather than a sequence of illustrative gags that follow the voiceover."
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 9,
+              "composition": 9,
+              "typography": 8,
+              "colour": 9,
+              "light_texture": 10,
+              "motion": 8,
+              "craft": 9,
+              "originality": 8
+            },
+            "tells": [
+              "The idea is specific and poetic: the cosmos found inside earthly forms. A nebula pools inside an impact crater, a nautilus on sand carries the logarithmic spiral, a protoplanetary disk forms with comets, and it resolves to an eye inside the Helix Nebula. Each frame rhymes macro and micro.",
+              "Light and texture are real and cinematic: rock grain, wet sand, the pearly translucent shell, volumetric dust, and a starburst core.",
+              "Every frame works as a poster, with confident asymmetric compositions and shallow depth of field.",
+              "The palette is restrained and earthy, with cold slate, sand and dust, and then pays off in the fiery orange and blue of the eye and nebula.",
+              "The typography is chosen with care. The widely tracked 'C O S M O S' lockup frames the pupil so the letters orbit the eye. The small credit type is tucked into negative space without competing with the image.",
+              "The frames imply choreography: a continuous push from the ground to space to the eye, ending in a match-cut reveal."
+            ],
+            "gaps": [
+              "The eye-in-the-nebula endpoint is a well-worn science-documentary trope. A less expected final image would raise originality further.",
+              "The tracked caps title lockup is elegant but conventional for the genre. A more custom wordmark could carry more of the idea.",
+              "Some transitional frames, such as the disk formation, lean on familiar space-VFX vocabulary and could be pushed to the same tactile specificity as the shell and crater."
+            ]
+          }
+        },
+        "ranking": [
+          "D",
+          "B",
+          "C",
+          "A"
+        ]
+      },
+      "meta": {
+        "seconds": 33.5,
+        "cost_usd": 0.1514232,
+        "tokens": 70628,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "critic": {
+    "answer": {
+      "scores": {
+        "motion": 5,
+        "sound": 6,
+        "craft": 7
+      },
+      "checks": {
+        "idea": true,
+        "invariant": true,
+        "arc": false,
+        "type_meaning": false,
+        "freeze_frame": false,
+        "ending": true,
+        "restraint": true,
+        "material": false,
+        "sync": true
+      },
+      "defects": [
+        "One shot holds for 15.8 s. The movement inside it is mostly the waveforms scrolling sideways at constant speed, so the screen reads as nearly static for long stretches.",
+        "In the pairs, the frames 1/6 s apart barely change: the waves translate linearly, with no easing, no overshoot and no secondary motion on the headphone, chip or ear.",
+        "The 'speaker' emission is a single soft black dash. The anti-noise is never shown leaving the driver, so the key causal step has no visual of its own.",
+        "The mic 'hearing' pulse is a faint pink ring that is barely legible. It should be a hit, not a ghost.",
+        "The waves are clipped hard at the frame edge and at the mic point. Where the wave enters the mic there is an abrupt cut-off with no handoff.",
+        "The headphone and ear diagram is reused unchanged across shots. Only the labels and the dashed wire are added, so the shots differ by text rather than by staging.",
+        "The 100% crop is slightly soft and the halftone dots are uneven in places. The paper grain is subtle and flat, with no light or falloff.",
+        "The first 17 s of audio is a static broadband noise wash with almost no change over time. Thin partials show above it, and there are few distinct sound-design hits on wave events."
+      ],
+      "gaps": [
+        "Choreography and timing: the piece needs eased, weighted moves and staged handoffs, for example noise travelling into the mic, the chip flipping the wave with a physical rotation, and anti-noise leaving the speaker to collide with the noise. It also needs an actual shot rhythm with a median of around 3\u20134 s, instead of a long scrolling diagram with captions replacing each other.",
+        "Arc and type: energy is flat until the noise drop at about 56%. There is no build to a climactic moment where the waves collide and cancel. Type is always fade-in caption text and never acts out the meaning: 'Silence' is not quieted, and 'upside down' is not flipped.",
+        "Sound design: the cut from noise to music is a good conceptual device, but it is one hard switch. The soundtrack needs layered, synced foley for mic, chip and speaker beats, a gradual phase-cancellation sweep that tracks the waves merging, and a fuller produced score with dynamic shape after the drop."
+      ]
+    },
+    "meta": {
+      "seconds": 23.5,
+      "cost_usd": 0.1662338,
+      "tokens": 72471,
+      "models": [
+        "claude-opus-5-5"
+      ]
+    },
+    "pace": "i-explainer.mp4: 30.0s, 4 shots, median 4.87s, longest 15.77s\nper-second change: [12.0, 11.0, 9.0, 6.7, 18.6, 6.5, 4.5, 2.7, 15.8, 8.9, 8.7, 9.3, 9.5, 12.9, 6.0, 10.8, 10.0, 3.1, 2.2, 16.7, 6.7, 7.5, 7.8, 6.7, 15.0, 9.2, 8.4, 10.1, 8.5]\nPACE: FAIL \u2014 longest shot 15.8s > 2.5s; median shot 4.9s > 1.5s"
+  },
+  "full_scores": {
+    "idea": 4.5,
+    "composition": 4.0,
+    "typography": 3.5,
+    "colour": 4.0,
+    "light_texture": 3.5,
+    "motion": 4.5,
+    "craft": 6.0,
+    "originality": 3.0,
+    "sound": 6
+  },
+  "full_overall": 4.33,
+  "cost_usd": 1.027,
+  "judge_seconds": 205.6,
+  "verdict": "FAIL"
+}
