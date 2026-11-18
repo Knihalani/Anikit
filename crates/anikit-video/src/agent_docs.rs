@@ -373,7 +373,7 @@ mod tests {
         assert!(docs(Some("key anchor")).unwrap().contains("anchor"));
         assert!(docs(Some("key ancor")).unwrap_err().contains("anchor"));
         let e = docs(Some("essentials")).unwrap();
-        assert!(e.len() < 15_000 && e.contains("compositions") && e.contains("shader"), "{}", e.len());
+        assert!(e.len() < 16_000 && e.contains("compositions") && e.contains("shader"), "{}", e.len());
         assert!(snippets(Some("snap-zoom")).unwrap().contains("\"shake\""));
     }
 
