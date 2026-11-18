@@ -1,0 +1,881 @@
+{
+ "size": "16:9",
+ "fps": 30,
+ "intent": {
+  "pace": "fast",
+  "genre": "social"
+ },
+ "music": {
+  "style": "cinematic-hybrid",
+  "bpm": 120,
+  "key": "Dm",
+  "mood": "dark epic",
+  "hits": [
+   "@2.0",
+   "@6.5",
+   "@7.5"
+  ],
+  "end": "ring"
+ },
+ "sound": {
+  "palette": "cinematic",
+  "ambience": {
+   "type": "crowd",
+   "level": -10
+  },
+  "density": 0.55,
+  "cues": [
+   {
+    "sfx": "impact",
+    "at": 0.12,
+    "gain": -9
+   },
+   {
+    "sfx": "impact",
+    "at": 0.48,
+    "gain": -8
+   },
+   {
+    "sfx": "impact",
+    "at": 0.84,
+    "gain": -7
+   },
+   {
+    "sfx": "impact",
+    "at": 1.2,
+    "gain": -5
+   },
+   {
+    "sfx": "riser",
+    "at": 2.0,
+    "gain": -6
+   },
+   {
+    "sfx": "boom",
+    "at": 6.75,
+    "gain": -2
+   },
+   {
+    "sfx": "braam",
+    "at": 7.5,
+    "gain": -4
+   }
+  ]
+ },
+ "post": {
+  "preset": "cinematic",
+  "bloom": 0.22,
+  "grain": 0.035,
+  "vignette": 0.35,
+  "halation": 0.15
+ },
+ "motionBlur": {
+  "shutter": 180
+ },
+ "defs": {
+  "line": {
+   "shape": "path",
+   "fill": "none",
+   "stroke": "#EEF3F8",
+   "strokeWidth": 5,
+   "anchor": "topLeft"
+  }
+ },
+ "scenes": [
+  {
+   "id": "floodlights",
+   "duration": 2.0,
+   "background": "#02040A",
+   "layers": [
+    {
+     "type": "shader",
+     "src": "flood.glsl"
+    }
+   ]
+  },
+  {
+   "id": "pitch",
+   "duration": 1.5,
+   "background": "#071A0E",
+   "transition": {
+    "type": "zoom-blur",
+    "duration": 0.3
+   },
+   "camera": {
+    "animate": [
+     {
+      "from": {
+       "zoom": 2.4,
+       "rotation": -14
+      },
+      "to": {
+       "zoom": 1.05,
+       "rotation": 0
+      },
+      "duration": 1.5,
+      "ease": "outCubic"
+     }
+    ]
+   },
+   "layers": [
+    {
+     "shape": "rect",
+     "width": 125,
+     "height": 1200,
+     "x": "=272 + $i*125",
+     "y": 540,
+     "repeat": 12,
+     "fill": "=$i % 2 == 0 ? #18532A : #1D6232"
+    },
+    {
+     "shape": "rect",
+     "width": 1700,
+     "height": 1100,
+     "x": 960,
+     "y": 540,
+     "blend": "screen",
+     "opacity": 0.55,
+     "fill": "radial-gradient(#3E7F52, #071A0E)"
+    },
+    {
+     "use": "line",
+     "x": 210,
+     "y": 54,
+     "d": "M0 0 H1500 V972 H0 Z",
+     "animate": [
+      {
+       "from": {
+        "trimEnd": 0
+       },
+       "to": {
+        "trimEnd": 1
+       },
+       "duration": 0.9,
+       "ease": "inOutCubic",
+       "at": 0.15
+      }
+     ]
+    },
+    {
+     "use": "line",
+     "x": 829,
+     "y": 54,
+     "d": "M131 0 V972 M262 486 A131 131 0 1 0 0 486 A131 131 0 1 0 262 486",
+     "animate": [
+      {
+       "from": {
+        "trimEnd": 0
+       },
+       "to": {
+        "trimEnd": 1
+       },
+       "duration": 0.7,
+       "ease": "outCubic"
+      }
+     ]
+    },
+    {
+     "use": "line",
+     "x": 210,
+     "y": 252,
+     "d": "M0 0 H236 V576 H0 M0 157 H79 V419 H0 M236 183.5 A131 131 0 0 1 236 392.5",
+     "animate": [
+      {
+       "from": {
+        "trimEnd": 0
+       },
+       "to": {
+        "trimEnd": 1
+       },
+       "duration": 0.7,
+       "ease": "outCubic",
+       "at": 0.35
+      }
+     ]
+    },
+    {
+     "use": "line",
+     "x": 1422,
+     "y": 252,
+     "d": "M288 0 H52 V576 H288 M288 157 H209 V419 H288 M52 183.5 A131 131 0 0 0 52 392.5",
+     "animate": [
+      {
+       "from": {
+        "trimEnd": 0
+       },
+       "to": {
+        "trimEnd": 1
+       },
+       "duration": 0.7,
+       "ease": "outCubic",
+       "at": 0.35
+      }
+     ]
+    },
+    {
+     "shape": "circle",
+     "width": 12,
+     "height": 12,
+     "fill": "#EEF3F8",
+     "x": 960,
+     "y": 540
+    },
+    {
+     "shape": "circle",
+     "width": 34,
+     "height": 34,
+     "x": 975,
+     "y": 528,
+     "fill": "radial-gradient(#FFFFFF, #B9C3CF)",
+     "shadow": {
+      "x": -10,
+      "y": 8,
+      "blur": 6,
+      "color": "#00000099"
+     }
+    }
+   ]
+  },
+  {
+   "id": "northbridge",
+   "duration": 1.5,
+   "background": "#1232B4",
+   "transition": {
+    "type": "whip",
+    "direction": "left",
+    "duration": 0.25
+   },
+   "layers": [
+    {
+     "shape": "rect",
+     "width": 1920,
+     "height": 1080,
+     "x": 960,
+     "y": 540,
+     "fill": "linear-gradient(180deg, #1A3FD0, #0B1F78)"
+    },
+    {
+     "use": "line",
+     "x": 0,
+     "y": 300,
+     "strokeWidth": 4,
+     "stroke": "#DCE6FF",
+     "opacity": 0.55,
+     "d": "M0 340 Q300 260 520 0 Q960 1600 1400 0 Q1660 260 1920 340 M520 0 V600 M1400 0 V600 M0 460 H1920",
+     "animate": [
+      {
+       "from": {
+        "trimEnd": 0
+       },
+       "to": {
+        "trimEnd": 1
+       },
+       "duration": 1.1,
+       "ease": "inOutCubic"
+      }
+     ]
+    },
+    {
+     "shape": "rect",
+     "repeat": 21,
+     "width": 3,
+     "anchor": "top",
+     "fill": "#DCE6FF",
+     "x": "=520 + 880*($i+1)/22",
+     "y": "=300 + 1600*(($i+1)/22)*(1-($i+1)/22)",
+     "height": "=760 - (300 + 1600*(($i+1)/22)*(1-($i+1)/22))",
+     "opacity": 0.4,
+     "enter": {
+      "preset": "fadeIn",
+      "delay": "=0.35 + $i*0.02"
+     }
+    },
+    {
+     "text": "NORTHBRIDGE",
+     "font": "Big Shoulders",
+     "weight": 900,
+     "size": "26vh",
+     "color": "#FFFFFF",
+     "letterSpacing": "-0.01em",
+     "x": "50%",
+     "y": "47%",
+     "smear": true,
+     "inertia": "heavy",
+     "shadow": {
+      "x": 0,
+      "y": 20,
+      "blur": 40,
+      "color": "#04104088"
+     },
+     "animate": [
+      {
+       "from": {
+        "x": 3000
+       },
+       "to": {
+        "x": 960
+       },
+       "duration": 0.45,
+       "ease": "outExpo"
+      },
+      {
+       "to": {
+        "x": 900
+       },
+       "at": 0.45,
+       "duration": 1.05,
+       "ease": "linear"
+      }
+     ]
+    },
+    {
+     "text": "CITY",
+     "font": "Big Shoulders",
+     "weight": 800,
+     "size": "7vh",
+     "color": "#FFFFFF",
+     "letterSpacing": "0.4em",
+     "x": "50%",
+     "y": "78%",
+     "enter": {
+      "preset": "mask by char up",
+      "delay": 0.3
+     }
+    }
+   ]
+  },
+  {
+   "id": "harbour",
+   "duration": 1.5,
+   "background": "#F0501E",
+   "transition": {
+    "type": "whip",
+    "direction": "right",
+    "duration": 0.25
+   },
+   "layers": [
+    {
+     "shape": "rect",
+     "width": 1920,
+     "height": 1080,
+     "x": 960,
+     "y": 540,
+     "fill": "linear-gradient(180deg, #FF6A2B, #D23A12)"
+    },
+    {
+     "shape": "path",
+     "d": "M0 0 L1700 -330 L1700 330 Z",
+     "x": 1560,
+     "y": 330,
+     "anchor": [
+      0,
+      0.5
+     ],
+     "blend": "screen",
+     "fill": "linear-gradient(90deg, #FFE9C8CC, #FFE9C800)",
+     "rotation": "=196 - 34*t"
+    },
+    {
+     "shape": "path",
+     "fill": "#0A1A33",
+     "x": 1505,
+     "y": 300,
+     "anchor": "topLeft",
+     "d": "M30 60 L80 60 L96 700 L14 700 Z M20 40 H90 V62 H20 Z M38 0 H72 V42 H38 Z"
+    },
+    {
+     "shape": "circle",
+     "width": 60,
+     "height": 60,
+     "x": 1560,
+     "y": 320,
+     "fill": "radial-gradient(#FFF6E0, #FFF6E000)",
+     "blend": "screen"
+    },
+    {
+     "shape": "path",
+     "fill": "none",
+     "stroke": "#0A1A33",
+     "strokeWidth": 5,
+     "repeat": 5,
+     "anchor": "topLeft",
+     "d": "M0 20 Q60 0 120 20 T240 20 T360 20 T480 20 T600 20 T720 20 T840 20 T960 20 T1080 20 T1200 20 T1320 20 T1440 20 T1560 20 T1680 20 T1800 20 T1920 20 T2040 20 T2160 20",
+     "x": "=-240 + 120*sin(t*1.6 + $i) - 60*$i",
+     "y": "=850 + $i*44",
+     "opacity": "=0.85 - $i*0.12"
+    },
+    {
+     "text": "HARBOUR",
+     "font": "Big Shoulders",
+     "weight": 900,
+     "size": "29vh",
+     "color": "#0A1A33",
+     "letterSpacing": "-0.01em",
+     "x": "40%",
+     "y": "45%",
+     "smear": true,
+     "inertia": "heavy",
+     "animate": [
+      {
+       "from": {
+        "x": -1400
+       },
+       "to": {
+        "x": 740
+       },
+       "duration": 0.45,
+       "ease": "outExpo"
+      },
+      {
+       "to": {
+        "x": 800
+       },
+       "at": 0.45,
+       "duration": 1.05,
+       "ease": "linear"
+      }
+     ]
+    },
+    {
+     "text": "ATHLETIC",
+     "font": "Big Shoulders",
+     "weight": 800,
+     "size": "7vh",
+     "color": "#0A1A33",
+     "letterSpacing": "0.4em",
+     "x": "40%",
+     "y": "70%",
+     "enter": {
+      "preset": "mask by char up",
+      "delay": 0.3
+     }
+    }
+   ]
+  },
+  {
+   "id": "clash",
+   "duration": 1.0,
+   "background": "#05070D",
+   "camera": {
+    "shake": {
+     "amount": 14,
+     "at": 0.22,
+     "duration": 0.35
+    },
+    "animate": [
+     {
+      "from": {
+       "zoom": 1.0
+      },
+      "to": {
+       "zoom": 1.06
+      },
+      "duration": 1.0,
+      "ease": "outCubic"
+     }
+    ]
+   },
+   "layers": [
+    {
+     "id": "left",
+     "layers": [
+      {
+       "shape": "rect",
+       "width": 960,
+       "height": 1080,
+       "x": 480,
+       "y": 540,
+       "fill": "linear-gradient(180deg, #1A3FD0, #0B1F78)"
+      },
+      {
+       "shape": "path",
+       "d": "M0 340 Q300 260 520 0 Q740 800 960 520 M520 0 V600 M0 460 H960",
+       "fill": "none",
+       "stroke": "#DCE6FF",
+       "strokeWidth": 4,
+       "opacity": 0.35,
+       "x": 0,
+       "y": 300,
+       "anchor": "topLeft"
+      },
+      {
+       "text": "NORTHBRIDGE",
+       "font": "Big Shoulders",
+       "weight": 900,
+       "size": "15vh",
+       "color": "#FFFFFF",
+       "anchor": "right",
+       "x": 920,
+       "y": 300
+      }
+     ],
+     "x": 0,
+     "y": 0,
+     "anchor": "topLeft",
+     "smear": true,
+     "animate": [
+      {
+       "from": {
+        "x": -300
+       },
+       "to": {
+        "x": 0
+       },
+       "duration": 0.18,
+       "ease": "inExpo"
+      },
+      {
+       "keyframes": {
+        "x": [
+         0,
+         -18,
+         0
+        ]
+       },
+       "at": 0.22,
+       "duration": 0.3,
+       "ease": "outCubic"
+      }
+     ]
+    },
+    {
+     "id": "right",
+     "layers": [
+      {
+       "shape": "rect",
+       "width": 960,
+       "height": 1080,
+       "x": 1440,
+       "y": 540,
+       "fill": "linear-gradient(180deg, #FF6A2B, #D23A12)"
+      },
+      {
+       "shape": "path",
+       "d": "M0 20 Q60 0 120 20 T240 20 T360 20 T480 20 T600 20 T720 20 T840 20 T960 20 T1080 20 T1200 20 T1320 20 T1440 20 T1560 20 T1680 20 T1800 20 T1920 20 T2040 20 T2160 20",
+       "fill": "none",
+       "stroke": "#0A1A33",
+       "strokeWidth": 5,
+       "repeat": 4,
+       "anchor": "topLeft",
+       "x": "=900 - 60*$i + 80*sin(t*1.6+$i)",
+       "y": "=850 + $i*44",
+       "opacity": "=0.7 - $i*0.12"
+      },
+      {
+       "text": "HARBOUR",
+       "font": "Big Shoulders",
+       "weight": 900,
+       "size": "15vh",
+       "color": "#071226",
+       "anchor": "left",
+       "x": 1000,
+       "y": 300
+      }
+     ],
+     "x": 0,
+     "y": 0,
+     "anchor": "topLeft",
+     "smear": true,
+     "animate": [
+      {
+       "from": {
+        "x": 300
+       },
+       "to": {
+        "x": 0
+       },
+       "duration": 0.18,
+       "ease": "inExpo"
+      },
+      {
+       "keyframes": {
+        "x": [
+         0,
+         18,
+         0
+        ]
+       },
+       "at": 0.22,
+       "duration": 0.3,
+       "ease": "outCubic"
+      }
+     ]
+    },
+    {
+     "shape": "rect",
+     "width": 8,
+     "height": 1080,
+     "x": 960,
+     "y": 540,
+     "fill": "#FFFFFF",
+     "glow": "#FFFFFF",
+     "animate": [
+      {
+       "from": {
+        "scaleY": 0
+       },
+       "to": {
+        "scaleY": 1
+       },
+       "at": 0.22,
+       "duration": 0.2,
+       "ease": "outExpo"
+      }
+     ]
+    },
+    {
+     "shape": "circle",
+     "width": 300,
+     "height": 300,
+     "x": 960,
+     "y": 540,
+     "fill": "none",
+     "stroke": "#FFFFFF",
+     "strokeWidth": 8,
+     "animate": [
+      {
+       "from": {
+        "trimEnd": 0
+       },
+       "to": {
+        "trimEnd": 1
+       },
+       "at": 0.25,
+       "duration": 0.45,
+       "ease": "outExpo"
+      }
+     ]
+    },
+    {
+     "shape": "circle",
+     "width": 20,
+     "height": 20,
+     "x": 960,
+     "y": 540,
+     "fill": "#FFFFFF",
+     "enter": {
+      "preset": "pop",
+      "delay": 0.3
+     }
+    },
+    {
+     "shape": "rect",
+     "width": 1920,
+     "height": 1080,
+     "x": 960,
+     "y": 540,
+     "fill": "#FFFFFF",
+     "blend": "screen",
+     "sfx": false,
+     "animate": [
+      {
+       "from": {
+        "opacity": 0
+       },
+       "to": {
+        "opacity": 0
+       },
+       "duration": 0.22
+      },
+      {
+       "keyframes": {
+        "opacity": [
+         0.85,
+         0
+        ]
+       },
+       "at": 0.22,
+       "duration": 0.3
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "lockup",
+   "duration": 2.5,
+   "background": "#02040A",
+   "camera": {
+    "animate": [
+     {
+      "from": {
+       "zoom": 1.0
+      },
+      "to": {
+       "zoom": 1.07
+      },
+      "duration": 2.5,
+      "ease": "outCubic"
+     }
+    ]
+   },
+   "layers": [
+    {
+     "type": "shader",
+     "src": "flood.glsl",
+     "uniforms": {
+      "tOff": 2.5
+     },
+     "x": 1060,
+     "y": 540
+    },
+    {
+     "shape": "rect",
+     "width": 1920,
+     "height": 1080,
+     "x": 960,
+     "y": 540,
+     "fill": "linear-gradient(90deg, #02040AEE, #02040A99 45%, #02040A00 75%)"
+    },
+    {
+     "text": "WOMEN'S SUPER LEAGUE",
+     "font": "Big Shoulders",
+     "weight": 700,
+     "size": "4vh",
+     "color": "#C9D6E8",
+     "letterSpacing": "0.18em",
+     "x": "7%",
+     "y": "16%",
+     "anchor": "left",
+     "enter": {
+      "preset": "fadeUp",
+      "delay": 0.15
+     }
+    },
+    {
+     "shape": "rect",
+     "width": 14,
+     "height": 118,
+     "x": "7%",
+     "y": "29%",
+     "anchor": "left",
+     "fill": "#2F56FF",
+     "animate": [
+      {
+       "from": {
+        "scaleY": 0
+       },
+       "to": {
+        "scaleY": 1
+       },
+       "duration": 0.35,
+       "ease": "outExpo"
+      }
+     ]
+    },
+    {
+     "text": "NORTHBRIDGE CITY",
+     "font": "Big Shoulders",
+     "weight": 900,
+     "size": "12.5vh",
+     "color": "#FFFFFF",
+     "x": "9%",
+     "y": "29%",
+     "anchor": "left",
+     "enter": "mask by line up"
+    },
+    {
+     "text": "*v*",
+     "font": "Newsreader",
+     "weight": 500,
+     "size": "9vh",
+     "color": "#E8EEF8",
+     "x": "9.3%",
+     "y": "41.5%",
+     "anchor": "left",
+     "enter": {
+      "preset": "fadeIn",
+      "delay": 0.2
+     }
+    },
+    {
+     "shape": "rect",
+     "width": 14,
+     "height": 118,
+     "x": "7%",
+     "y": "54%",
+     "anchor": "left",
+     "fill": "#FF5A24",
+     "animate": [
+      {
+       "from": {
+        "scaleY": 0
+       },
+       "to": {
+        "scaleY": 1
+       },
+       "at": 0.12,
+       "duration": 0.35,
+       "ease": "outExpo"
+      }
+     ]
+    },
+    {
+     "text": "HARBOUR ATHLETIC",
+     "font": "Big Shoulders",
+     "weight": 900,
+     "size": "12.5vh",
+     "color": "#FFFFFF",
+     "x": "9%",
+     "y": "54%",
+     "anchor": "left",
+     "enter": {
+      "preset": "mask by line up",
+      "delay": 0.12
+     }
+    },
+    {
+     "text": "KICK-OFF",
+     "font": "Big Shoulders",
+     "weight": 700,
+     "size": "4vh",
+     "color": "#C9D6E8",
+     "letterSpacing": "0.18em",
+     "x": "9%",
+     "y": "68%",
+     "anchor": "left",
+     "enter": {
+      "preset": "fadeUp",
+      "delay": 0.45
+     }
+    },
+    {
+     "text": "19:45",
+     "font": "Big Shoulders",
+     "weight": 900,
+     "size": "19vh",
+     "color": "#FFFFFF",
+     "x": "9%",
+     "y": "80%",
+     "anchor": "left",
+     "enter": {
+      "preset": "scramble",
+      "delay": 0.5
+     }
+    },
+    {
+     "shape": "rect",
+     "width": 1920,
+     "height": 1080,
+     "x": 960,
+     "y": 540,
+     "fill": "#FFFFFF",
+     "blend": "screen",
+     "sfx": false,
+     "animate": [
+      {
+       "keyframes": {
+        "opacity": [
+         0.9,
+         0
+        ]
+       },
+       "duration": 0.3,
+       "ease": "outCubic"
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

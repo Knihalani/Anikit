@@ -1,0 +1,1 @@
+{"cmd": "anikit-video render deliverables/eval/k-sports/spec.json -o deliverables/eval/k-sports/final.mp4 --sheet deliverables/eval/k-sports/contact.png", "exit": 0, "wall_s": 56.48, "peak_rss_mb": 1669.1}
