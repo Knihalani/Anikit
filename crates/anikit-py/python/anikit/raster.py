@@ -33,6 +33,7 @@ Also here: :func:`shatter` (break a mesh into flying shards) and
 
 from __future__ import annotations
 
+import array
 import dataclasses
 import math
 import time
@@ -1263,14 +1264,14 @@ class Shards:
         # Deterministic per-shard randomness (the TypeScript generator, bit for bit).
         seed = (0x9E3779B9 ^ nt) & 0xFFFFFFFF
         j = self.spread
-        values = []
+        values = array.array("I")
         append = values.append
         multiplier, increment = 0x2C1B3C6D, 0x6D2B79F5
         mask, scale = 0xFFFFFFFF, 4294967296.0
         for _ in range(8 * nt):
             seed = ((((seed ^ (seed >> 15)) * multiplier) & mask) + increment) & mask
             append(seed)
-        vals = np.array(values, np.float64).reshape(nt, 8) / scale
+        vals = np.frombuffer(values, np.uint32).astype(np.float64).reshape(nt, 8) / scale
         d = cents - ctr
         dist = np.sqrt(np.einsum("ij,ij->i", d, d))
         dd = np.where(dist == 0, 1.0, dist)
