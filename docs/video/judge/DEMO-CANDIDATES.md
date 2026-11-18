@@ -116,8 +116,9 @@ Every judged output, best first within each category. Score = median blind score
 | # | Score | Verdict | Judged pro | Refs | Full | Engine | Source | Piece | Result |
 |---|---|---|---|---|---|---|---|---|---|
 | 1 | 4.25 | FAIL | 1/6 | 7.15 | 4.61 | Anikit | demo | j-music-demo | `docs/video/judge/demos/rebuilds/j-music-demo` |
-| 2 | 3.75 | FAIL | 0/3 | 7.21 | 4.11 | Anikit | r2 | j-music | `docs/video/judge/rounds/r2/results/j-music` |
-| 3 | 3.12 | FAIL | 0/3 | 6.87 | 3.56 | Anikit | r1 | j-music | `docs/video/judge/rounds/r1/results/j-music` |
+| 2 | 4.19 | FAIL | 1/6 | 7.23 | 4.58 | Anikit | demo | j-music-demo-p7 | `docs/video/judge/demos/rebuilds/j-music-demo-p7` |
+| 3 | 3.75 | FAIL | 0/3 | 7.21 | 4.11 | Anikit | r2 | j-music | `docs/video/judge/rounds/r2/results/j-music` |
+| 4 | 3.12 | FAIL | 0/3 | 6.87 | 3.56 | Anikit | r1 | j-music | `docs/video/judge/rounds/r1/results/j-music` |
 
 ## product launch
 
