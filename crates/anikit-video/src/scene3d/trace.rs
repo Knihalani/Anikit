@@ -1451,8 +1451,10 @@ impl Scene {
                 }
                 // Knurl: crossed helical grooves around Y.
                 _ => {
-                    let a = q.z.atan2(q.x) * 0.05;
-                    ((a / period + q.y / period) * tau).sin() * ((a / period - q.y / period) * tau).sin()
+                    // Arc length around Y, so the diamonds keep their shape at any radius.
+                    let arc = q.z.atan2(q.x) * (q.x * q.x + q.z * q.z).sqrt();
+                    let (u, w) = ((arc + q.y) / period, (arc - q.y) / period);
+                    1.0 - 2.0 * (fract(u) - 0.5).abs().max((fract(w) - 0.5).abs())
                 }
             }
         };

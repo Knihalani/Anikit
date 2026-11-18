@@ -124,7 +124,7 @@ Grooves need about six pixels per period to resolve. Below that they fade into e
 
 `{ "extends": "aluminium", "base": "#E4E6E9", "roughness": 0.15, "pattern": "guilloche", "patternScale": 0.012 }`
 
-Proof: `docs/video/shots/3d-patterns/dials.jpg` (a 100 mm macro on two dials, guilloché and clous de Paris; trace about 0.7 s at 1080p). Known limit: very fine guilloché can still moiré near the centre of the rings.
+Recipe: `anikit-video recipes precision-macro` (a knurled knob with a sunburst cap on a brushed plate, a strip sweep and a rack focus; still `docs/video/shots/3d-patterns/precision-macro.jpg`). Proof: `docs/video/shots/3d-patterns/dials.jpg` (a 100 mm macro on two dials, guilloché and clous de Paris; trace about 0.7 s at 1080p). Known limit: very fine guilloché can still moiré near the centre of the rings.
 
 ## Sets
 
