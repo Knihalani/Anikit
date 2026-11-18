@@ -19,11 +19,12 @@ Every judged output, best first within each category. Score = median blind score
 | 2 | 3.62 | FAIL | 0/3 | 6.79 | 4.28 | Anikit | r2 | f-3d | `docs/video/judge/rounds/r2/results/f-3d` |
 | 3 | 3.62 | FAIL | 0/6 | 6.94 | 3.89 | Anikit | demo | f-3d-demo | `docs/video/judge/demos/rebuilds/f-3d-demo` |
 | 4 | 3.5 | FAIL | 0/3 | 7.08 | 3.78 | Anikit | r1 | f-3d | `docs/video/judge/rounds/r1/results/f-3d` |
-| 5 | 3.25 | FAIL | 0/3 | 7.38 | 3.67 | Anikit | demo | v-sound_calibre9-after | `docs/video/judge/demos/results/v-sound_calibre9-after` |
-| 6 | 3 | FAIL | 0/3 | 7.0 | 3.12 | Anikit | demo | 3d-showcase_showcase | `docs/video/judge/demos/results/3d-showcase_showcase` |
-| 7 | 3 | FAIL | 0/3 | 7.17 | 3.22 | Anikit | demo | sim_unveil | `docs/video/judge/demos/results/sim_unveil` |
-| 8 | 2.75 | FAIL | 0/3 | 7.71 | 2.78 | Anikit | demo | v-sound_physics_drop | `docs/video/judge/demos/results/v-sound_physics_drop` |
-| 9 | 2.25 | FAIL | 0/3 | 7.63 | 2.5 | Anikit | demo | sim_snow | `docs/video/judge/demos/results/sim_snow` |
+| 5 | 3.31 | FAIL | 0/6 | 7.02 | 3.72 | Anikit | demo | f-3d-demo-v2 | `docs/video/judge/demos/rebuilds/f-3d-demo-v2` |
+| 6 | 3.25 | FAIL | 0/3 | 7.38 | 3.67 | Anikit | demo | v-sound_calibre9-after | `docs/video/judge/demos/results/v-sound_calibre9-after` |
+| 7 | 3 | FAIL | 0/3 | 7.0 | 3.12 | Anikit | demo | 3d-showcase_showcase | `docs/video/judge/demos/results/3d-showcase_showcase` |
+| 8 | 3 | FAIL | 0/3 | 7.17 | 3.22 | Anikit | demo | sim_unveil | `docs/video/judge/demos/results/sim_unveil` |
+| 9 | 2.75 | FAIL | 0/3 | 7.71 | 2.78 | Anikit | demo | v-sound_physics_drop | `docs/video/judge/demos/results/v-sound_physics_drop` |
+| 10 | 2.25 | FAIL | 0/3 | 7.63 | 2.5 | Anikit | demo | sim_snow | `docs/video/judge/demos/results/sim_snow` |
 
 ## 9:16 social ad
 
