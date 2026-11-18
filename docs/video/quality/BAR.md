@@ -81,3 +81,12 @@ The user's verdict on `docs/video/skills/launch-examples/margin/`: "margin also 
 - any combination that could be a Notion/Linear/Arc-alike landing page turned into a video.
 
 What the user is asking for instead is **amazing and specific**: density of craft (many considered layers per frame, real imagery made with the engine: illustration, simulation, shader worlds, photographic-grade compositing), motion with choreography and weight, an idea only this product could have, and a look a designer would not recognise as a trend. Restraint is a choice that must still be rich (cf. title sequences), never emptiness.
+
+## Fifth rejection: the marching-band Anikit launch ("horrid… so artificial and weird")
+
+`deliverables/launch3/anikit/` is a ray-traced simulation of a real-world scene: a 144-piece marching band on a football field, seen from above, forming a bird and then the word ANIKIT. The blind judge scored it PASS (professional in 2 of 2 practice trials, 7.7 against references at 6.2). The user called it horrid, artificial and weird.
+
+What this teaches:
+- **Don't simulate reality the engine can't photograph.** Real-world scenes with people, crowds, places, nature or food, rendered as CG, read as synthetic and game-like. However clever the idea, the image gives it away.
+- **The judge is not the bar.** It compares six stills against references and rewards an idea and clear composition. It can't see "this looks fake" the way a person does. Treat a PASS as necessary, never sufficient, and show the user only work that would also survive a human eye.
+- **An analogous-craft idea can still be right as a concept.** Render it as design (diagram, type, print, UI, graphic abstraction), not as a fake photograph of the real thing.
