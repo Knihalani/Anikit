@@ -620,6 +620,9 @@ pub struct Camera {
     pub y: Option<Num>,
     pub zoom: Option<Num>,
     pub rotation: Option<Num>,
+    /// Dolly: move the camera through depth (a push-in with real parallax: near layers grow faster than far ones).
+    /// Layers at `depth` 0 sit 1 unit away, so `0.5` halves their distance; layers the camera passes disappear. Animatable.
+    pub dolly: Option<Num>,
     /// Depth in focus (layers at this `depth` are sharp). Default 0. Animatable (focus pulls).
     pub focus: Option<Num>,
     /// Depth-of-field strength: blur σ in px per unit of |depth − focus|. Default 0 (off).
@@ -747,6 +750,9 @@ pub struct Layer {
     /// Group drag (overlapping action): child i follows the group's own motion i × drag seconds later,
     /// so a moving group trails and settles part by part. Pairs well with `inertia` on the group.
     pub drag: Option<f64>,
+    /// Extrusion / long shadow: the layer's silhouette repeated along a direction, behind it, in one colour.
+    /// `{"angle": 45, "length": 120, "color": "#000", "fade": 0}` (angle in degrees, 0 = right, 90 = down).
+    pub extrude: Option<ExtrudeSpec>,
     /// Smear: stretch the layer along its direction of travel on fast moves (`true`, or strength; 1 = default).
     #[schemars(with = "Option<serde_json::Value>")]
     pub smear: Option<serde_json::Value>,
@@ -1063,6 +1069,20 @@ pub struct AnimatorSpec {
     pub duration: Option<f64>,
     pub delay: Option<f64>,
     pub ease: Option<String>,
+}
+
+/// `extrude`: a solid extrusion or long shadow.
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct ExtrudeSpec {
+    /// Direction in degrees (0 = right, 90 = down). Default 45.
+    pub angle: Option<f64>,
+    /// Length in px. Default 60.
+    pub length: Option<f64>,
+    /// Colour (default 50% black).
+    pub color: Option<String>,
+    /// 0 = solid; 1 = fades out toward the far end (a long shadow).
+    pub fade: Option<f64>,
 }
 
 /// `zigzag` shape modifier.

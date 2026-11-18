@@ -67,8 +67,10 @@ pub(crate) mod prop {
     pub const RANGE0: usize = 35;
     pub const RANGE1: usize = 36;
     pub const RANGE_OFF: usize = 37;
+    /// Camera dolly: travel through depth (layers at depth 0 sit 1 unit away).
+    pub const DOLLY: usize = 38;
     /// Shader uniforms: `UNIFORM_SLOTS` floats, mapped per layer by name.
-    pub const U0: usize = 38;
+    pub const U0: usize = 39;
     pub const N: usize = U0 + super::shader::UNIFORM_SLOTS;
 
     /// Default values.
@@ -121,6 +123,7 @@ pub(crate) mod prop {
             "rangeStart" => (RANGE0, 1),
             "rangeEnd" => (RANGE1, 1),
             "rangeOffset" => (RANGE_OFF, 1),
+            "dolly" => (DOLLY, 1),
             "fill" | "color" => (FILL, 4),
             "stroke" => (STROKE, 4),
             _ => return None,
@@ -869,7 +872,7 @@ impl Evaluator {
         let cx = Cx { ev: self, scene_t: lt, gt: t, dof: 0.0, amul: 1.0 };
         let (cam, v, panning) = self.scene_cam(s, t, xf);
         let (cxp, cyp, rot, zoom) = (v[0], v[1], v[2], v[3]);
-        let (focus, aperture) = (v[4], v[5]);
+        let (focus, aperture, dolly) = (v[4], v[5], v[6]);
         let skip = SKIP.with(|s| !s.borrow().is_empty());
         for (li, n) in s.layers.iter().enumerate() {
             if skip && n.id.as_deref().is_some_and(|id| SKIP.with(|s| s.borrow().iter().any(|x| x == id))) {
@@ -888,9 +891,18 @@ impl Evaluator {
             let lt = (lt - n.start).max(0.0);
             self.props(n, &cx, lt, &mut lv);
             let d = lv[prop::DEPTH];
-            let lcam = if panning && d != 0.0 {
-                let k = 1.0 / (1.0 + d.max(-0.9));
-                let m = dl::mul(&translate(w * 0.5, h * 0.5), &dl::mul(&rotate(rot), &dl::mul(&scale(zoom, zoom), &translate(-w * 0.5 - cxp * k, -h * 0.5 - cyp * k))));
+            // Perspective: a layer at depth d sits 1 + d from the camera at dolly 0. A dolly moves the
+            // camera forward, so near layers grow faster than far ones; pans move near layers more.
+            let dist = 1.0 + d.max(-0.9);
+            let rel = dist - dolly;
+            if rel <= 0.02 {
+                continue; // the camera has passed it
+            }
+            let lcam = if (panning && d != 0.0) || dolly != 0.0 {
+                // Scale zoom·dist/rel; pan cxp/dist in layer space = zoom·cxp/rel on screen (perspective).
+                let z = zoom * dist / rel;
+                let k = 1.0 / dist;
+                let m = dl::mul(&translate(w * 0.5, h * 0.5), &dl::mul(&rotate(rot), &dl::mul(&scale(z, z), &translate(-w * 0.5 - cxp * k, -h * 0.5 - cyp * k))));
                 dl::mul(xf, &m)
             } else {
                 cam
@@ -902,7 +914,7 @@ impl Evaluator {
 
     /// A scene's camera transform at global time `t` (after `xf`), with
     /// `[x, y, rotation, zoom, focus, aperture]` and whether it pans.
-    fn scene_cam(&self, s: &SceneC, t: f32, xf: &Affine) -> (Affine, [f32; 6], bool) {
+    fn scene_cam(&self, s: &SceneC, t: f32, xf: &Affine) -> (Affine, [f32; 7], bool) {
         let (w, h) = (self.width as f32, self.height as f32);
         let lt = t - s.start;
         let cx = Cx { ev: self, scene_t: lt, gt: t, dof: 0.0, amul: 1.0 };
@@ -936,7 +948,7 @@ impl Evaluator {
         };
         let (focus, aperture) = (v[prop::FOCUS], v[prop::APERTURE].max(0.0));
         let panning = cxp != 0.0 || cyp != 0.0;
-        (cam, [cxp, cyp, rot, zoom, focus, aperture], panning)
+        (cam, [cxp, cyp, rot, zoom, focus, aperture, v[prop::DOLLY]], panning)
     }
 
     fn emit_transition(&self, a: &SceneC, b: &SceneC, t: f32, p: f32, e: f32, out: &mut Vec<Op>) {
@@ -1367,6 +1379,22 @@ impl Evaluator {
         let start = out.len();
         if n.matte.is_some() {
             out.push(Op::PushLayer { opacity: 1.0, blend: Blend::Normal, filters: Vec::new(), clip: None, cache_key: None });
+        }
+        if let Some((dx, dy, steps, fade, m)) = n.fx.as_deref().and_then(|f| f.extrude) {
+            // One tinted layer holding the silhouette stepped back along the direction (far end first).
+            out.push(Op::PushLayer { opacity: 1.0, blend: Blend::Normal, filters: vec![Filter::ColorMatrix(m)], clip: None, cache_key: None });
+            let at = out.len();
+            for k in (1..=steps).rev() {
+                let a = 1.0 - fade * (k as f32 - 1.0) / steps as f32;
+                let c = Cx { amul: cx.amul * a, ..*cx };
+                let px = dl::mul(&translate(dx * k as f32, dy * k as f32), parent);
+                self.emit_node_inner(n, &c, &px, psize, po, out);
+            }
+            if out.len() == at {
+                out.pop();
+            } else {
+                out.push(Op::PopLayer);
+            }
         }
         let body = out.len();
         match n.fx.as_deref() {
