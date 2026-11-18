@@ -428,6 +428,35 @@ def test_bind_many_exports_world_output_once():
     assert native.output_calls == 1
 
 
+def test_bind_many_stops_registering_after_target_setter_fails():
+    class Target:
+        pass
+
+    class RaisingTarget:
+        @property
+        def x(self):
+            raise AttributeError
+
+        @x.setter
+        def x(self, value):
+            raise ValueError("x setter failed")
+
+    w = World(gravity=(0, 0))
+    bodies = w.add_bodies([(10, 20), (30, 40), (50, 60)])
+    first, middle, third = Target(), RaisingTarget(), Target()
+
+    with pytest.raises(ValueError, match="x setter failed"):
+        w.bind_many(bodies, [first, middle, third])
+
+    assert len(w._bindings) == 2
+    assert not hasattr(third, "x") and not hasattr(third, "y")
+
+    w.unbind(middle)
+    w.sync()
+
+    assert not hasattr(third, "x") and not hasattr(third, "y")
+
+
 def test_bind_many_preserves_bindings_before_invalid_body():
     w = World(gravity=(0, 0))
     w.add_bodies([(10, 20), (30, 40), (50, 60)])

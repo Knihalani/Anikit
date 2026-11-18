@@ -845,8 +845,10 @@ class World:
                 new.append(self._make_binding(b, t, **keys))
         finally:
             if new:
-                self._bindings.extend(new)
-                self._write(new, self._native.output())
+                out = _floats(self._native.output())
+                for b in new:
+                    self._bindings.append(b)
+                    World._write_out([b], out)
 
     def unbind(self, what: Any = None) -> None:
         """Remove bindings of a target, a body, or (``None``) all of them."""
@@ -860,7 +862,10 @@ class World:
 
     @staticmethod
     def _write(bindings: List[_Binding], raw: bytes) -> None:
-        out = _floats(raw)
+        World._write_out(bindings, _floats(raw))
+
+    @staticmethod
+    def _write_out(bindings: List[_Binding], out: "array[float]") -> None:
         deg = 180.0 / math.pi
         for b in bindings:
             k = b.index * 3
