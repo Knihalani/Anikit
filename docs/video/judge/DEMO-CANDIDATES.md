@@ -29,8 +29,9 @@ Every judged output, best first within each category. Score = median blind score
 | # | Score | Verdict | Judged pro | Refs | Full | Engine | Source | Piece | Result |
 |---|---|---|---|---|---|---|---|---|---|
 | 1 | 3.94 | FAIL | 0/6 | 7.04 | 3.97 | Anikit | r3 | a-social | `docs/video/judge/rounds/r3/results/a-social` |
-| 2 | 3.38 | FAIL | 0/3 | 7.17 | 3.89 | Anikit | r2 | a-social | `docs/video/judge/rounds/r2/results/a-social` |
-| 3 | 3.25 | FAIL | 0/3 | 7.37 | 3.78 | Anikit | r1 | a-social | `docs/video/judge/rounds/r1/results/a-social` |
+| 2 | 3.5 | FAIL | 0/6 | 7.06 | 4.06 | Anikit | demo | a-social-demo | `docs/video/judge/demos/rebuilds/a-social-demo` |
+| 3 | 3.38 | FAIL | 0/3 | 7.17 | 3.89 | Anikit | r2 | a-social | `docs/video/judge/rounds/r2/results/a-social` |
+| 4 | 3.25 | FAIL | 0/3 | 7.37 | 3.78 | Anikit | r1 | a-social | `docs/video/judge/rounds/r1/results/a-social` |
 
 ## brand ident
 
@@ -50,11 +51,12 @@ Every judged output, best first within each category. Score = median blind score
 | # | Score | Verdict | Judged pro | Refs | Full | Engine | Source | Piece | Result |
 |---|---|---|---|---|---|---|---|---|---|
 | 1 | 4.88 | FAIL | 0/6 | 7.31 | 5.25 | Anikit | demo | e-data-demo | `docs/video/judge/demos/rebuilds/e-data-demo` |
-| 2 | 4 | FAIL | 0/3 | 7.67 | 4.28 | Anikit | demo | ceiling2_breath_breath | `docs/video/judge/demos/results/ceiling2_breath_breath` |
-| 3 | 3.62 | FAIL | 0/3 | 7.25 | 3.83 | Anikit | r1 | e-data | `docs/video/judge/rounds/r1/results/e-data` |
-| 4 | 3.38 | FAIL | 0/3 | 7.25 | 3.67 | Anikit | r2 | e-data | `docs/video/judge/rounds/r2/results/e-data` |
-| 5 | 2.75 | FAIL | 0/3 | 7.37 | 3.33 | HyperFrames | r1 | hf-e-data | `docs/video/judge/rounds/r1/results/hf-e-data` |
-| 6 | 2.62 | FAIL | 0/3 | 7.75 | 2.94 | Anikit | demo | graphic_pieces_street-ledger | `docs/video/judge/demos/results/graphic_pieces_street-ledger` |
+| 2 | 4.31 | FAIL | 0/6 | 7.25 | 4.53 | Anikit | r3 | e-data | `docs/video/judge/rounds/r3/results/e-data` |
+| 3 | 4 | FAIL | 0/3 | 7.67 | 4.28 | Anikit | demo | ceiling2_breath_breath | `docs/video/judge/demos/results/ceiling2_breath_breath` |
+| 4 | 3.62 | FAIL | 0/3 | 7.25 | 3.83 | Anikit | r1 | e-data | `docs/video/judge/rounds/r1/results/e-data` |
+| 5 | 3.38 | FAIL | 0/3 | 7.25 | 3.67 | Anikit | r2 | e-data | `docs/video/judge/rounds/r2/results/e-data` |
+| 6 | 2.75 | FAIL | 0/3 | 7.37 | 3.33 | HyperFrames | r1 | hf-e-data | `docs/video/judge/rounds/r1/results/hf-e-data` |
+| 7 | 2.62 | FAIL | 0/3 | 7.75 | 2.94 | Anikit | demo | graphic_pieces_street-ledger | `docs/video/judge/demos/results/graphic_pieces_street-ledger` |
 
 ## event promo
 
@@ -113,8 +115,9 @@ Every judged output, best first within each category. Score = median blind score
 
 | # | Score | Verdict | Judged pro | Refs | Full | Engine | Source | Piece | Result |
 |---|---|---|---|---|---|---|---|---|---|
-| 1 | 3.75 | FAIL | 0/3 | 7.21 | 4.11 | Anikit | r2 | j-music | `docs/video/judge/rounds/r2/results/j-music` |
-| 2 | 3.12 | FAIL | 0/3 | 6.87 | 3.56 | Anikit | r1 | j-music | `docs/video/judge/rounds/r1/results/j-music` |
+| 1 | 4.25 | FAIL | 1/6 | 7.15 | 4.61 | Anikit | demo | j-music-demo | `docs/video/judge/demos/rebuilds/j-music-demo` |
+| 2 | 3.75 | FAIL | 0/3 | 7.21 | 4.11 | Anikit | r2 | j-music | `docs/video/judge/rounds/r2/results/j-music` |
+| 3 | 3.12 | FAIL | 0/3 | 6.87 | 3.56 | Anikit | r1 | j-music | `docs/video/judge/rounds/r1/results/j-music` |
 
 ## product launch
 
