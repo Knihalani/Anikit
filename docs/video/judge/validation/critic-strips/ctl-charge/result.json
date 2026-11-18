@@ -1,0 +1,41 @@
+{
+  "answer": {
+    "scores": {
+      "motion": 7,
+      "sound": null,
+      "craft": 8
+    },
+    "checks": {
+      "idea": false,
+      "invariant": false,
+      "arc": false,
+      "type_meaning": false,
+      "freeze_frame": false,
+      "ending": false,
+      "restraint": true,
+      "material": true,
+      "sync": null
+    },
+    "defects": [
+      "Visible compression blocking and macroblocking in the dark gradients and the magenta paint at the 100% crop; the shadow falloff behind the robot head bands into steps.",
+      "The long corridor shot runs about 4-5 s with very little change (2.7-4.0 change/s). The character walks off into shadow and the frame sits nearly empty, which reads as dead air in a 20 s cut.",
+      "The robot-strike transition (strip3) is a heavy blur smear across about 2 frames into a new angle. The move is readable, but the shot change has no clear landing point and the hit resolves into a mushy frame.",
+      "Several frames are crushed so dark that the subject's silhouette is lost: the figure in frame 5 is barely separable from the door.",
+      "The first frame's hand/gauntlet close-up is mostly underexposed, so the opening image lacks a clear focal read."
+    ],
+    "gaps": [
+      "Pacing and arc: energy spikes early (the spark grind and robot hit at 2-4 s) and again at about 15 s, with a flat 5 s trough between them. There is no build to a peak at 60-80% and no designed release. Top trailer cuts escalate shot by shot and land the peak deliberately.",
+      "Choreography of the transitions: the good character animation (facial strain, the robot's whip-pan strike with weighty motion blur, overlapping spark physics) is joined by cuts that don't hand off through matched action or eyelines. The ending (an explosion wide) doesn't rhyme with the gauntlet opening.",
+      "Finish at delivery: the lighting and materials are film-grade (sparks with falloff, the worn cloth, the magenta paint on matte white), but the encode crushes the blacks and blocks the gradients. Several shots are lit so low the subject disappears, which a top studio would grade for legibility at thumbnail and at 1:1."
+    ]
+  },
+  "meta": {
+    "seconds": 22.8,
+    "cost_usd": 0.15136660000000002,
+    "tokens": 71293,
+    "models": [
+      "claude-opus-5-5"
+    ]
+  },
+  "pace": "blender-studio-charge-2022.mp4: 20.0s, 3 shots, median 4.21s, longest 14.54s\nper-second change: [13.5, 17.8, 26.0, 21.6, 27.4, 10.4, 17.0, 24.9, 20.0, 5.5, 4.0, 3.9, 4.0, 3.6, 2.7, 21.0, 5.7, 4.9, 3.7]\nPACE: FAIL \u2014 longest shot 14.5s > 2.5s; median shot 4.2s > 1.5s; 9/19 seconds look like the previous second"
+}

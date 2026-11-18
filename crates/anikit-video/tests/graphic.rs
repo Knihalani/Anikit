@@ -146,3 +146,39 @@ fn near_grid_warning() {
     assert_eq!(w.len(), 1, "{w:?}");
     assert!(w[0].contains("layers[0]") && w[0].contains("x = 96"), "{w:?}");
 }
+
+#[test]
+fn brush_strokes_fill_and_paint_on() {
+    let e = ev(r##"{ "scenes": [ { "duration": 2, "layers": [ { "shape": "path", "d": "M0 0 C100 -50 200 50 300 0", "fill": "none", "stroke": "#111", "strokeWidth": 20,
+        "brush": { "dry": 0.5, "seed": 2 }, "animate": [ { "from": { "trimEnd": 0 }, "duration": 1 } ] } ] } ] }"##);
+    let fills = |t: f32| e.eval(t).ops.iter().filter(|o| matches!(o, Op::Fill { .. })).count();
+    let strokes = e.eval(1.5).ops.iter().filter(|o| matches!(o, Op::Stroke { .. })).count();
+    assert_eq!(strokes, 0);
+    assert_eq!(fills(0.0), 0, "nothing painted yet");
+    assert_eq!(fills(1.5), 1);
+    let w = parse_json(r#"{ "scenes": [ { "layers": [ { "shape": "circle", "brush": true } ] } ] }"#).unwrap();
+    let ev2 = Evaluator::new(&w.spec, Options::default()).unwrap();
+    assert!(ev2.diagnostics.iter().any(|d| d.to_string().contains("brush")));
+}
+
+#[test]
+fn theme_palette_and_riso_inks() {
+    let e = ev(r##"{ "theme": { "palette": "#3255a4 split", "colors": { "accent": "riso:fluorescent-pink" } },
+        "scenes": [ { "layers": [ { "shape": "rect", "width": 10, "height": 10, "fill": "$accent2" }, { "shape": "rect", "width": 10, "height": 10, "fill": "$accent" } ] } ] }"##);
+    let _ = e.eval(0.5);
+    let bad = parse_json(r##"{ "theme": { "palette": "#3255a4 sideways" }, "scenes": [ { "layers": [] } ] }"##).unwrap();
+    let err = Evaluator::new(&bad.spec, Options::default()).err().unwrap().to_string();
+    assert!(err.contains("theme.palette") && err.contains("split"), "{err}");
+}
+
+#[test]
+fn tween_between_cells() {
+    let e = ev(r##"{ "grid": { "columns": 12, "rows": 8, "margin": [54, 96], "gutter": 24 }, "scenes": [ { "duration": 2, "layers": [
+        { "cell": "1-6/1-4", "shape": "rect", "fill": "#f00", "animate": [ { "to": { "cell": "7-12/5-8" }, "duration": 1 } ] } ] } ] }"##);
+    let rect = |t: f32| e.eval(t).ops.iter().find_map(|o| if let Op::RoundRect { x, y, w, h, transform, .. } = o { Some((transform[4] + x, transform[5] + y, *w, *h)) } else { None }).unwrap();
+    let (x0, y0, w0, _) = rect(0.0);
+    let (x1, y1, w1, h1) = rect(1.5);
+    assert!((x0 - 96.0).abs() < 0.5 && (y0 - 54.0).abs() < 0.5, "{x0} {y0}");
+    assert!((x1 - (96.0 + 6.0 * 146.0)).abs() < 0.5 && (y1 - (54.0 + 4.0 * 124.5)).abs() < 0.5, "{x1} {y1}");
+    assert!((w0 - w1).abs() < 0.5 && (h1 - (4.0 * 100.5 + 3.0 * 24.0)).abs() < 0.5);
+}

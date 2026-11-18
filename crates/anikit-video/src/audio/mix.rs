@@ -356,6 +356,26 @@ pub fn mix_sources<P: AsRef<Pcm>>(
     duration: f64,
     rate: u32,
 ) -> Pcm {
+    let [mut out, voice, sfx] = mix_stems(tracks, sources, duration, rate);
+    for ((o, v), s) in out.iter_mut().zip(&voice).zip(&sfx) {
+        *o += v + s;
+    }
+    limit(&mut out, rate);
+    Pcm {
+        rate,
+        channels: 2,
+        samples: out,
+    }
+}
+
+/// Like [`mix_sources`] but unlimited and split by role: interleaved stereo
+/// `[music, voice, sfx]` stems (ducking already applied).
+pub fn mix_stems<P: AsRef<Pcm>>(
+    tracks: &[Track],
+    sources: &[P],
+    duration: f64,
+    rate: u32,
+) -> [Vec<f32>; 3] {
     assert_eq!(tracks.len(), sources.len(), "one source per track");
     let n_out = (duration.max(0.0) * rate as f64).round() as usize;
     let srcs: Vec<Cow<Pcm>> = sources
@@ -410,9 +430,14 @@ pub fn mix_sources<P: AsRef<Pcm>>(
         }));
     }
 
-    let mut out = vec![0.0f32; n_out * 2];
-    for ((p, s), ti) in places.iter().zip(&srcs).zip(&target_of) {
+    let mut outs = [vec![0.0f32; n_out * 2], vec![0.0f32; n_out * 2], vec![0.0f32; n_out * 2]];
+    for (((p, s), ti), t) in places.iter().zip(&srcs).zip(&target_of).zip(tracks) {
         let Some(p) = p else { continue };
+        let out = &mut outs[match t.role() {
+            Role::Music => 0,
+            Role::Voice => 1,
+            Role::Sfx => 2,
+        }];
         match ti {
             None => render(p, s, n_out, |n, l, r| {
                 out[2 * n] += l;
@@ -443,12 +468,7 @@ pub fn mix_sources<P: AsRef<Pcm>>(
             }
         }
     }
-    limit(&mut out, rate);
-    Pcm {
-        rate,
-        channels: 2,
-        samples: out,
-    }
+    outs
 }
 
 /// Where a duck setting wants to be ducked: sidechain activity held for

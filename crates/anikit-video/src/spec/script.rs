@@ -154,6 +154,22 @@ fn hsl(h: f64, s: f64, l: f64) -> String {
     format!("#{:02x}{:02x}{:02x}", q(r), q(g), q(b))
 }
 
+fn rgb_hex(r: f64, g: f64, b: f64) -> String {
+    let q = |v: f64| v.round().clamp(0.0, 255.0) as u8;
+    format!("#{:02x}{:02x}{:02x}", q(r), q(g), q(b))
+}
+
+fn with_alpha(hex: String, a: f64) -> String {
+    format!("{hex}{:02x}", (a.clamp(0.0, 1.0) * 255.0).round() as u8)
+}
+
+fn oklch(l: f64, c: f64, h: f64) -> String {
+    let l = if l > 1.5 { l / 100.0 } else { l };
+    let h = h.to_radians();
+    let [r, g, b] = crate::analyze::image_ops::oklab_to_srgb([l as f32, (c * h.cos()) as f32, (c * h.sin()) as f32]);
+    format!("#{r:02x}{g:02x}{b:02x}")
+}
+
 fn engine() -> Engine {
     let mut e = Engine::new();
     e.set_max_operations(50_000_000);
@@ -181,6 +197,13 @@ fn engine() -> Engine {
         c + (n(x) - a) / (n(b) - a) * (n(d) - c)
     });
     e.register_fn("hsl", |h: Dynamic, s: Dynamic, l: Dynamic| hsl(n(h), n(s), n(l)));
+    e.register_fn("hsl", |h: Dynamic, s: Dynamic, l: Dynamic, a: Dynamic| with_alpha(hsl(n(h), n(s), n(l)), n(a)));
+    // Same ranges as expressions: rgb 0–255 (alpha 0–1), oklch L 0–1 (or a percentage), C ≈ 0–0.4, h degrees.
+    e.register_fn("rgb", |r: Dynamic, g: Dynamic, b: Dynamic| rgb_hex(n(r), n(g), n(b)));
+    e.register_fn("rgb", |r: Dynamic, g: Dynamic, b: Dynamic, a: Dynamic| with_alpha(rgb_hex(n(r), n(g), n(b)), n(a)));
+    e.register_fn("rgba", |r: Dynamic, g: Dynamic, b: Dynamic, a: Dynamic| with_alpha(rgb_hex(n(r), n(g), n(b)), n(a)));
+    e.register_fn("oklch", |l: Dynamic, c: Dynamic, h: Dynamic| oklch(n(l), n(c), n(h)));
+    e.register_fn("oklch", |l: Dynamic, c: Dynamic, h: Dynamic, a: Dynamic| with_alpha(oklch(n(l), n(c), n(h)), n(a)));
     e.register_fn("fmt", |x: Dynamic, d: i64| format!("{:.*}", d.clamp(0, 12) as usize, n(x)));
     e.register_fn("noise2", |x: Dynamic, y: Dynamic| noise2(n(x), n(y)));
     e.register_fn("noise3", |x: Dynamic, y: Dynamic, z: Dynamic| noise3(n(x), n(y), n(z)));

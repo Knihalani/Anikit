@@ -1,0 +1,525 @@
+{
+  "name": "div-e-data",
+  "tags": [
+    "data-story",
+    "editorial-data"
+  ],
+  "refs": [
+    "kurzgesagt-climate",
+    "kurzgesagt-short",
+    "cosmos-spacetime-odyssey"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 3,
+      "composition": 3,
+      "typography": 3,
+      "colour": 3,
+      "light_texture": 2,
+      "motion": 3,
+      "craft": 2,
+      "originality": 2
+    },
+    "overall": 2.62,
+    "judged_professional": "0/3",
+    "pro_rate": 0.0,
+    "mean_rank": 4,
+    "gaps": [
+      "Give it a physical, specific idea. Show the ice receding as material: textured, lit and dimensional, rather than a default bar chart growing",
+      "Replace the default serif-plus-grotesk pairing with a typographic system that has scale contrast, and integrate the type with the image instead of setting it like slide text",
+      "Fix the finish (clipped source line, mismatched date range, garbled end-card data) and vary composition and pacing between frames so the motion has weight and choreography",
+      "There is no idea beyond 'animated bar chart of the dataset'. It needs a visual metaphor that makes the loss physical, such as ice that actually melts and fractures as the bars fall, in the way A makes cosmic scale tangible.",
+      "The typography is default (generic serif plus grotesk) with no scale contrast or integration with the image. The type needs a point of view and has to live inside the visual world.",
+      "The frames have no light, material or depth, and the cropping and data errors suggest it was never checked. Real texture, a composed frame on every beat and basic QA would all be required.",
+      "No image or metaphor: the best entry turns data into matter. Make the ice physically shrink, crack or melt with real light and texture instead of plotting bars",
+      "Fix basic layout and finish: text cropped off-frame, a truncated source line, an empty end card. Every frame needs to be composed, not filled",
+      "Replace the default dark-UI kit (tracked label, serif headline, one accent) with a palette and type system specific to the Arctic subject"
+    ],
+    "tells": [
+      "It is the textbook 'tasteful AI' look: a near-black navy ground, a small tracked-caps label ('ARCTIC SEA ICE \u00b7 1979\u20132026'), a generic editorial serif headline, an italic line in one coral accent colour, and an empty frame",
+      "The type is set at defaults: an editorial serif for the year counter, a generic grotesk for the axes and labels, and no scale idea beyond 'big number top right'",
+      "The ice motif is a stock Voronoi cell pattern with a vignette. It is an effect with no subject, and it disappears after the opening frame",
+      "The middle frames repeat one layout: a bar chart filling up, with only the year and the bar count changing. It is a slide-deck structure",
+      "There are craft errors: the source line is clipped to 'rce:' at the frame edge in two frames, the title claims 1979\u20132026 while the chart ends at 2024, and the end card has a stray 'India: 3.29 million km\u00b2' that reads like an unchecked generated string",
+      "The end card is a centred-left source citation on a blurred dark blob. It is placeholder-grade",
+      "It follows the textbook 'tasteful AI' template: dark navy ground, a small tracked-caps label ('ARCTIC SEA ICE \u00b7 1979\u20132026') over a generic editorial serif headline, and one orange-red accent line in italics.",
+      "The frames are a slide deck. Two of the four are the same bar-chart layout with the year number swapped, and the last is a sources card on an empty dark gradient.",
+      "There are craft errors: the left-edge text is clipped ('rce: NSIDC', 'RCTIC SEA ICE'), the header claims data to 2026 while the chart ends at 2024, and the sources card holds a stray, nonsensical 'India: 3.29 million km\u00b2'.",
+      "The Voronoi 'ice' tiles are a stock procedural effect with flat grey fills and no real ice material, light or texture. The bar chart uses default chart styling and an Inter-like sans.",
+      "A textbook 'tasteful AI' template: a dark navy ground, a small tracked-caps label ('ARCTIC SEA ICE \u00b7 1979\u20132026') above a generic editorial serif headline, with one orange accent line in italics",
+      "The idea is literal: a bar chart of the dataset with a year counter, essentially a slide deck with bars growing in",
+      "Frames 2 and 3 share an identical layout with the numbers swapped, then an end card that is a source citation on a near-empty dark field",
+      "Craft errors: the headline and label are cropped at the left frame edge, and the source line is cut off ('rce: NSIDC\u2026')",
+      "The Voronoi 'ice' pattern is a procedural effect with flat grey fills and no light, translucency or texture of real ice",
+      "Default grotesk for the chart and UI, a single highlighted bar in orange, generic gridlines. No typographic idea or scale contrast beyond a big serif year"
+    ]
+  },
+  "refs_summary": {
+    "kurzgesagt-climate": {
+      "overall": 7.62,
+      "judged_professional": "3/3",
+      "mean_rank": 2
+    },
+    "kurzgesagt-short": {
+      "overall": 6.5,
+      "judged_professional": "3/3",
+      "mean_rank": 3
+    },
+    "cosmos-spacetime-odyssey": {
+      "overall": 8,
+      "judged_professional": "3/3",
+      "mean_rank": 1
+    }
+  },
+  "ref_mean": 7.37,
+  "delta": -4.75,
+  "trials": [
+    {
+      "key": {
+        "A": "cosmos-spacetime-odyssey",
+        "B": "kurzgesagt-climate",
+        "C": "candidate",
+        "D": "kurzgesagt-short"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.93,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 9,
+              "originality": 7
+            },
+            "tells": [
+              "Each frame is a photoreal composite with a clear subject: a crater with a nebula inside it, a nautilus shell on wet sand, a protoplanetary disc with comets, and an eye set inside the Helix nebula",
+              "The images rhyme from small to large: crater, shell spiral, disc spiral, iris. The spiral and circle motif runs through the whole piece and shows choreography between frames",
+              "The light is real and motivated: the specular rim on the shell, a backlit disc, volumetric glow, and material texture in the rock and sand",
+              "The credit type is restrained and fitted into each scene: small tracked caps placed in the negative space of each shot",
+              "The main title has wide-tracked letterforms with the eye sitting in the O. The type and the image share one idea"
+            ],
+            "gaps": [
+              "The main title's spaced caps and the 'A Spacetime Odyssey' subtitle are close to stock broadcast type. A custom typographic gesture would raise it",
+              "The palette is the expected cosmic one of teal, orange and nebula colours. It is beautiful but not surprising",
+              "The eye-in-a-nebula reveal is a well-worn science-documentary trope. The final payoff is less original than the shell and crater frames"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 6,
+              "colour": 9,
+              "light_texture": 7,
+              "motion": 8,
+              "craft": 9,
+              "originality": 7
+            },
+            "tells": [
+              "It has a highly consistent, owned illustration system: isometric dioramas, a bird cast and a saturated palette of violet, cyan, magenta and lime used deliberately",
+              "Frames are dense and layered. The traffic jam has smog-blob particles, vehicles with reflections and believable lane perspective",
+              "The scale shifts between frames (city street, then an isometric systems map, then a four-panel character grid, then a hero product shot), which shows edited choreography rather than one repeated layout",
+              "It uses illustrative light well: glow on the bulb, gradient shading, rim highlights and soft cast shadows",
+              "The characters have clear personalities and props (headphones, sunglasses, glasses), so they are not clip-art"
+            ],
+            "gaps": [
+              "Almost no type is visible. The UI in the last frame (sliders and a tick) is generic iconography with no typographic point of view",
+              "The house style is recognisable and sits in a well-established explainer genre. Its surprise comes from execution rather than the idea",
+              "The four-quadrant character frame is the weakest composition. It is closer to a template split-screen than a designed poster"
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 3,
+              "composition": 3,
+              "typography": 3,
+              "colour": 3,
+              "light_texture": 2,
+              "motion": 2,
+              "craft": 2,
+              "originality": 2
+            },
+            "tells": [
+              "It is the textbook 'tasteful AI' look: a near-black navy ground, a small tracked-caps label ('ARCTIC SEA ICE \u00b7 1979\u20132026'), a generic editorial serif headline, an italic line in one coral accent colour, and an empty frame",
+              "The type is set at defaults: an editorial serif for the year counter, a generic grotesk for the axes and labels, and no scale idea beyond 'big number top right'",
+              "The ice motif is a stock Voronoi cell pattern with a vignette. It is an effect with no subject, and it disappears after the opening frame",
+              "The middle frames repeat one layout: a bar chart filling up, with only the year and the bar count changing. It is a slide-deck structure",
+              "There are craft errors: the source line is clipped to 'rce:' at the frame edge in two frames, the title claims 1979\u20132026 while the chart ends at 2024, and the end card has a stray 'India: 3.29 million km\u00b2' that reads like an unchecked generated string",
+              "The end card is a centred-left source citation on a blurred dark blob. It is placeholder-grade"
+            ],
+            "gaps": [
+              "Give it a physical, specific idea. Show the ice receding as material: textured, lit and dimensional, rather than a default bar chart growing",
+              "Replace the default serif-plus-grotesk pairing with a typographic system that has scale contrast, and integrate the type with the image instead of setting it like slide text",
+              "Fix the finish (clipped source line, mismatched date range, garbled end-card data) and vary composition and pacing between frames so the motion has weight and choreography"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 6,
+              "composition": 6,
+              "typography": 5,
+              "colour": 8,
+              "light_texture": 6,
+              "motion": 7,
+              "craft": 7,
+              "originality": 6
+            },
+            "tells": [
+              "It uses the same disciplined illustration system as B (consistent character design, saturated violet, cyan and magenta palette, soft gradients) in a vertical format",
+              "Every frame is a different set: a villain's control room, a topographic heat-map title card, a card game between birds, and a woolly mammoth in snow. That is varied staging with narrative comedy",
+              "The title card integrates bold rounded display type with a stacked shadow over the map illustration, which is a considered treatment",
+              "The mammoth has textured shading and characterful drawing rather than vector-default clip-art"
+            ],
+            "gaps": [
+              "The burned-in social captions ('completely due', 'misconception', 'ice age,') are small default-weight text that undercuts the craft. They need a designed caption system",
+              "The vertical crops feel adapted rather than composed. The control-room and card-game frames are cramped at the top, and subjects crowd the edges",
+              "The idea is a competent explainer repackaged for shorts. It has less of the poster-grade density and layered world-building of B or the single unifying visual metaphor of A"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "B",
+          "D",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 32.9,
+        "cost_usd": 0.1444554,
+        "tokens": 70286,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "cosmos-spacetime-odyssey",
+        "B": "kurzgesagt-climate",
+        "C": "kurzgesagt-short",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 7,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 9,
+              "originality": 7
+            },
+            "tells": [
+              "Strong visual rhyme across scales: crater pool holding a nebula, nautilus spiral, accretion disc, and an iris inside the Helix Nebula. Cosmic and earthly forms echo each other, which is a real conceptual through-line.",
+              "Physically believable light and material: wet rock, the grain of the sand, translucent shell with subsurface glow, volumetric haze around the protoplanetary disc.",
+              "The credits sit in the negative space of each composition, as broadcast title work does. The very wide-tracked COSMOS logotype frames the pupil, so type and image lock together.",
+              "The shots travel from macro to cosmic and from close to vast, which implies deliberate camera choreography rather than one repeated layout."
+            ],
+            "gaps": [
+              "The eye-in-nebula end card is a well-worn space clich\u00e9. A less expected final image would make it more memorable.",
+              "The credit typography is a standard thin grotesk in small caps and adds no character of its own. A custom treatment that reacts to each environment would raise it.",
+              "The palette moves from blue to orange in a conventional way. A more distinctive colour script across the sequence would push it toward award level."
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.88,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 6,
+              "colour": 9,
+              "light_texture": 7,
+              "motion": 8,
+              "craft": 9,
+              "originality": 7
+            },
+            "tells": [
+              "A saturated, deliberately clashing palette (violet road, cyan isometric ground, magenta, lime) is handled with real discipline. Each frame has its own key colour and still belongs to a single system.",
+              "The frames vary widely: a dense traffic jam with smoke-blob pollution, an isometric systems map, a four-panel split-screen of characters, and a clean product-style close-up. That variety points to real choreography and editorial pacing.",
+              "The character design is consistent and full of personality (birds with headphones and sunglasses), and the visual metaphor carries through: purple smoke blobs stand for emissions in every scene.",
+              "Detailing is careful: rim lights, soft shadows, reflections on the car paint, and cars and buses drawn with distinct designs."
+            ],
+            "gaps": [
+              "It sits inside a recognisable house style for flat explainer illustration, so originality is capped. It needs one sequence that breaks its own visual grammar.",
+              "No meaningful typography is visible. The UI sliders in the last frame are generic iconography rather than designed type and information graphics.",
+              "Texture is clean vector with gradient shading. Some grain, print texture or lighting variation would add depth and set it apart from the many explainer channels using the same look."
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.72,
+            "scores": {
+              "idea": 6,
+              "composition": 7,
+              "typography": 5,
+              "colour": 8,
+              "light_texture": 6,
+              "motion": 7,
+              "craft": 7,
+              "originality": 6
+            },
+            "tells": [
+              "It shares a coherent, polished illustration system with B: bird characters, a villain at a STOP console, a stylised mammoth, and a heat-map Europe. That points to an established studio pipeline, not a template.",
+              "The 'Europe's Next Ice Age' title is set in a chunky rounded bold face with an outline and drop shadow, and it sits well on the colour-banded map.",
+              "Each frame stages the scene for vertical format with distinct compositions, and the characters act in a different way in every frame.",
+              "Weak spots: the burned-in captions ('completely due', 'misconception', 'ice age,') are small default social-media subtitles that clash with the illustration."
+            ],
+            "gaps": [
+              "The auto-caption subtitles are generic and badly placed (on top of the console, on top of the ground). The type should be designed into each frame the way B integrates its visuals.",
+              "The vertical short-form reformat compresses the compositions. The frames feel cropped from a wider design rather than built for 9:16.",
+              "Light and depth are simpler than in B: flatter shading and fewer layers. Richer staging and atmosphere would match the parent work."
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 3,
+              "composition": 3,
+              "typography": 3,
+              "colour": 3,
+              "light_texture": 2,
+              "motion": 3,
+              "craft": 2,
+              "originality": 2
+            },
+            "tells": [
+              "It follows the textbook 'tasteful AI' template: dark navy ground, a small tracked-caps label ('ARCTIC SEA ICE \u00b7 1979\u20132026') over a generic editorial serif headline, and one orange-red accent line in italics.",
+              "The frames are a slide deck. Two of the four are the same bar-chart layout with the year number swapped, and the last is a sources card on an empty dark gradient.",
+              "There are craft errors: the left-edge text is clipped ('rce: NSIDC', 'RCTIC SEA ICE'), the header claims data to 2026 while the chart ends at 2024, and the sources card holds a stray, nonsensical 'India: 3.29 million km\u00b2'.",
+              "The Voronoi 'ice' tiles are a stock procedural effect with flat grey fills and no real ice material, light or texture. The bar chart uses default chart styling and an Inter-like sans."
+            ],
+            "gaps": [
+              "There is no idea beyond 'animated bar chart of the dataset'. It needs a visual metaphor that makes the loss physical, such as ice that actually melts and fractures as the bars fall, in the way A makes cosmic scale tangible.",
+              "The typography is default (generic serif plus grotesk) with no scale contrast or integration with the image. The type needs a point of view and has to live inside the visual world.",
+              "The frames have no light, material or depth, and the cropping and data errors suggest it was never checked. Real texture, a composed frame on every beat and basic QA would all be required."
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "B",
+          "C",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 34.7,
+        "cost_usd": 0.1441482,
+        "tokens": 70277,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "kurzgesagt-short",
+        "B": "kurzgesagt-climate",
+        "C": "cosmos-spacetime-odyssey",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 7,
+              "motion": 7,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "The house illustration system is consistent and owned: rounded, asymmetric character designs (a mad-scientist figure, bird characters, a woolly mammoth), each with its own shape language, not clip-art",
+              "Saturated, deliberate palette (violet/magenta mammoth against a pink-lavender sky, a cyan-to-orange table scene) with soft inner glows and rim light that give depth to flat vector",
+              "Each frame is a different staging and scene: a control room with a STOP button, a heat-map title card, a two-character dialogue, a single-creature hero shot. That points to real choreography, not one layout repeated",
+              "The title 'Europe's Next Ice Age' sits as chunky, outlined type laid over a stylised thermal map, so type and image work together",
+              "Weaknesses: burned-in subtitles in a small default sans sit like social captions, and the vertical format squeezes the compositions"
+            ],
+            "gaps": [
+              "Captions are set as small, generic, centred subtitles. Design them into the frame as the best entry does with its credits, or remove them",
+              "The title card's outlined white type is serviceable, not distinctive. Give it a typographic idea tied to ice or climate",
+              "The vertical crop leaves the compositions cramped and centred. Use the tall frame on purpose with vertical staging, scale shifts and depth"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.88,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 7,
+              "motion": 8,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "Dense, layered frames: a gridlocked highway with a dozen distinct vehicles, exhaust clouds in the foreground and city structure behind",
+              "An isometric 'emissions map' of tiles (steak, plane, solar panels, wind turbines, forest) with characters interacting turns the abstract idea into a world, and the soot blobs carry over as a motif between scenes",
+              "A four-panel split screen of bird characters with distinct props (headphones, sunglasses, glasses) shows variety and personality",
+              "Shots change in kind (wide street, isometric diorama, split grid, single object with a UI gauge), which implies real editing rhythm",
+              "No type is visible. Its absence suits a narration-led explainer, but the UI gauge in the last frame is generic"
+            ],
+            "gaps": [
+              "The gauge/checkmark UI panel in the last frame looks like stock interface graphics. Draw it in the illustration's own language",
+              "The look is excellent but belongs to a house style. A piece-specific visual surprise would lift originality",
+              "Light is mostly flat ambient with glows. A motivated light source (headlights, smog-filtered sun) would add atmosphere the subject wants"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 9,
+              "composition": 9,
+              "typography": 7,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 9,
+              "originality": 8
+            },
+            "tells": [
+              "A specific conceptual thread: cosmic matter in a crater pool, a nautilus shell (the Fibonacci spiral as a cosmic echo) on sand, a protoplanetary disc, and the Helix Nebula as an eye. It links the microscopic, the terrestrial and the galactic",
+              "Real light and material: wet rock, the grain of sand, translucent shell glowing with subsurface light, volumetric dust in the accretion disc",
+              "The end reveal places the iris in the nebula with the wide-tracked 'C O S M O S' wordmark spread across it, a memorable image that justifies the whole sequence",
+              "Credits are small, restrained and tucked into negative space beside each subject, following title-sequence convention with discipline",
+              "Every frame works as a poster, and each one changes scale and setting"
+            ],
+            "gaps": [
+              "The nebula-as-eye image is famous, so the climax relies partly on a known visual rather than an invented one",
+              "The wordmark's wide tracking is elegant but conventional. There is little typographic risk compared with the image-making",
+              "The credit type is very small and uniform. More scale variation or integration with the matter on screen could push it further"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 3,
+              "composition": 3,
+              "typography": 3,
+              "colour": 3,
+              "light_texture": 2,
+              "motion": 3,
+              "craft": 2,
+              "originality": 2
+            },
+            "tells": [
+              "A textbook 'tasteful AI' template: a dark navy ground, a small tracked-caps label ('ARCTIC SEA ICE \u00b7 1979\u20132026') above a generic editorial serif headline, with one orange accent line in italics",
+              "The idea is literal: a bar chart of the dataset with a year counter, essentially a slide deck with bars growing in",
+              "Frames 2 and 3 share an identical layout with the numbers swapped, then an end card that is a source citation on a near-empty dark field",
+              "Craft errors: the headline and label are cropped at the left frame edge, and the source line is cut off ('rce: NSIDC\u2026')",
+              "The Voronoi 'ice' pattern is a procedural effect with flat grey fills and no light, translucency or texture of real ice",
+              "Default grotesk for the chart and UI, a single highlighted bar in orange, generic gridlines. No typographic idea or scale contrast beyond a big serif year"
+            ],
+            "gaps": [
+              "No image or metaphor: the best entry turns data into matter. Make the ice physically shrink, crack or melt with real light and texture instead of plotting bars",
+              "Fix basic layout and finish: text cropped off-frame, a truncated source line, an empty end card. Every frame needs to be composed, not filled",
+              "Replace the default dark-UI kit (tracked label, serif headline, one accent) with a palette and type system specific to the Arctic subject"
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "B",
+          "A",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 33.6,
+        "cost_usd": 0.144167,
+        "tokens": 70266,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "critic": {
+    "answer": {
+      "scores": {
+        "motion": 4,
+        "sound": 4,
+        "craft": 6
+      },
+      "checks": {
+        "idea": false,
+        "invariant": false,
+        "arc": false,
+        "type_meaning": false,
+        "freeze_frame": false,
+        "ending": false,
+        "restraint": true,
+        "material": false,
+        "sync": true
+      },
+      "defects": [
+        "Dead air throughout: the disc comparison and the chart hold almost static for seconds at a time (19 of 29 seconds barely change), with an 18.1 s shot",
+        "The bar chart builds linearly, one bar per tick, with no easing or settle; a bar 'grows' only when its height changes between frames",
+        "The disc comparison is static between the 1/6 s pair. Its 'half the ice' payoff is never animated as a shrink or a reveal",
+        "The Voronoi ice texture appears only in the opening and in the trend card and drops out of every data shot, so it is decoration, not a device",
+        "The '3.5 million' figure appears with a plain fade, sitting under a sentence with no visual link to the trend",
+        "The ending is a static source/credits card on near-black: an information slide, not a resolution",
+        "The crop shows flat, untextured bars with only a faint gradient. It is clean, but there is no material or light",
+        "The year counter's '2009' reads 5.26 against a bar that doesn't match it on the same frame, so the label and the data are out of sync during the build",
+        "The audio is static sustained synth chords with evenly stacked partials and hard gaps between blocks. It sounds like generated pads, with only one noise swell (~10.5 s) as sound design"
+      ],
+      "gaps": [
+        "No motion idea. The ice cells should physically fracture and melt into the bars and the disc, so that one material carries the data. Instead it is a slideshow of a title card, a disc, a chart and a source card",
+        "Timing and pace: the long linear chart build and static holds need hard cuts of about 2.5 s, eased bar growth with overshoot and settle, and a real peak on the 2012 record low before a release",
+        "Sound is placeholder pad blocks with no impacts, no ice or texture foley and no musical build. Hits should be scored to the record-low reveal and the end card"
+      ]
+    },
+    "meta": {
+      "seconds": 25.6,
+      "cost_usd": 0.16016039999999998,
+      "tokens": 72176,
+      "models": [
+        "claude-opus-5-5"
+      ]
+    },
+    "pace": "arctic-sea-ice.mp4: 30.0s, 3 shots, median 7.70s, longest 18.10s\nper-second change: [5.1, 4.4, 4.3, 38.7, 15.6, 2.3, 13.6, 0.1, 0.1, 27.4, 6.8, 8.0, 8.0, 7.4, 5.8, 4.7, 4.4, 1.7, 1.5, 0.9, 0.4, 53.8, 5.4, 4.5, 1.7, 1.6, 15.6, 0.1, 0.0]\nPACE: FAIL \u2014 longest shot 18.1s > 2.5s; median shot 7.7s > 1.5s; 19/29 seconds look like the previous second"
+  },
+  "full_scores": {
+    "idea": 3,
+    "composition": 3,
+    "typography": 3,
+    "colour": 3,
+    "light_texture": 2,
+    "motion": 3.5,
+    "craft": 4.0,
+    "originality": 2,
+    "sound": 4
+  },
+  "full_overall": 3.06,
+  "cost_usd": 0.593,
+  "judge_seconds": 126.8,
+  "verdict": "FAIL"
+}
