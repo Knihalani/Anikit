@@ -1,0 +1,25 @@
+RAILYARD — 15 s launch film
+
+Idea: the API call lays the track. One line of code becomes a rail; the money runs it
+from one bank account to another, and every signal it passes turns green and rings
+a bell. Each signal is a webhook (a state change).
+
+Nouns/verbs: rail, switch, signal, yard / call, move, settle, signal.
+Before -> after: a line of code (intent) -> money settled in the other account.
+Motif: the rail line. It is drawn by the code, carries the money, and ends as the
+underline of the wordmark. Sound motif: a bell at every webhook, rising in pitch,
+resolving on "settled".
+
+World: a printed railway poster world (screenprint / Swiss rail posters, British Rail
+signalling diagrams, Otl Aicher signage), not a dark dashboard. Hazard-yellow ground,
+black ink, signal green for "settled". Ink texture, halftone ballast, sleepers.
+Colour script: black (code) -> yellow (in motion) -> green (settled) -> yellow/black (name).
+Type: Big Shoulders Display (railway / transit signage condensed grotesk) for the
+name and one statement; IBM Plex Mono for the real API call and event names.
+
+Shots: macro code crop -> top-down yard, a switch throws -> rushing perspective track
+under signal gantries (created / pending / settled) -> full-bleed green SETTLED ->
+wordmark on the rail with the brief's own line.
+
+Sound: percussive acoustic piece at 112 bpm (wood/brush rhythm like rail joints),
+bells on the webhooks, clicks on switches; one drop to near-silence before SETTLED.

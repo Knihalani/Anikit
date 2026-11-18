@@ -1,0 +1,1494 @@
+{
+ "size": "16:9",
+ "fps": 30,
+ "intent": {
+  "pace": "medium",
+  "genre": "launch"
+ },
+ "fonts": {
+  "Signal": "fonts/BigShoulders-800.ttf",
+  "Plex": "fonts/PlexMono-500.ttf"
+ },
+ "music": {
+  "style": "acoustic",
+  "bpm": 112,
+  "key": "D",
+  "hits": [
+   "@bar5"
+  ],
+  "end": "ring",
+  "tracks": [
+   {
+    "inst": "drums:brush",
+    "drums": {
+     "rim": "x..x..x...x..x..",
+     "shaker": "xoxoxoxoxoxoxoxo"
+    },
+    "bars": 4,
+    "gain": -4
+   }
+  ]
+ },
+ "motionBlur": {
+  "shutter": 180
+ },
+ "post": {
+  "grain": 0.025,
+  "vignette": 0.12
+ },
+ "scenes": [
+  {
+   "duration": 2.679,
+   "background": "#0C0C0B",
+   "camera": {
+    "animate": [
+     {
+      "from": {
+       "zoom": 1.3,
+       "x": -187,
+       "y": -117
+      },
+      "to": {
+       "zoom": 1.0,
+       "x": 0,
+       "y": 0
+      },
+      "duration": 2.2,
+      "ease": "inOutCubic"
+     },
+     {
+      "to": {
+       "x": 1300
+      },
+      "at": 2.36,
+      "duration": 0.32,
+      "ease": "inExpo"
+     }
+    ]
+   },
+   "audio": [
+    {
+     "sfx": "typing",
+     "at": 0.0,
+     "gain": -5
+    },
+    {
+     "sfx": "whoosh",
+     "at": 2.5,
+     "gain": -5
+    }
+   ],
+   "layers": [
+    {
+     "text": "[railyard]{#F6C400}.transfers.create({",
+     "font": "Plex",
+     "size": 76,
+     "color": "#EDEAE2",
+     "x": 150,
+     "y": 300,
+     "anchor": "left",
+     "enter": {
+      "preset": "type",
+      "cps": 80
+     }
+    },
+    {
+     "text": "  from:   \"acct_9f2a…4417\",",
+     "font": "Plex",
+     "size": 76,
+     "color": "#EDEAE2",
+     "x": 150,
+     "y": 395,
+     "anchor": "left",
+     "enter": {
+      "preset": "type",
+      "cps": 80,
+      "delay": 0.36
+     }
+    },
+    {
+     "text": "  to:     \"acct_1c7e…0932\",",
+     "font": "Plex",
+     "size": 76,
+     "color": "#EDEAE2",
+     "x": 150,
+     "y": 490,
+     "anchor": "left",
+     "enter": {
+      "preset": "type",
+      "cps": 80,
+      "delay": 0.68
+     }
+    },
+    {
+     "text": "  amount: [\"€12,400.00\"]{#F6C400},",
+     "font": "Plex",
+     "size": 76,
+     "color": "#EDEAE2",
+     "x": 150,
+     "y": 585,
+     "anchor": "left",
+     "enter": {
+      "preset": "type",
+      "cps": 80,
+      "delay": 1.0
+     }
+    },
+    {
+     "text": "})",
+     "font": "Plex",
+     "size": 76,
+     "color": "#EDEAE2",
+     "x": 150,
+     "y": 680,
+     "anchor": "left",
+     "enter": {
+      "preset": "type",
+      "cps": 80,
+      "delay": 1.32
+     }
+    },
+    {
+     "draw": [
+      {
+       "line": [
+        270,
+        672,
+        3400,
+        672
+       ],
+       "stroke": "#F6C400",
+       "width": 5
+      },
+      {
+       "line": [
+        270,
+        694,
+        3400,
+        694
+       ],
+       "stroke": "#F6C400",
+       "width": 5
+      }
+     ],
+     "start": 1.55,
+     "animate": [
+      {
+       "from": {
+        "trimEnd": 0
+       },
+       "to": {
+        "trimEnd": 1
+       },
+       "duration": 0.7,
+       "ease": "outExpo"
+      }
+     ]
+    },
+    {
+     "script": [
+      "let out = [];",
+      "for k in 0..62 {",
+      "  let x = 300.0 + k * 50.0;",
+      "  out.push(#{ shape: \"rect\", width: 10, height: 44, fill: \"#F6C400\", x: x, y: 683,",
+      "    start: 1.55 + k * 0.012, enter: #{ preset: \"pop\", duration: 0.15 } });",
+      "}",
+      "out"
+     ]
+    }
+   ]
+  },
+  {
+   "duration": 2.143,
+   "background": "#F6C400",
+   "camera": {
+    "animate": [
+     {
+      "from": {
+       "x": -900,
+       "zoom": 1.08
+      },
+      "to": {
+       "x": 0
+      },
+      "duration": 0.4,
+      "ease": "outExpo"
+     },
+     {
+      "to": {
+       "zoom": 1.08
+      },
+      "at": 0.4,
+      "duration": 1.74,
+      "ease": "inOutSine"
+     }
+    ]
+   },
+   "audio": [
+    {
+     "sfx": "click",
+     "at": 0.72,
+     "gain": -5
+    },
+    {
+     "sfx": "ding",
+     "at": 0.85,
+     "gain": -5
+    },
+    {
+     "sfx": "click",
+     "at": 1.55,
+     "gain": -5
+    }
+   ],
+   "layers": [
+    {
+     "shape": "rect",
+     "width": 2400,
+     "height": 1400,
+     "fill": "#E9B700",
+     "pattern": {
+      "kind": "dots",
+      "spacing": 14,
+      "mark": 0.22,
+      "jitter": 0.6,
+      "seed": 3
+     }
+    },
+    {
+     "draw": [
+      {
+       "script": [
+        "let out = [];",
+        "let segs = [[-140.0, 1260.0, 980.0, 140.0]];",
+        "for y in [300.0, 440.0, 580.0, 720.0, 860.0] { segs.push([1120.0 - y, y, 2600.0, y]); }",
+        "for s in segs {",
+        "  let dx = s[2] - s[0]; let dy = s[3] - s[1]; let L = sqrt(dx*dx + dy*dy);",
+        "  let ux = dx / L; let uy = dy / L; let nx = -uy; let ny = ux;",
+        "  let d = 0.0;",
+        "  while d < L { let cx = s[0] + ux*d; let cy = s[1] + uy*d;",
+        "    out.push(#{ line: [cx - nx*22.0, cy - ny*22.0, cx + nx*22.0, cy + ny*22.0], stroke: \"#3B2F00\", width: 8 }); d += 24.0; }",
+        "  out.push(#{ line: [s[0] - nx*11.0, s[1] - ny*11.0, s[2] - nx*11.0, s[3] - ny*11.0], stroke: \"#111\", width: 4 });",
+        "  out.push(#{ line: [s[0] + nx*11.0, s[1] + ny*11.0, s[2] + nx*11.0, s[3] + ny*11.0], stroke: \"#111\", width: 4 });",
+        "}",
+        "out"
+       ]
+      }
+     ],
+     "inkTexture": 0.3
+    },
+    {
+     "shape": "rect",
+     "width": 340,
+     "height": 58,
+     "radius": 4,
+     "fill": "#111",
+     "x": 1660,
+     "y": 440
+    },
+    {
+     "text": "acct_1c7e…0932",
+     "font": "Plex",
+     "size": 34,
+     "color": "#F6C400",
+     "x": 1500,
+     "y": 440,
+     "anchor": "left"
+    },
+    {
+     "shape": "rect",
+     "width": 46,
+     "height": 104,
+     "radius": 23,
+     "fill": "#111",
+     "x": 640,
+     "y": 360
+    },
+    {
+     "shape": "rect",
+     "width": 8,
+     "height": 70,
+     "fill": "#111",
+     "x": 640,
+     "y": 440
+    },
+    {
+     "shape": "circle",
+     "width": 30,
+     "height": 30,
+     "x": 640,
+     "y": 337,
+     "update": "#{ fill: if t < 0.85 { \"#E8321E\" } else { \"#2A2420\" } }"
+    },
+    {
+     "shape": "circle",
+     "width": 30,
+     "height": 30,
+     "x": 640,
+     "y": 383,
+     "update": "#{ fill: if t < 0.85 { \"#22281F\" } else { \"#4CFF7A\" } }"
+    },
+    {
+     "draw": [
+      {
+       "line": [
+        640,
+        320,
+        500,
+        240
+       ],
+       "stroke": "#111",
+       "width": 4
+      }
+     ],
+     "start": 0.8
+    },
+    {
+     "shape": "rect",
+     "width": 560,
+     "height": 140,
+     "radius": 4,
+     "fill": "#111",
+     "x": 220,
+     "y": 176,
+     "anchor": "left",
+     "start": 0.8,
+     "enter": {
+      "preset": "wipe",
+      "duration": 0.2
+     }
+    },
+    {
+     "text": "transfer.created",
+     "font": "Plex",
+     "size": 48,
+     "color": "#F6C400",
+     "x": 250,
+     "y": 150,
+     "anchor": "left",
+     "start": 0.85,
+     "enter": {
+      "preset": "type",
+      "cps": 60
+     }
+    },
+    {
+     "text": "webhook sent  09:41:07.112",
+     "font": "Plex",
+     "size": 32,
+     "color": "#F6C400",
+     "x": 250,
+     "y": 202,
+     "anchor": "left",
+     "start": 0.95,
+     "enter": {
+      "preset": "type",
+      "cps": 70
+     }
+    },
+    {
+     "shape": "rect",
+     "width": 210,
+     "height": 58,
+     "radius": 6,
+     "fill": "#111",
+     "update": "let s = if t < 0.85 { 1300.0 * t / 0.85 } else { let u = 1.0 - min((t - 0.85) / 0.8, 1.0); 1300.0 + 700.0 * (1.0 - u*u*u) }; let x = 0.0; let y = 0.0; let r = 0.0; if s < 1300.0 { x = -140.0 + s * 0.7071 + 0.0; y = 1260.0 - s * 0.7071; r = -45.0; } else { x = 780.0 + (s - 1300.0) - 100.0; y = 440.0; r = 0.0; } if s > 1240.0 && s < 1360.0 { r = -45.0 + 45.0 * (s - 1240.0) / 120.0; } #{ x: x, y: y, rotation: r }"
+    },
+    {
+     "text": "€12,400",
+     "font": "Plex",
+     "size": 32,
+     "color": "#F6C400",
+     "update": "let s = if t < 0.85 { 1300.0 * t / 0.85 } else { let u = 1.0 - min((t - 0.85) / 0.8, 1.0); 1300.0 + 700.0 * (1.0 - u*u*u) }; let x = 0.0; let y = 0.0; let r = 0.0; if s < 1300.0 { x = -140.0 + s * 0.7071 + 0.0; y = 1260.0 - s * 0.7071; r = -45.0; } else { x = 780.0 + (s - 1300.0) - 100.0; y = 440.0; r = 0.0; } if s > 1240.0 && s < 1360.0 { r = -45.0 + 45.0 * (s - 1240.0) / 120.0; } #{ x: x, y: y, rotation: r }"
+    }
+   ]
+  },
+  {
+   "duration": 3.75,
+   "background": "#F6C400",
+   "audio": [
+    {
+     "sfx": "ding",
+     "at": 1.1,
+     "gain": -5
+    },
+    {
+     "sfx": "ding",
+     "at": 2.3,
+     "gain": -5
+    },
+    {
+     "sfx": "whoosh",
+     "at": 3.3,
+     "gain": -5
+    }
+   ],
+   "layers": [
+    {
+     "shape": "rect",
+     "width": 1920,
+     "height": 760,
+     "x": 960,
+     "y": 710,
+     "fill": "#E9B700",
+     "pattern": {
+      "kind": "dots",
+      "spacing": 16,
+      "mark": 0.3,
+      "ramp": [
+       0.1,
+       1
+      ],
+      "angle": 90,
+      "jitter": 0.4,
+      "seed": 9
+     }
+    },
+    {
+     "shape": "rect",
+     "width": 1920,
+     "height": 4,
+     "x": 960,
+     "y": 330,
+     "fill": "#111"
+    },
+    {
+     "draw": [
+      {
+       "rect": [
+        472.8284851168795,
+        313.3176831100014,
+        3,
+        24.297514307877705
+       ],
+       "fill": "#111"
+      },
+      {
+       "circle": [
+        474.3284851168795,
+        305.7024856921223,
+        5
+       ],
+       "fill": "#E8321E"
+      },
+      {
+       "rect": [
+        204.28444929709855,
+        315.48475341170007,
+        3,
+        28.284448071322075
+       ],
+       "fill": "#111"
+      },
+      {
+       "circle": [
+        205.78444929709855,
+        301.71555192867794,
+        5
+       ],
+       "fill": "#E8321E"
+      },
+      {
+       "rect": [
+        1511.3323267522876,
+        296.1057723348586,
+        3,
+        19.77013256794826
+       ],
+       "fill": "#111"
+      },
+      {
+       "circle": [
+        1512.8323267522876,
+        310.2298674320517,
+        5
+       ],
+       "fill": "#2FBF5B"
+      },
+      {
+       "rect": [
+        701.3506334803703,
+        295.72661569350004,
+        3,
+        35.498663654631116
+       ],
+       "fill": "#111"
+      },
+      {
+       "circle": [
+        702.8506334803703,
+        294.5013363453689,
+        5
+       ],
+       "fill": "#E8321E"
+      },
+      {
+       "rect": [
+        432.9967959452064,
+        291.8856335828704,
+        3,
+        35.5519212682389
+       ],
+       "fill": "#111"
+      },
+      {
+       "circle": [
+        434.4967959452064,
+        294.4480787317611,
+        5
+       ],
+       "fill": "#E8321E"
+      },
+      {
+       "rect": [
+        1511.3240229190578,
+        310.97067393149973,
+        3,
+        22.056098889787926
+       ],
+       "fill": "#111"
+      },
+      {
+       "circle": [
+        1512.8240229190578,
+        307.9439011102121,
+        5
+       ],
+       "fill": "#2FBF5B"
+      },
+      {
+       "rect": [
+        1634.371841808306,
+        291.0160029663082,
+        3,
+        36.06176123679667
+       ],
+       "fill": "#111"
+      },
+      {
+       "circle": [
+        1635.871841808306,
+        293.93823876320334,
+        5
+       ],
+       "fill": "#E8321E"
+      },
+      {
+       "rect": [
+        198.06158484825616,
+        300.24785102328315,
+        3,
+        31.464237869428306
+       ],
+       "fill": "#111"
+      },
+      {
+       "circle": [
+        199.56158484825616,
+        298.5357621305717,
+        5
+       ],
+       "fill": "#2FBF5B"
+      },
+      {
+       "rect": [
+        496.4273146922432,
+        309.56962227587934,
+        3,
+        21.279937478326268
+       ],
+       "fill": "#111"
+      },
+      {
+       "circle": [
+        497.9273146922432,
+        308.72006252167375,
+        5
+       ],
+       "fill": "#2FBF5B"
+      },
+      {
+       "rect": [
+        1584.9513301287006,
+        315.8125053075654,
+        3,
+        21.590483403813366
+       ],
+       "fill": "#111"
+      },
+      {
+       "circle": [
+        1586.4513301287006,
+        308.4095165961866,
+        5
+       ],
+       "fill": "#2FBF5B"
+      },
+      {
+       "rect": [
+        1661.9637213769736,
+        293.9508537061855,
+        3,
+        27.21768175865154
+       ],
+       "fill": "#111"
+      },
+      {
+       "circle": [
+        1663.4637213769736,
+        302.78231824134843,
+        5
+       ],
+       "fill": "#E8321E"
+      },
+      {
+       "rect": [
+        818.1651838868777,
+        308.5067071675724,
+        3,
+        25.735682235615965
+       ],
+       "fill": "#111"
+      },
+      {
+       "circle": [
+        819.6651838868777,
+        304.26431776438403,
+        5
+       ],
+       "fill": "#E8321E"
+      },
+      {
+       "rect": [
+        599.9053374362397,
+        294.87259971549986,
+        3,
+        15.12420019587846
+       ],
+       "fill": "#111"
+      },
+      {
+       "circle": [
+        601.4053374362397,
+        314.8757998041215,
+        5
+       ],
+       "fill": "#E8321E"
+      },
+      {
+       "rect": [
+        889.8123258388441,
+        290.0657284461613,
+        3,
+        27.490674241633464
+       ],
+       "fill": "#111"
+      },
+      {
+       "circle": [
+        891.3123258388441,
+        302.5093257583665,
+        5
+       ],
+       "fill": "#2FBF5B"
+      },
+      {
+       "rect": [
+        905.5817584515871,
+        307.08607509902396,
+        3,
+        39.929250728474926
+       ],
+       "fill": "#111"
+      },
+      {
+       "circle": [
+        907.0817584515871,
+        290.0707492715251,
+        5
+       ],
+       "fill": "#E8321E"
+      },
+      {
+       "rect": [
+        160.74678367035207,
+        292.2481727058482,
+        3,
+        30.510496753821442
+       ],
+       "fill": "#111"
+      },
+      {
+       "circle": [
+        162.24678367035207,
+        299.4895032461786,
+        5
+       ],
+       "fill": "#E8321E"
+      },
+      {
+       "rect": [
+        546.900896325817,
+        306.74840038020886,
+        3,
+        33.420509705752025
+       ],
+       "fill": "#111"
+      },
+      {
+       "circle": [
+        548.400896325817,
+        296.579490294248,
+        5
+       ],
+       "fill": "#E8321E"
+      },
+      {
+       "rect": [
+        1205.8552220142878,
+        310.83348282044983,
+        3,
+        22.41188955773015
+       ],
+       "fill": "#111"
+      },
+      {
+       "circle": [
+        1207.3552220142878,
+        307.58811044226985,
+        5
+       ],
+       "fill": "#E8321E"
+      },
+      {
+       "rect": [
+        1341.5189783954602,
+        308.7855514593853,
+        3,
+        29.13721208275284
+       ],
+       "fill": "#111"
+      },
+      {
+       "circle": [
+        1343.0189783954602,
+        300.86278791724715,
+        5
+       ],
+       "fill": "#E8321E"
+      },
+      {
+       "rect": [
+        263.24753952893053,
+        291.7009004457591,
+        3,
+        21.564030616987402
+       ],
+       "fill": "#111"
+      },
+      {
+       "circle": [
+        264.74753952893053,
+        308.4359693830126,
+        5
+       ],
+       "fill": "#E8321E"
+      },
+      {
+       "rect": [
+        117.27258551891615,
+        297.8704110820005,
+        3,
+        37.294122256907386
+       ],
+       "fill": "#111"
+      },
+      {
+       "circle": [
+        118.77258551891615,
+        292.7058777430926,
+        5
+       ],
+       "fill": "#E8321E"
+      },
+      {
+       "rect": [
+        1390.6754399120236,
+        291.0434426180633,
+        3,
+        14.472875657625995
+       ],
+       "fill": "#111"
+      },
+      {
+       "circle": [
+        1392.1754399120236,
+        315.527124342374,
+        5
+       ],
+       "fill": "#E8321E"
+      },
+      {
+       "rect": [
+        630.384060632083,
+        312.02434968831966,
+        3,
+        30.949987640016673
+       ],
+       "fill": "#111"
+      },
+      {
+       "circle": [
+        631.884060632083,
+        299.0500123599833,
+        5
+       ],
+       "fill": "#2FBF5B"
+      },
+      {
+       "rect": [
+        1289.7804417683717,
+        313.9783365158091,
+        3,
+        30.060970716005528
+       ],
+       "fill": "#111"
+      },
+      {
+       "circle": [
+        1291.2804417683717,
+        299.9390292839945,
+        5
+       ],
+       "fill": "#E8321E"
+      },
+      {
+       "rect": [
+        575.7714120972546,
+        309.4987682854943,
+        3,
+        29.56905133282508
+       ],
+       "fill": "#111"
+      },
+      {
+       "circle": [
+        577.2714120972546,
+        300.4309486671749,
+        5
+       ],
+       "fill": "#E8321E"
+      },
+      {
+       "rect": [
+        648.1053017265031,
+        315.7556918751713,
+        3,
+        15.164727015975256
+       ],
+       "fill": "#111"
+      },
+      {
+       "circle": [
+        649.6053017265031,
+        314.83527298402475,
+        5
+       ],
+       "fill": "#E8321E"
+      }
+     ]
+    },
+    {
+     "draw": [
+      {
+       "line": [
+        1100,
+        330,
+        -9565.0,
+        1530
+       ],
+       "stroke": "#2B2300",
+       "width": 3
+      },
+      {
+       "line": [
+        1100,
+        330,
+        -8485.0,
+        1530
+       ],
+       "stroke": "#2B2300",
+       "width": 3
+      },
+      {
+       "line": [
+        1100,
+        330,
+        -6190.0,
+        1530
+       ],
+       "stroke": "#2B2300",
+       "width": 3
+      },
+      {
+       "line": [
+        1100,
+        330,
+        -5109.999999999999,
+        1530
+       ],
+       "stroke": "#2B2300",
+       "width": 3
+      },
+      {
+       "line": [
+        1100,
+        330,
+        -2815.0,
+        1530
+       ],
+       "stroke": "#2B2300",
+       "width": 3
+      },
+      {
+       "line": [
+        1100,
+        330,
+        -1735.0,
+        1530
+       ],
+       "stroke": "#2B2300",
+       "width": 3
+      },
+      {
+       "line": [
+        1100,
+        330,
+        3935.0,
+        1530
+       ],
+       "stroke": "#2B2300",
+       "width": 3
+      },
+      {
+       "line": [
+        1100,
+        330,
+        5015.0,
+        1530
+       ],
+       "stroke": "#2B2300",
+       "width": 3
+      },
+      {
+       "line": [
+        1100,
+        330,
+        7309.999999999999,
+        1530
+       ],
+       "stroke": "#2B2300",
+       "width": 3
+      },
+      {
+       "line": [
+        1100,
+        330,
+        8390.0,
+        1530
+       ],
+       "stroke": "#2B2300",
+       "width": 3
+      },
+      {
+       "line": [
+        1100,
+        330,
+        10685.0,
+        1530
+       ],
+       "stroke": "#2B2300",
+       "width": 3
+      },
+      {
+       "line": [
+        1100,
+        330,
+        11765.0,
+        1530
+       ],
+       "stroke": "#2B2300",
+       "width": 3
+      },
+      {
+       "line": [
+        1100,
+        330,
+        14060.000000000002,
+        1530
+       ],
+       "stroke": "#2B2300",
+       "width": 3
+      },
+      {
+       "line": [
+        1100,
+        330,
+        15140.0,
+        1530
+       ],
+       "stroke": "#2B2300",
+       "width": 3
+      }
+     ]
+    },
+    {
+     "repeat": 70,
+     "shape": "rect",
+     "fill": "#2B2300",
+     "radius": 2,
+     "update": "let v = 34.0 + 30.0 * max(t - 3.0, 0.0); let z = 1.7 + ((i * 0.62 - v * t) % 43.4 + 43.4) % 43.4; #{ x: 1100.0, y: 330.0 + 1440.0 / z, width: 2.7 * 900.0 / z, height: max(1440.0 * 0.22 / (z*z), 1.0), opacity: min((43.0 - z) / 8.0, 1.0) }"
+    },
+    {
+     "draw": [
+      {
+       "points": [
+        [
+         1100,
+         330
+        ],
+        [
+         575,
+         1530
+        ],
+        [
+         515,
+         1530
+        ]
+       ],
+       "closed": true,
+       "fill": "#111"
+      },
+      {
+       "points": [
+        [
+         1100,
+         330
+        ],
+        [
+         1625,
+         1530
+        ],
+        [
+         1685,
+         1530
+        ]
+       ],
+       "closed": true,
+       "fill": "#111"
+      }
+     ]
+    },
+    {
+     "script": [
+      "let out = [];",
+      "let masts = [[46.0, 0.0], [87.0, 1.0]];",
+      "for m in masts {",
+      "  let z0 = m[0];",
+      "  let zx = \"let z = max(\" + z0 + \" - 34.0 * t, 0.6);\";",
+      "  out.push(#{ shape: \"rect\", fill: \"#111\", update: zx + \" #{ x: 1100.0 + 900.0*2.6/z, y: 330.0 + 900.0*(1.6 - 1.7)/z, width: 900.0*0.18/z, height: 900.0*3.4/z }\" });",
+      "  out.push(#{ shape: \"rect\", fill: \"#111\", update: zx + \" #{ x: 1100.0 + 900.0*2.6/z, y: 330.0 + 900.0*(1.6 - 3.6)/z, width: 900.0*0.9/z, height: 900.0*1.9/z, radius: 900.0*0.45/z }\" });",
+      "  out.push(#{ shape: \"circle\", update: zx + \" #{ x: 1100.0 + 900.0*2.6/z, y: 330.0 + 900.0*(1.6 - 4.05)/z, width: 900.0*0.55/z, height: 900.0*0.55/z, fill: if z > 14.0 { \\\"#E8321E\\\" } else { \\\"#2A2420\\\" } }\" });",
+      "  out.push(#{ shape: \"circle\", update: zx + \" #{ x: 1100.0 + 900.0*2.6/z, y: 330.0 + 900.0*(1.6 - 3.15)/z, width: 900.0*0.55/z, height: 900.0*0.55/z, fill: if z > 14.0 { \\\"#22281F\\\" } else { \\\"#4CFF7A\\\" } }\" });",
+      "}",
+      "out"
+     ]
+    },
+    {
+     "shape": "rect",
+     "width": 720,
+     "height": 150,
+     "radius": 4,
+     "fill": "#111",
+     "x": 120,
+     "y": 910,
+     "anchor": "left",
+     "start": 0.9,
+     "enter": {
+      "preset": "wipe",
+      "duration": 0.2
+     }
+    },
+    {
+     "text": "transfer.pending",
+     "font": "Plex",
+     "size": 56,
+     "color": "#F6C400",
+     "x": 150,
+     "y": 880,
+     "anchor": "left",
+     "start": 0.94,
+     "end": 2.14,
+     "enter": {
+      "preset": "type",
+      "cps": 70
+     }
+    },
+    {
+     "text": "webhook sent  09:41:07.164",
+     "font": "Plex",
+     "size": 34,
+     "color": "#F6C400",
+     "x": 150,
+     "y": 940,
+     "anchor": "left",
+     "start": 1.0,
+     "end": 2.14,
+     "enter": {
+      "preset": "type",
+      "cps": 80
+     }
+    },
+    {
+     "text": "transfer.processing",
+     "font": "Plex",
+     "size": 56,
+     "color": "#F6C400",
+     "x": 150,
+     "y": 880,
+     "anchor": "left",
+     "start": 2.14,
+     "enter": {
+      "preset": "type",
+      "cps": 70
+     }
+    },
+    {
+     "text": "webhook sent  09:41:07.219",
+     "font": "Plex",
+     "size": 34,
+     "color": "#F6C400",
+     "x": 150,
+     "y": 940,
+     "anchor": "left",
+     "start": 2.2,
+     "enter": {
+      "preset": "type",
+      "cps": 80
+     }
+    }
+   ]
+  },
+  {
+   "duration": 2.143,
+   "background": "#18A957",
+   "camera": {
+    "animate": [
+     {
+      "from": {
+       "zoom": 1.12
+      },
+      "to": {
+       "zoom": 1.0
+      },
+      "duration": 0.35,
+      "ease": "outExpo"
+     },
+     {
+      "to": {
+       "zoom": 1.03
+      },
+      "at": 0.35,
+      "duration": 1.8,
+      "ease": "linear"
+     }
+    ],
+    "shake": {
+     "amount": 10,
+     "at": 0,
+     "duration": 0.25
+    }
+   },
+   "audio": [
+    {
+     "sfx": "chime",
+     "at": 0.0,
+     "gain": -5
+    }
+   ],
+   "layers": [
+    {
+     "shape": "rect",
+     "width": 2200,
+     "height": 1300,
+     "fill": "#14994D",
+     "pattern": {
+      "kind": "dots",
+      "spacing": 14,
+      "mark": 0.2,
+      "jitter": 0.6,
+      "seed": 5
+     }
+    },
+    {
+     "text": "SETTLED",
+     "font": "Signal",
+     "size": 380,
+     "color": "#0B0B0A",
+     "x": 96,
+     "y": 430,
+     "anchor": "left",
+     "letterSpacing": "-0.01em",
+     "animate": [
+      {
+       "from": {
+        "scale": 1.18
+       },
+       "duration": 0.3,
+       "ease": "outExpo"
+      }
+     ]
+    },
+    {
+     "text": "transfer.settled   09:41:07.287",
+     "font": "Plex",
+     "size": 44,
+     "color": "#0B0B0A",
+     "x": 110,
+     "y": 700,
+     "anchor": "left",
+     "enter": {
+      "preset": "type",
+      "cps": 90,
+      "delay": 0.2
+     }
+    },
+    {
+     "text": "€12,400.00  →  acct_1c7e…0932",
+     "font": "Plex",
+     "size": 44,
+     "color": "#0B0B0A",
+     "x": 110,
+     "y": 766,
+     "anchor": "left",
+     "enter": {
+      "preset": "type",
+      "cps": 90,
+      "delay": 0.35
+     }
+    },
+    {
+     "shape": "rect",
+     "width": 300,
+     "height": 700,
+     "radius": 150,
+     "fill": "#0B0B0A",
+     "x": 1560,
+     "y": 520
+    },
+    {
+     "shape": "rect",
+     "width": 40,
+     "height": 400,
+     "fill": "#0B0B0A",
+     "x": 1560,
+     "y": 1000
+    },
+    {
+     "shape": "circle",
+     "width": 190,
+     "height": 190,
+     "fill": "#0F3A22",
+     "x": 1560,
+     "y": 300
+    },
+    {
+     "shape": "circle",
+     "width": 190,
+     "height": 190,
+     "fill": "#0F3A22",
+     "x": 1560,
+     "y": 520
+    },
+    {
+     "shape": "circle",
+     "width": 190,
+     "height": 190,
+     "fill": "#C8FFD6",
+     "x": 1560,
+     "y": 740,
+     "glow": "#7CFF9E"
+    }
+   ]
+  },
+  {
+   "duration": 4.286,
+   "background": "#F6C400",
+   "audio": [
+    {
+     "sfx": "click",
+     "at": 1.25,
+     "gain": -5
+    },
+    {
+     "sfx": "ding",
+     "at": 1.25,
+     "gain": -5
+    }
+   ],
+   "layers": [
+    {
+     "shape": "rect",
+     "width": 2200,
+     "height": 1300,
+     "fill": "#E9B700",
+     "pattern": {
+      "kind": "dots",
+      "spacing": 14,
+      "mark": 0.22,
+      "jitter": 0.6,
+      "seed": 3
+     }
+    },
+    {
+     "text": "RAILYARD",
+     "font": "Signal",
+     "size": 330,
+     "color": "#0B0B0A",
+     "x": 140,
+     "y": 400,
+     "anchor": "left",
+     "letterSpacing": "-0.005em",
+     "enter": "mask by line up"
+    },
+    {
+     "draw": [
+      {
+       "line": [
+        140,
+        600,
+        1780,
+        600
+       ],
+       "stroke": "#0B0B0A",
+       "width": 6
+      },
+      {
+       "line": [
+        140,
+        630,
+        1780,
+        630
+       ],
+       "stroke": "#0B0B0A",
+       "width": 6
+      }
+     ],
+     "animate": [
+      {
+       "from": {
+        "trimEnd": 0
+       },
+       "to": {
+        "trimEnd": 1
+       },
+       "duration": 0.9,
+       "ease": "outExpo",
+       "at": 0.15
+      }
+     ]
+    },
+    {
+     "repeat": 55,
+     "shape": "rect",
+     "width": 10,
+     "height": 52,
+     "fill": "#3B2F00",
+     "x": "=160 + $i*30",
+     "y": 615,
+     "start": "=0.15 + $i*0.008",
+     "enter": {
+      "preset": "pop",
+      "duration": 0.15
+     }
+    },
+    {
+     "shape": "rect",
+     "width": 210,
+     "height": 50,
+     "radius": 6,
+     "fill": "#0B0B0A",
+     "y": 588,
+     "update": "let u = 1.0 - min(t / 1.25, 1.0); #{ x: -200.0 + 1850.0 * (1.0 - u*u*u*u) }"
+    },
+    {
+     "text": "€12,400",
+     "font": "Plex",
+     "size": 30,
+     "color": "#F6C400",
+     "y": 588,
+     "update": "let u = 1.0 - min(t / 1.25, 1.0); #{ x: -200.0 + 1850.0 * (1.0 - u*u*u*u) }"
+    },
+    {
+     "text": "One API call. Instant settlement.",
+     "font": "Plex",
+     "size": 46,
+     "color": "#0B0B0A",
+     "x": 146,
+     "y": 760,
+     "anchor": "left",
+     "enter": {
+      "preset": "rise",
+      "delay": 0.55
+     }
+    },
+    {
+     "text": "A webhook at every state change.",
+     "font": "Plex",
+     "size": 46,
+     "color": "#0B0B0A",
+     "x": 146,
+     "y": 826,
+     "anchor": "left",
+     "enter": {
+      "preset": "rise",
+      "delay": 0.7
+     }
+    },
+    {
+     "shape": "rect",
+     "width": 8,
+     "height": 120,
+     "fill": "#0B0B0A",
+     "x": 1830,
+     "y": 560
+    },
+    {
+     "shape": "rect",
+     "width": 46,
+     "height": 100,
+     "radius": 23,
+     "fill": "#0B0B0A",
+     "x": 1830,
+     "y": 470
+    },
+    {
+     "shape": "circle",
+     "width": 30,
+     "height": 30,
+     "x": 1830,
+     "y": 448,
+     "update": "#{ fill: if t < 1.25 { \"#E8321E\" } else { \"#2A2420\" } }"
+    },
+    {
+     "shape": "circle",
+     "width": 30,
+     "height": 30,
+     "x": 1830,
+     "y": 492,
+     "update": "#{ fill: if t < 1.25 { \"#22281F\" } else { \"#4CFF7A\" } }"
+    }
+   ]
+  }
+ ]
+}

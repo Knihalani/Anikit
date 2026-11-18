@@ -1,0 +1,1 @@
+{"cmd": "anikit-video render deliverables/eval/b-launch/spec.json -o deliverables/eval/b-launch/final.mp4 --sheet deliverables/eval/b-launch/contact.png", "exit": 0, "wall_s": 38.77, "peak_rss_mb": 918.6}
