@@ -472,7 +472,7 @@ def critic(src, workdir, tags=()):
     for r in rows:
         pairs.paste(r, (0, y)); y += r.height
     pairs.save(blind / "pairs.jpg", quality=88)
-    if os.environ.get("JUDGE_STRIPS", "0") == "1":
+    if os.environ.get("JUDGE_STRIPS", "1") == "1":
         for k, (t0, img) in enumerate(motion_strips(src)):
             img.save(blind / f"strip{k + 1}.jpg", quality=85)
     # 100% crop of the most detailed 640x400 window across the frames
