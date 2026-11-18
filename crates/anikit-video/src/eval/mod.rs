@@ -507,6 +507,15 @@ thread_local! {
     static TAGS: std::cell::RefCell<Option<Vec<OpTag>>> = const { std::cell::RefCell::new(None) };
 }
 
+/// Run `f` with layer tagging off: for ops emitted into a side list (shader
+/// channels, transition scenes), whose ranges don't index the frame's list.
+pub(crate) fn untagged<R>(f: impl FnOnce() -> R) -> R {
+    let saved = TAGS.with(|tg| tg.borrow_mut().take());
+    let r = f();
+    TAGS.with(|tg| *tg.borrow_mut() = saved);
+    r
+}
+
 /// Timing summary of one scene.
 #[derive(Clone, Debug, serde::Serialize)]
 pub struct SceneInfo {
@@ -1019,8 +1028,10 @@ impl Evaluator {
             TransKind::Cut => self.emit_scene(b, t, &id, false, out),
             TransKind::Shader => {
                 let (mut fa, mut fb) = (Vec::new(), Vec::new());
-                self.emit_scene(a, t, &id, false, &mut fa);
-                self.emit_scene(b, t, &id, false, &mut fb);
+                untagged(|| {
+                    self.emit_scene(a, t, &id, false, &mut fa);
+                    self.emit_scene(b, t, &id, false, &mut fb);
+                });
                 match &tr.shader {
                     Some(sc) => self.emit_shader_transition(&sc.0, (fa, a.bg_color), (fb, b.bg_color), t, e, out),
                     None => out.extend(fb),

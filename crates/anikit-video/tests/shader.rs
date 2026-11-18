@@ -321,3 +321,22 @@ fn many_static_uniforms_leave_slots_for_animated_ones() {
     assert!((a[0] as i32 - 41).abs() <= 1, "16 × 0.01 = 0.16 → 41: {a:?}");
     assert!(b[1] > a[1] + 100, "k animates: {a:?} → {b:?}");
 }
+
+/// A shader with a `{layers: […]}` channel: the channel's layers are emitted
+/// into their own list and must not add tags to the frame's (they made the
+/// render estimate panic).
+#[test]
+fn tagged_eval_with_a_layers_channel_stays_in_range() {
+    let ev = build(
+        r##"{ "size": [160, 90], "scenes": [ { "duration": 2, "layers": [
+              { "shader": "void mainImage(out vec4 c, in vec2 p) { c = texture(iChannel0, p / iResolution.xy); }",
+                "channels": [ { "layers": [ { "text": "K", "size": 40 }, { "shape": "rect", "width": 40, "height": 20, "fill": "#ff0000" } ] } ] } ] } ] }"##,
+    );
+    for f in 0..4 {
+        let (dl, tags) = ev.eval_tagged(f as f32 * 0.4);
+        assert!(!tags.is_empty());
+        for t in &tags {
+            assert!(t.ops.start < t.ops.end && t.ops.end <= dl.ops.len(), "frame {f}: {:?} of {} ops", t.ops, dl.ops.len());
+        }
+    }
+}
