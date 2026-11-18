@@ -41,6 +41,13 @@
 - **Contents:** ≈3,200 WAV samples with SFZ mappings (strings sections and solo violin,
   woodwinds, brass, harp, timpani, mallets, organ, upright piano, GM-style percussion).
 
+### VSCO-2 CE subsets (`vsco-strings`, `vsco-winds`)
+
+- The same repository, licence and authors as `vsco2-ce` above, as a sparse checkout of only the
+  string sections (violins, violas, cellos, contrabass) and the SFZ files (≈410 MB download).
+- `vsco-winds` likewise checks out only horn, trumpet, tenor trombone, tuba, the woodwinds, harp and
+  timpani (≈520 MB download).
+
 ### Salamander Grand Piano V3 (`salamander`)
 
 - **Source:** <https://github.com/sfzinstruments/SalamanderGrandPiano> — Yamaha C5,
