@@ -407,6 +407,32 @@ fn adaptive_render_reuses_scratch_across_sizes() {
 }
 
 #[test]
+fn adaptive_nan_threshold_keeps_one_sample_output() {
+    let src = "void mainImage(out vec4 c, in vec2 p) {
+        float a = step(0.5, fract(p.x * 0.137 + sin(p.y * 0.31) * 0.2));
+        float b = step(0.5, fract(p.y * 0.173 + sin(p.x * 0.27) * 0.2));
+        c = vec4(a, b, a * b, 1.0);
+    }";
+    let shader = Shader::compile(src).unwrap();
+    for (w, h) in [(1, 1), (7, 5)] {
+        let mut adaptive = Frame::new(w, h, 0.0);
+        adaptive.supersample = true;
+        adaptive.adaptive = true;
+        adaptive.threshold = f32::NAN;
+        adaptive.max_refine = 1.0;
+        let mut one_sample = adaptive.clone();
+        one_sample.supersample = false;
+
+        assert_eq!(shader.render_f32(&adaptive), shader.render_f32(&one_sample), "{w}×{h}");
+        let mut adaptive_px = vec![0u8; w as usize * h as usize * 4];
+        let mut one_sample_px = vec![0u8; adaptive_px.len()];
+        shader.render(&adaptive, &mut adaptive_px);
+        shader.render(&one_sample, &mut one_sample_px);
+        assert_eq!(adaptive_px, one_sample_px, "{w}×{h}");
+    }
+}
+
+#[test]
 fn unrolled_loops_keep_glsl_semantics() {
     // Counter value after the loop, divergent ifs around it, nested and
     // decreasing loops, loops with a break (not unrolled), <= bounds.

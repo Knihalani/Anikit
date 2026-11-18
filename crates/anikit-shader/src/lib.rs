@@ -264,6 +264,23 @@ struct AaScratch {
     contrast: Vec<f32>,
 }
 
+/// Reusable adaptive-AA buffers, shared by all shaders; at most
+/// `AA_POOL_MAX` are kept, so retained memory doesn't grow with shader count.
+const AA_POOL_MAX: usize = 2;
+static AA_POOL: std::sync::Mutex<Vec<AaScratch>> = std::sync::Mutex::new(Vec::new());
+
+fn take_scratch() -> AaScratch {
+    AA_POOL.lock().ok().and_then(|mut p| p.pop()).unwrap_or_default()
+}
+
+fn give_scratch(s: AaScratch) {
+    if let Ok(mut p) = AA_POOL.lock() {
+        if p.len() < AA_POOL_MAX {
+            p.push(s);
+        }
+    }
+}
+
 /// A compiled shader. Cheap to share between threads; `render` is `&self`.
 pub struct Shader {
     kernel: jit::Kernel,
@@ -285,7 +302,6 @@ pub struct Shader {
     /// First pixel (fragCoord x, y) a render produced NaN or ±Inf at, packed
     /// `x << 32 | y`, or `u64::MAX`: see [`Shader::take_nonfinite`].
     nonfinite: std::sync::atomic::AtomicU64,
-    scratch: std::sync::Mutex<AaScratch>,
 }
 
 impl Shader {
@@ -399,7 +415,6 @@ impl Shader {
             channels_used,
             compile_ms: t0.elapsed().as_secs_f64() * 1e3,
             nonfinite: std::sync::atomic::AtomicU64::new(u64::MAX),
-            scratch: std::sync::Mutex::new(AaScratch::default()),
         })
     }
 
@@ -482,14 +497,10 @@ impl Shader {
             let mut f1 = f.clone();
             f1.supersample = false;
             self.run(&f1, &mut out, w, |dst, px, _, _| *dst = px);
-            if let Ok(mut scratch) = self.scratch.try_lock() {
-                let mut none = vec![(); w * h];
-                self.refine(f, &mut out, &mut scratch.contrast, w, h, &mut none, |_, _, _| {});
-            } else {
-                let mut scratch = AaScratch::default();
-                let mut none = vec![(); w * h];
-                self.refine(f, &mut out, &mut scratch.contrast, w, h, &mut none, |_, _, _| {});
-            }
+            let mut scratch = take_scratch();
+            let mut none = vec![(); w * h];
+            self.refine(f, &mut out, &mut scratch.contrast, w, h, &mut none, |_, _, _| {});
+            give_scratch(scratch);
         } else {
             self.run(f, &mut out, w, |dst, px, _, _| *dst = px);
         }
@@ -499,6 +510,7 @@ impl Shader {
     /// Adaptive supersampling: re-shade, with 2×2 sub-samples, every pixel that
     /// differs from any of its 8 neighbours by more than the threshold in any channel.
     #[allow(clippy::too_many_arguments)]
+    #[allow(clippy::neg_cmp_op_on_partial_ord)]
     fn refine<P: Send>(
         &self,
         f: &Frame,
@@ -583,7 +595,8 @@ impl Shader {
             let cr = &contrast[y * w..y * w + w];
             let mut x = 0;
             while x < w {
-                if cr[x] <= th {
+                // NaN threshold refines nothing, as before.
+                if !(cr[x] > th) {
                     x += 1;
                     continue;
                 }
@@ -651,12 +664,9 @@ impl Shader {
                     convert(&mut row[x], src[x], x, y);
                 }
             };
-            if let Ok(mut scratch) = self.scratch.try_lock() {
-                self.render_adaptive(f, &mut scratch, px, put);
-            } else {
-                let mut scratch = AaScratch::default();
-                self.render_adaptive(f, &mut scratch, px, put);
-            }
+            let mut scratch = take_scratch();
+            self.render_adaptive(f, &mut scratch, px, put);
+            give_scratch(scratch);
         } else if !f.supersample {
             self.run_quads(f, px, w, |rows, b, q, py| {
                 let o = quad_rgba8(b, (q * 2) as u32, py as u32, alpha, dither);
