@@ -111,6 +111,21 @@ They stick to the object (object space), are deterministic, and show mostly wher
 
 Cost: measured on the comparison scene (3 objects, 1080p, 4 cores), trace went from 0.76 s to 1.02 s at 0.6, because uneven highlights get more edge samples. Proof: `docs/video/shots/3d-imperfections/compare.jpg` (clean vs `imperfections: 0.6`, with 100% crops).
 
+## Machined finishes
+
+Watches, cameras, audio gear and tools are defined by their machined surfaces. `pattern` adds one as bump on any material (`patternScale` is the period in metres, `patternStrength` defaults to 1):
+- `brushed`: fine parallel grooves (along the object's X);
+- `sunburst`: radial lines from the object's Y axis (dials);
+- `guilloche`: engine-turned waves (rings whose radius ripples with angle);
+- `clous-de-paris`: a hobnail grid of small pyramids;
+- `knurl`: crossed helical grooves (grips and crowns, on the sides of cylinders).
+
+Grooves need about six pixels per period to resolve. Below that they fade into extra roughness (sheen) instead of aliasing, so frame them close: a 100 mm `macro` at f/8–11.
+
+`{ "extends": "aluminium", "base": "#E4E6E9", "roughness": 0.15, "pattern": "guilloche", "patternScale": 0.012 }`
+
+Proof: `docs/video/shots/3d-patterns/dials.jpg` (a 100 mm macro on two dials, guilloché and clous de Paris; trace about 0.7 s at 1080p). Known limit: very fine guilloché can still moiré near the centre of the rings.
+
 ## Sets
 
 Build a stage, not a void. `set` adds a designed set around the subject as ordinary objects, so materials, keys and expressions still apply. It takes a name, `{ "preset", "color", "material", "size", "shape", "density" }`, or a list of these.

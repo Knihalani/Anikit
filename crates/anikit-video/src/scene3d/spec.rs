@@ -219,7 +219,7 @@ pub fn builtin_material(name: &str) -> Option<Material> {
     })
 }
 
-const MAT_KEYS: &[&str] = &["base", "color", "metallic", "roughness", "specular", "emissive", "emissive_strength", "clearcoat", "transmission", "ior", "tint", "tint_distance", "glow", "extends", "texture", "scale", "mapping", "normal_strength", "texture_rotate", "imperfections", "roughness_variation", "smudges", "scratches", "dust"];
+const MAT_KEYS: &[&str] = &["base", "color", "metallic", "roughness", "specular", "emissive", "emissive_strength", "clearcoat", "transmission", "ior", "tint", "tint_distance", "glow", "extends", "texture", "scale", "mapping", "normal_strength", "texture_rotate", "imperfections", "roughness_variation", "smudges", "scratches", "dust", "pattern", "pattern_scale", "pattern_strength"];
 
 pub fn material(v: &Value, named: &HashMap<String, Material>, path: &str) -> Res<Material> {
     match v {
@@ -278,6 +278,26 @@ pub fn material(v: &Value, named: &HashMap<String, Material>, path: &str) -> Res
                 out.pbr = super::pbr::load(src, &o).map_err(|e| format!("{path}.texture: {e}"))?;
                 // The tint went into the set; the base multiplies it.
                 out.base = v3(1.0, 1.0, 1.0);
+            }
+            // Machined patterns (bump): brushed, sunburst, guilloche, clous-de-paris, knurl.
+            if let Some(pt) = m.get("pattern") {
+                let name = pt.as_str().ok_or_else(|| format!("{path}.pattern: expected a pattern name"))?;
+                let names = ["brushed", "sunburst", "guilloche", "clous-de-paris", "knurl"];
+                let k = crate::components::kebab(name);
+                let kind = match k.as_str() {
+                    "brushed" => 1,
+                    "sunburst" => 2,
+                    "guilloche" | "guilloché" => 3,
+                    "clous-de-paris" | "hobnail" => 4,
+                    "knurl" | "knurled" => 5,
+                    o => {
+                        let hint = crate::components::style::closest(o, &names).map(|c| format!("; did you mean `{c}`?")).unwrap_or_default();
+                        return Err(format!("{path}.pattern: unknown pattern `{o}`{hint}"));
+                    }
+                };
+                let sc = m.get("pattern_scale").map(|x| f(x, &format!("{path}.patternScale"))).transpose()?.unwrap_or(0.01).max(1e-5);
+                let st = m.get("pattern_strength").map(|x| f(x, &format!("{path}.patternStrength"))).transpose()?.unwrap_or(1.0).max(0.0);
+                out.pattern = (kind, sc, st);
             }
             // Imperfections: one amount (a believable mix), or each by name.
             if let Some(x) = m.get("imperfections") {

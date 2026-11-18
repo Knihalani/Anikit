@@ -1450,6 +1450,9 @@ mod tests {
 
     #[test]
     fn errors_suggest_fixes() {
+        let m = spec::material(&json!({ "extends": "aluminium", "pattern": "guilloche", "pattern_scale": 0.002 }), &HashMap::new(), "m").unwrap();
+        assert_eq!(m.pattern, (3, 0.002, 1.0));
+        assert!(spec::material(&json!({ "extends": "aluminium", "pattern": "guiloche" }), &HashMap::new(), "m").err().unwrap().contains("did you mean `guilloche`"));
         let e0 = env::Env::preset_tinted("studio", v3(1.0, 0.0, 0.0), v3(0.0, 0.0, 1.0), v3(1.0, 1.0, 1.0), v3(0.0, 1.0, 0.0)).unwrap();
         let (_, mut ls, an) = spec::lights(&json!([ { "pos": "=[cos(t), 2, sin(t)]", "target": [0, 0, 0], "intensity": "=10+5*sin(t*3)" } ]), &e0, "lights").unwrap();
         assert_eq!(an.len(), 1);
