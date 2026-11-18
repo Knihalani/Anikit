@@ -204,6 +204,7 @@ pub struct Renderer {
     /// Motion-blur accumulator (linear RGB).
     motion_acc: Vec<f32>,
     motion_tmp: Vec<f32>,
+    motion_cols: Vec<f32>,
     /// Clip coverage masks for motion-blurred wipes.
     mask_ctx: Option<RenderContext>,
     mask_pix: Pixmap,
@@ -247,6 +248,7 @@ impl Renderer {
             pp: Default::default(),
             motion_acc: Vec::new(),
             motion_tmp: Vec::new(),
+            motion_cols: Vec::new(),
             mask_ctx: None,
             mask_pix: Pixmap::new(1, 1),
             grain: Vec::new(),
