@@ -10,3 +10,12 @@
 | 11–12 (18.75) | company front at night · 2.3× · tracking along the line | wave lines straighten into three ranks 60 yd wide | 6 · the line advances | build, fill |
 | 13 (22.5) | one player close · 5× · slow push | **hard stop:** full-band hit, everyone frozen, ~1.4 s silence | stop | silence |
 | 14–16 (24.4) | the field · 2.1× → 0.76× · rising, unrotating | the front peels into **ANIKIT**, painted VIDEO beneath; at 28.15 the command wipes on: `anikit-video render spec.json` (held 1.85 s) | payoff: the name made by the device | fanfare → open chord ring |
+
+## Pass 3 beat changes (shipped)
+| bar | shot | change |
+|---|---|---|
+| 5–6 (7.5) | block → **gull outline** · 1.3× → 1.0× · camera swings −25° → −90° | the block peels into the outline of a bird, the yellow dot grid left behind |
+| 7–8 (11.25) | **the gull flies** · 1.0× · tracking, beak up the screen | wings beat once every 2 beats (8 drill frames per wingbeat) as it flies the field |
+| 9–10 (15.0) | the same flight, seam sweeping afternoon → floodlight | every player matches across the seam, mid-wingbeat |
+| 11–12 (18.75) | night, close, tracking | the gull folds into the company front |
+| 14–16 (24.4) | rising | ANIKIT painted in Alfa Slab, the band tracing its outline; VIDEO beneath; command at 28.15 s |

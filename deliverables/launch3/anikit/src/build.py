@@ -113,22 +113,21 @@ keys = []                       # list of (time, positions per marcher)
 p = block(-11.0); keys.append((0.0, p))
 p = block(-6.0);  keys.append((bar(3), p))
 p = block(-2.0);  keys.append((bar(5), p))
-r0 = assign(p, rings()); keys.append((bar(7), r0))
-# rings counter-rotate through bars 7-8 (sampled every beat to follow the arc)
-def ring_of(pt):
-    r = math.hypot(*pt); return 0 if r > 12 else (1 if r > 8 else 2)
-spin = (55.0, -70.0, 110.0)
-for s in range(1, 9):
-    f = s / 8
-    pts = []
-    for pt in r0:
-        k = ring_of(pt); a = math.radians(spin[k] * f)
-        pts.append((pt[0] * math.cos(a) - pt[1] * math.sin(a), pt[0] * math.sin(a) + pt[1] * math.cos(a)))
-    keys.append((bar(7) + s * BEAT, pts))
-p = assign(keys[-1][1], wave()); keys.append((bar(11) - 0.0001, p))
+# bars 5-6: the block becomes a gull; bars 7-10: it flies the length of the field, one wingbeat every 2 beats
+from bird import bird
+def gull(phase, cx):
+    return [(-y + cx, x) for x, y in bird(phase, 0, 0, 1.0)]   # rotated to fly toward +x
+X0, X1 = -14.0, 12.0
+g0 = gull(0.0, X0)
+order = hungarian([[math.dist(a, b) ** 2 for b in g0] for a in p])   # marcher i -> outline slot order[i]
+for k in range(0, 65):
+    f = k / 64
+    pts = gull((k / 8) % 1.0, X0 + (X1 - X0) * f)
+    keys.append((bar(7) + k * BEAT / 4, [pts[order[i]] for i in range(N)]))
+p = keys[-1][1]
 p = assign(p, company_front()); keys.append((bar(13), p))
 keys.append((bar(14), p))
-p = assign(p, letters()); keys.append((bar(15) + 2 * BEAT, p))
+p = assign(p, [tuple(q) for q in json.load(open(os.path.join(HERE, 'anikit_outline.json')))]); keys.append((bar(15) + 2 * BEAT, p))
 keys.append((30.5, p))
 
 # march-step easing between sets is linear (it is marching); flows in the payoff ease
@@ -250,6 +249,7 @@ def field(night):
     if not night:
         layers += dots_layers()
     layers.append(paint_text("Your agent writes one page.", (0, 11.6), 88, start=bar(3), end=bar(5)))
+    layers.append(paint_text("ANIKIT", (0, -2.5), 531.1, start=bar(14), op=0.82, spacing="0em"))
     layers.append(paint_text("VIDEO", (0, 8.6), 150, spacing="0.5em", start=bar(14)))
     layers.append(paint_text("anikit-video render spec.json", (0, 13.4), 74, start=28.15, wipe=0.5, font="Alfa Slab One"))
     for i in range(N):
@@ -314,14 +314,14 @@ scenes.append(shot(bar(3), ease_expr(fx - 140, fx + 10, bar(3)), ease_expr(fy - 
 # S2 · bars 3-4 · pull back: the whole block marches its eight steps; the page's words in the turf
 scenes.append(shot(BAR * 2, ease_expr(fx, 0, BAR * 2, 'outCubic'), ease_expr(fy, yd(1.6), BAR * 2, 'outCubic'),
                    ease_expr(2.8, 1.0, BAR * 2, 'outCubic'), ease_expr(10, 0, BAR * 2, 'outCubic'), False))
-# S3 · bars 5-6 · rotated, off-centre: the block peels into rings
-scenes.append(shot(BAR * 2, ease_expr(yd(-5), yd(-2), BAR * 2), ease_expr(yd(-4), yd(-1), BAR * 2),
-                   ease_expr(1.65, 1.45, BAR * 2), ease_expr(-30, -20, BAR * 2), False))
-# S4 · bars 7-8 · straight down, symmetric: rings counter-rotate, silks flip, bells flash
-scenes.append(shot(BAR * 2, 0, 0, ease_expr(0.93, 1.0, BAR * 2), 0, False))
-# S5 · bars 9-10 · one show, two nights: the seam sweeps afternoon into floodlight
+# S3 · bars 5-6 · rotated: the block peels into the outline of a gull
+scenes.append(shot(BAR * 2, ease_expr(yd(-3), yd(-12), BAR * 2), ease_expr(yd(-2), 0, BAR * 2),
+                   ease_expr(1.3, 1.0, BAR * 2), ease_expr(-25, -90, BAR * 2, 'inOutCubic'), False))
+# S4 · bars 7-8 · straight down, tracking: the gull flies, its wings beating on the drum
+scenes.append(shot(BAR * 2, ease_expr(yd(-12), yd(-1.5), BAR * 2, 'linear'), 0, 1.0, -90, False))
+# S5 · bars 9-10 · the same flight, another night: the seam sweeps afternoon into floodlight
 seam_x = ease_expr(1800, -500, BAR * 2, 'inOutCubic')
-scenes.append(shot(BAR * 2, 0, yd(1.2), 0.98, 6, False, seam="=" + seam_x))
+scenes.append(shot(BAR * 2, ease_expr(yd(-1.5), yd(9), BAR * 2, 'linear'), 0, 1.0, -88, False, seam="=" + seam_x))
 # S6 · bars 11-12 · night, close, tracking along the company front as it forms
 scenes.append(shot(BAR * 2, ease_expr(yd(-14), yd(2), BAR * 2), ease_expr(yd(2.0), yd(2.6), BAR * 2),
                    2.3, -7, True))

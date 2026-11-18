@@ -74,3 +74,42 @@ Critic defects (verbatim):
 - Pass 2 7.5 vs pass 1 7.06: the difference is 0.44, under 0.75, so it counts as a tie. Pass 2 has fewer WORLD gaps (light and figure fidelity are no longer named, and idea/composition/craft/motion all rose), so **pass 2 ships** → final.mp4, contact.png = pass2.png.
 - Crit 2 names IDEA gaps (the formations build to a logo rather than say something). The rule allows a third pass with a new idea from a different family. I did not run one: it means a new world, new style frames and a full rebuild. The next Anikit film should start from a reject (greenhouse seed or weather order), or from an idea where the device itself carries the meaning (determinism), not just the reveal.
 - Known remaining craft: the end lockup mixes dotted formation caps with a painted slab; the instruments are flat shapes; the middle (11–18 s) changes slowly.
+
+# Pass 3 (after the skill's new steps 1b research and 3b play; idea changed)
+
+Pass 3 rebuilt the middle of the film around the strongest play test, the band performing an animation (a gull whose wings beat on the drum), and replaced the end lockup with ANIKIT painted in Alfa Slab and outlined by the band. See `refs/`, `tests/notes.md`, the revisited `2-ideas.md` and `3-world.md`.
+
+# Crit 3 (same tags; refs wealthsimple-trade, tiffany-holiday, vertigo)
+
+**Overall 7.69** (delta +1.4), judged professional 2/2, ranked 2nd of 4 in both trials (behind vertigo). Full score with the critic stage: 7.14 (pass 2: 6.97, pass 1: 6.58).
+
+Scores: {"idea": 8.0, "composition": 8.0, "typography": 7.0, "colour": 7.0, "light_texture": 7.0, "motion": 8.5, "craft": 8.0, "originality": 8.0}
+
+Gaps (verbatim):
+
+- The palette stays on the expected turf green, maroon and gold; a more unexpected colour decision, the kind A makes, would lift it  
+  → **WORLD (palette)**
+- The end type is only a pastiche of varsity lettering rather than a typographic idea of its own, and 'VIDEO' is a weak, generic secondary line  
+  → **CRAFT (end type)**
+- The light is flat and uniform after the shadow frames; the stadium-light or dusk drama the setting invites is missing  
+  → **WORLD (light)**
+- The palette is close to the subject's literal colours (field green, maroon, gold). A more surprising colour treatment would push it towards the impact of A  
+  → **WORLD (palette)**
+- The end card's 'VIDEO' sub-line is set as a fairly default slab and doesn't carry the idea as well as the main wordmark  
+  → **CRAFT (end type)**
+- The figures are simple stylised tokens; more texture and variation in the performers would add richness, much as A contrasts photographed skin with precise line work  
+  → **WORLD (figure fidelity)**
+
+Critic defects (verbatim):
+
+- Pacing: shots run up to 11.3 s (median 5.6 s). Between about 10 and 19 s the per-second change sits around 17-22, so the bird formation plays as a near-static hold with only the card-flip line crawling along its outline.
+- The marchers are one flat sprite (red ring, white head, cream/gold disc) repeated with identical drop shadows. Up close it reads as instanced clip-art, not a crowd: there is no variation in size, pose or timing offset.
+- The card-flip wave moves at a constant linear rate along the bird outline and the long row. There's no acceleration, overlap or settle where it arrives, so the wave reads as mechanical.
+- The mid shots use a hard flat diagonal shadow wedge (the light-green block at frame right and lower left) that looks like a stray layer, not motivated lighting.
+- The bird logo is small in frame and surrounded by a dense grid of gold dots that competes with it, so the hero shape has weak figure-ground.
+- In the end card, 'VIDEO' is set in a slab serif that clashes with the blocky 'ANIKIT' display letters. The marchers on the letters are scattered and noisy, which blurs the letter edges at viewing size.
+- Soundtrack: an evenly spaced percussive grid with clean, few-partial pitched tones and a white-noise riser from 19.5 to 22.5 s that cuts off abruptly. It reads as programmatic/generated, not a recorded drumline or produced score.
+
+## Final decision
+- Scores: pass 1 7.06 · pass 2 7.50 · pass 3 7.69. Each step is under 0.75, so they count as ties, and the rule ships the pass with the fewest IDEA/WORLD gaps. **Crit 3 names no IDEA gap** (crit 2 named two), and idea, originality and typography rose. **Pass 3 ships** → final.mp4, contact.png = pass3.png. The 3-pass limit is reached.
+- Left for a next film (honest list): the palette sits on the subject's literal colours; the performers are one sprite with no variation; the middle (10–19 s) changes slowly; 'VIDEO' is a weak secondary line; the score sounds programmatic (the riser cuts off abruptly).

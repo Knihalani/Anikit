@@ -1,0 +1,389 @@
+{
+  "name": "pass3",
+  "tags": [
+    "product-launch",
+    "explainer-2d"
+  ],
+  "refs": [
+    "wealthsimple-trade",
+    "tiffany-holiday",
+    "vertigo"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 8.0,
+      "composition": 8.0,
+      "typography": 7.0,
+      "colour": 7.0,
+      "light_texture": 7.0,
+      "motion": 8.5,
+      "craft": 8.0,
+      "originality": 8.0
+    },
+    "overall": 7.69,
+    "judged_professional": "2/2",
+    "pro_rate": 1.0,
+    "mean_rank": 2,
+    "gaps": [
+      "The palette stays on the expected turf green, maroon and gold; a more unexpected colour decision, the kind A makes, would lift it",
+      "The end type is only a pastiche of varsity lettering rather than a typographic idea of its own, and 'VIDEO' is a weak, generic secondary line",
+      "The light is flat and uniform after the shadow frames; the stadium-light or dusk drama the setting invites is missing",
+      "The palette is close to the subject's literal colours (field green, maroon, gold). A more surprising colour treatment would push it towards the impact of A",
+      "The end card's 'VIDEO' sub-line is set as a fairly default slab and doesn't carry the idea as well as the main wordmark",
+      "The figures are simple stylised tokens; more texture and variation in the performers would add richness, much as A contrasts photographed skin with precise line work"
+    ],
+    "tells": [
+      "The idea is specific and witty: a top-down marching-band formation spells out the studio name, so the logo is literally choreographed",
+      "The frames show real choreography between them: grid ranks, diagonal sweeps, a bird outline formed by the marchers, ranks re-forming, then the wordmark",
+      "The marchers are built as a consistent stylised character system, with long cast shadows giving a low-sun time of day",
+      "The camera angle changes from frame to frame (rotated diagonals, then straight overhead), which shows directed camera work",
+      "The college-athletic slab type of the wordmark suits the football-field setting",
+      "The idea is specific: the logo is formed by a top-down marching band on a football field. Performers form a bird, then letters, and a banner travels across the field",
+      "Strong choreography between frames: grids march diagonally, regroup into an outline shape, the flag line sweeps, then everything resolves into the wordmark",
+      "Long low-sun cast shadows, turf stripe texture and a vignette give the scene real light and depth",
+      "The camera angle varies from frame to frame (tilted, overhead, oblique), so no two frames share a composition",
+      "The collegiate slab letterforms are built out of the performers, so the type comes from the idea itself"
+    ]
+  },
+  "refs_summary": {
+    "wealthsimple-trade": {
+      "overall": 3.0,
+      "judged_professional": "0/2",
+      "mean_rank": 4
+    },
+    "tiffany-holiday": {
+      "overall": 6.56,
+      "judged_professional": "2/2",
+      "mean_rank": 3
+    },
+    "vertigo": {
+      "overall": 9.31,
+      "judged_professional": "2/2",
+      "mean_rank": 1
+    }
+  },
+  "ref_mean": 6.29,
+  "delta": 1.4,
+  "trials": [
+    {
+      "key": {
+        "A": "vertigo",
+        "B": "wealthsimple-trade",
+        "C": "candidate",
+        "D": "tiffany-holiday"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 9,
+              "colour": 10,
+              "light_texture": 8,
+              "motion": 9,
+              "craft": 9,
+              "originality": 10
+            },
+            "tells": [
+              "A specific idea that only this film could have: the extreme close-up of an eye turns into Lissajous spirals, so the shape itself means vertigo",
+              "The palette is a deliberate clash: blood-red monochrome against magenta and acid-green spirograph lines on black",
+              "The slab-serif outline title is set at full scale across the iris, and the credits are locked into tight asymmetric blocks that work against the spirals",
+              "The frames show real choreography: the eye, then the spiral born in the pupil, then the spirals growing in scale and colour, then the return to the eye for the director's credit",
+              "The photographic skin, lashes and wet highlights of the eye give it real texture, set against the clean mathematical line work"
+            ],
+            "gaps": [
+              "None against this field; it is the benchmark entry",
+              "The middle credit frames repeat one layout (spiral plus text block) more than the opening does",
+              "The legibility of the outlined slab type on busy red skin is borderline in places"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 7,
+              "colour": 7,
+              "light_texture": 7,
+              "motion": 8,
+              "craft": 8,
+              "originality": 8
+            },
+            "tells": [
+              "The idea is specific and witty: a top-down marching-band formation spells out the studio name, so the logo is literally choreographed",
+              "The frames show real choreography between them: grid ranks, diagonal sweeps, a bird outline formed by the marchers, ranks re-forming, then the wordmark",
+              "The marchers are built as a consistent stylised character system, with long cast shadows giving a low-sun time of day",
+              "The camera angle changes from frame to frame (rotated diagonals, then straight overhead), which shows directed camera work",
+              "The college-athletic slab type of the wordmark suits the football-field setting"
+            ],
+            "gaps": [
+              "The palette stays on the expected turf green, maroon and gold; a more unexpected colour decision, the kind A makes, would lift it",
+              "The end type is only a pastiche of varsity lettering rather than a typographic idea of its own, and 'VIDEO' is a weak, generic secondary line",
+              "The light is flat and uniform after the shadow frames; the stadium-light or dusk drama the setting invites is missing"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.6,
+            "scores": {
+              "idea": 6,
+              "composition": 7,
+              "typography": 4,
+              "colour": 7,
+              "light_texture": 8,
+              "motion": 7,
+              "craft": 7,
+              "originality": 5
+            },
+            "tells": [
+              "It has a through-line: a jewelled bird and its sparkle trail travel through a clock face, a city crossing seen from above, a stage, a facade and a dinner table, which reads as a directed holiday-luxury narrative",
+              "The cinematic lighting is motivated (stage spotlights, window glow, candlelight) and the scenes have real depth of field and material detail in the metal and gem surfaces",
+              "The camera varies (macro, top-down, wide, interior), which suggests a planned shot list",
+              "There are concerns: the final painterly desert frame with a figure breaks the style and aspect ratio, and the sparkle-trail device is the most stock trope in luxury holiday advertising",
+              "No type is visible; the absence is neutral and its brand-film logic would normally earn an end card"
+            ],
+            "gaps": [
+              "The idea is the category default (a magic sparkle tour of New York at Christmas); it needs a concept as ownable as A's eye-to-spiral",
+              "There is no typographic voice at all; a designed title system integrated with the image is missing",
+              "Its visual language is inconsistent (glossy CG against a painted desert), which weakens the sense that every frame is a poster"
+            ]
+          },
+          "B": {
+            "verdict": "not professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 2,
+              "composition": 3,
+              "typography": 2,
+              "colour": 4,
+              "light_texture": 4,
+              "motion": 2,
+              "craft": 3,
+              "originality": 2
+            },
+            "tells": [
+              "The same composition repeats: one centred object on an empty cream, pastel or blue seamless ground in every frame",
+              "The objects are unrelated (earbuds, a steering wheel with traffic-sign pills, a cannabis bud, a plug in a porthole, a ball-TV with chess, a glowing ring); there is no subject or idea connecting them",
+              "It has the generic 'tasteful AI' look: soft studio light, cream ground, mostly empty frame and placeholder UI-like icon pills around the wheel",
+              "The aspect ratios are inconsistent (16:9, square, 4:3), which reads as assembled generated stills rather than one designed film",
+              "The frames show no implied motion or choreography, just a slideshow of hero renders",
+              "There is no typography, and its absence leaves the piece with no message or point of view"
+            ],
+            "gaps": [
+              "It needs a single specific idea that links the objects and transforms one into the next, the way A's eye becomes a spiral",
+              "Compositions are needed that use the whole frame, with scale contrast, cropping and layering, instead of a centred object on a void",
+              "A deliberate palette and motivated light are needed, plus designed type that gives the sequence meaning"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "C",
+          "D",
+          "B"
+        ]
+      },
+      "meta": {
+        "seconds": 30.7,
+        "cost_usd": 0.158684,
+        "tokens": 71991,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "vertigo",
+        "B": "wealthsimple-trade",
+        "C": "tiffany-holiday",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 9,
+              "colour": 10,
+              "light_texture": 9,
+              "motion": 9,
+              "craft": 9,
+              "originality": 10
+            },
+            "tells": [
+              "The concept belongs to this film alone: an extreme close-up of an eye that the spirals grow out of. The pupil becomes a vortex, which is the film's theme made visible",
+              "The palette shifts deliberately from a monochrome blood-red face to violet, then mint-green Lissajous/spirograph forms on black",
+              "The slab-serif outline display face with small tracked caps for roles gives a strong scale contrast between names and roles. The credit blocks are set ragged and pushed asymmetrically against the forms",
+              "Real photographic texture of skin, lashes and wet highlights contrasts with mathematically precise line work",
+              "The sequence has a clear choreography: face, spiral born in the iris, a series of rotating figures, a return to the eye for the director credit. It is a structure that closes on itself",
+              "Each frame works as a poster on its own"
+            ],
+            "gaps": [
+              "This is the benchmark. Remaining weaknesses are small: the long credit stacks in frame 4 crowd the spiral and come close to the slide-like layout of a credit roll",
+              "The middle credit frames repeat the same layout (black ground, centred figure, type beside it) a little more than the opening and closing frames do",
+              "The music credit sits on top of the figure, where the overlap slightly hurts legibility"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 7,
+              "colour": 7,
+              "light_texture": 7,
+              "motion": 9,
+              "craft": 8,
+              "originality": 8
+            },
+            "tells": [
+              "The idea is specific: the logo is formed by a top-down marching band on a football field. Performers form a bird, then letters, and a banner travels across the field",
+              "Strong choreography between frames: grids march diagonally, regroup into an outline shape, the flag line sweeps, then everything resolves into the wordmark",
+              "Long low-sun cast shadows, turf stripe texture and a vignette give the scene real light and depth",
+              "The camera angle varies from frame to frame (tilted, overhead, oblique), so no two frames share a composition",
+              "The collegiate slab letterforms are built out of the performers, so the type comes from the idea itself"
+            ],
+            "gaps": [
+              "The palette is close to the subject's literal colours (field green, maroon, gold). A more surprising colour treatment would push it towards the impact of A",
+              "The end card's 'VIDEO' sub-line is set as a fairly default slab and doesn't carry the idea as well as the main wordmark",
+              "The figures are simple stylised tokens; more texture and variation in the performers would add richness, much as A contrasts photographed skin with precise line work"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.7,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 5,
+              "colour": 7,
+              "light_texture": 8,
+              "motion": 7,
+              "craft": 7,
+              "originality": 6
+            },
+            "tells": [
+              "A jewelled bird makes a journey across varied scenes: a clock face, a bird's-eye view of a taxi corner, a ballet stage, brownstone windows, a dinner table, a desert mesa",
+              "Cinematic lighting with shallow depth of field, practical lights, bokeh, and a believable gold-and-teal palette",
+              "The variety of camera position and location implies a narrative with real camera moves",
+              "There is no type, which suits a mood-led luxury holiday spot, but the piece has no typographic identity"
+            ],
+            "gaps": [
+              "The core idea (a magical sparkle trail linking scenes) is a familiar holiday-ad trope. It needs an idea only this piece could have, the way A's spiral grows from the eye",
+              "Style is inconsistent: the painterly Monument Valley frame doesn't match the CG realism elsewhere, which weakens cohesion. The film needs one visual rule",
+              "The sparkle particle trails feel generic. Give the bird's motion a signature design rather than default particle effects"
+            ]
+          },
+          "B": {
+            "verdict": "not professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 3,
+              "composition": 3,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 4,
+              "motion": 2,
+              "craft": 4,
+              "originality": 3
+            },
+            "tells": [
+              "Every frame repeats one layout: a single centred object on a plain cream or pastel seamless backdrop. The structure is a slide deck",
+              "The objects look like 'tasteful AI' renders: generic earbuds, a steering wheel with floating clip-art traffic-icon pills, a cannabis bud blob, a socket made from a porthole, a ball-TV with a chess board",
+              "The subjects have no connection to each other, so there is no evident idea or narrative. It reads as effect with no subject",
+              "Soft diffuse studio light is the same in every frame. Aspect ratios are inconsistent (square and wide frames mixed), which shows uncurated output",
+              "The style breaks in the last frame (glowing blue sci-fi ring) with no motivation",
+              "There is no typography at all, and its absence doesn't serve anything"
+            ],
+            "gaps": [
+              "It needs a central concept that ties the frames together and transforms between them, as A's eye becomes the spiral and returns to the eye",
+              "Break the centred-object-on-backdrop template: vary scale, cropping, camera and depth, and choreograph transitions between frames",
+              "Commit to a deliberate palette, motivated light, real material detail and a typographic voice instead of default pastel product renders"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "D",
+          "C",
+          "B"
+        ]
+      },
+      "meta": {
+        "seconds": 30.5,
+        "cost_usd": 0.1570682,
+        "tokens": 71907,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "critic": {
+    "answer": {
+      "scores": {
+        "motion": 6,
+        "sound": 5,
+        "craft": 6
+      },
+      "checks": {
+        "idea": true,
+        "invariant": true,
+        "arc": true,
+        "type_meaning": true,
+        "freeze_frame": false,
+        "ending": true,
+        "restraint": true,
+        "material": true,
+        "sync": true
+      },
+      "defects": [
+        "Pacing: shots run up to 11.3 s (median 5.6 s). Between about 10 and 19 s the per-second change sits around 17-22, so the bird formation plays as a near-static hold with only the card-flip line crawling along its outline.",
+        "The marchers are one flat sprite (red ring, white head, cream/gold disc) repeated with identical drop shadows. Up close it reads as instanced clip-art, not a crowd: there is no variation in size, pose or timing offset.",
+        "The card-flip wave moves at a constant linear rate along the bird outline and the long row. There's no acceleration, overlap or settle where it arrives, so the wave reads as mechanical.",
+        "The mid shots use a hard flat diagonal shadow wedge (the light-green block at frame right and lower left) that looks like a stray layer, not motivated lighting.",
+        "The bird logo is small in frame and surrounded by a dense grid of gold dots that competes with it, so the hero shape has weak figure-ground.",
+        "In the end card, 'VIDEO' is set in a slab serif that clashes with the blocky 'ANIKIT' display letters. The marchers on the letters are scattered and noisy, which blurs the letter edges at viewing size.",
+        "Soundtrack: an evenly spaced percussive grid with clean, few-partial pitched tones and a white-noise riser from 19.5 to 22.5 s that cuts off abruptly. It reads as programmatic/generated, not a recorded drumline or produced score."
+      ],
+      "gaps": [
+        "Choreography and timing: a real field show lives on formation morphs. The bodies should flow from block to shape to letters with staggered offsets, path curvature, overshoot and settle. Here formations are mostly pre-set and only a linear card flip travels, and the camera mostly drifts. The film needs cuts or camera moves around 2 s, with the flips and steps landing on the drum hits.",
+        "Sound: the bed is a static, mechanical tick grid plus a stock noise riser, with no brass, no crowd, no field ambience and no foley for the card flips or footsteps. The track builds through the riser, but after the drop the dynamics fall back to the same flat grid instead of a big band hit that sells the logo reveal.",
+        "Finish and material: flat vector marchers with cloned shadows over a mildly noisy grass texture. Top studio work would add per-figure variation, small step bobs and arm swings, ambient occlusion, stadium-light falloff, and a hero end-frame composed as a poster rather than a dense, noisy letter fill."
+      ]
+    },
+    "meta": {
+      "seconds": 24.2,
+      "cost_usd": 0.1636718,
+      "tokens": 72321,
+      "models": [
+        "claude-opus-5-5"
+      ]
+    },
+    "pace": "pass3.mp4: 30.0s, 5 shots, median 5.60s, longest 11.27s\nper-second change: [28.1, 28.2, 28.5, 29.9, 31.7, 31.1, 21.3, 28.6, 26.2, 23.8, 17.6, 19.2, 19.5, 19.3, 20.3, 22.4, 23.2, 19.4, 21.9, 26.2, 30.4, 34.9, 36.8, 75.5, 57.8, 66.1, 18.4, 15.6, 15.8]\nPACE: FAIL \u2014 longest shot 11.3s > 2.5s; median shot 5.6s > 2.0s"
+  },
+  "full_scores": {
+    "idea": 8.0,
+    "composition": 8.0,
+    "typography": 7.0,
+    "colour": 7.0,
+    "light_texture": 7.0,
+    "motion": 7.25,
+    "craft": 7.0,
+    "originality": 8.0,
+    "sound": 5
+  },
+  "full_overall": 7.14,
+  "cost_usd": 0.479,
+  "judge_seconds": 85.4,
+  "verdict": "PASS"
+}

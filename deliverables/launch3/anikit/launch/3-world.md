@@ -10,3 +10,9 @@
 
 ## Style frames (launch/frames/compare.png: A low sun · B floodlight · C overcast; same moment, bar 8 rings)
 **Picked A.** The long shadows make 144 small figures read as standing bodies with weight and give the frame a light you can point to; C is flat (the "flat light" failure) and B loses the rings' contrast at this scale — floodlight is kept for the second half as the arc, where shots are closer.
+
+---
+
+## Revisited after 1b/3b (pass 3)
+- **Kept:** turf, the sun → floodlight arc, the palette, Alfa Slab painted in the turf, the marching-band score. The tests confirmed this world. The ray-traced alternative read as placeholder and the riso look split the palette.
+- **Changed:** the middle of the film. The rings (a pattern) become **a gull in flight drawn by the band** (an animation: 8 frames per wingbeat, one wingbeat every 2 beats, flying the length of the field). The seam now shows *the same flight* on two nights. The end name is no longer stick letters: it is the **outline of ANIKIT in the same Alfa Slab face** that paints VIDEO, so the lockup is one typographic voice.
