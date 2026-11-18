@@ -1415,6 +1415,7 @@ impl Evaluator {
         let body = out.len();
         match n.fx.as_deref() {
             Some(fx) if fx.repeat.is_some() || fx.echo.is_some() => self.emit_fx(n, fx, cx, parent, psize, po, out),
+            Some(fx) if fx.mblur.is_some() => self.emit_mblur(n, fx.mblur.unwrap(), cx, parent, psize, po, out),
             _ => self.emit_node_inner(n, cx, parent, psize, po, out),
         }
         if let Some(m) = n.matte.as_deref() {
@@ -1452,6 +1453,36 @@ impl Evaluator {
                 }
             });
         }
+    }
+
+    /// Per-layer motion blur: sub-frame copies across the shutter, each added at 1/N inside an isolated
+    /// layer (an exact average, also where copies don't overlap). Frames where the layer is still draw once.
+    #[allow(clippy::too_many_arguments)]
+    fn emit_mblur(&self, n: &Node, (shutter, samples): (f32, u32), cx: &Cx, parent: &Affine, psize: [f32; 2], po: f32, out: &mut Vec<Op>) {
+        let span = shutter / self.fps.max(1.0);
+        let lt = cx.scene_t - n.start;
+        let (mut a, mut b) = ([0.0f32; prop::N], [0.0f32; prop::N]);
+        self.props(n, cx, lt, &mut a);
+        let pc = Cx { scene_t: cx.scene_t - span, gt: cx.gt - span, ..*cx };
+        self.props(n, &pc, lt - span, &mut b);
+        let moved = [prop::X, prop::Y, prop::SX, prop::SY, prop::ROT].iter().any(|&s| (a[s] - b[s]).abs() > 0.25 * if s == prop::SX || s == prop::SY { 0.002 } else { 1.0 });
+        if !moved || samples < 2 {
+            return self.emit_node_inner(n, cx, parent, psize, po, out);
+        }
+        // Enough samples that consecutive copies overlap (~4 px apart), so the streak doesn't strobe.
+        let travel = ((a[prop::X] - b[prop::X]).powi(2) + (a[prop::Y] - b[prop::Y]).powi(2)).sqrt()
+            + (a[prop::ROT] - b[prop::ROT]).abs() * 2.0
+            + ((a[prop::SX] - b[prop::SX]).abs() + (a[prop::SY] - b[prop::SY]).abs()) * (a[prop::W] + a[prop::H]) * 0.5;
+        let samples = ((travel / 4.0).ceil() as u32).clamp(samples, 64);
+        out.push(Op::PushLayer { opacity: 1.0, blend: Blend::Normal, filters: Vec::new(), clip: None, cache_key: None });
+        for i in 0..samples {
+            let dt = span * (1.0 - i as f32 / (samples - 1) as f32);
+            let c = Cx { scene_t: cx.scene_t - dt, gt: cx.gt - dt, amul: cx.amul / samples as f32, ..*cx };
+            out.push(Op::PushLayer { opacity: 1.0, blend: Blend::Add, filters: Vec::new(), clip: None, cache_key: None });
+            self.emit_node_inner(n, &c, parent, psize, po, out);
+            out.push(Op::PopLayer);
+        }
+        out.push(Op::PopLayer);
     }
 
     /// Repeater and echo: the same node re-emitted at other times and transforms.
