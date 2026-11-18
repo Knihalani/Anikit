@@ -389,6 +389,7 @@ if (oldBundle) {
         const api = window[apiName];
         const target = document.querySelector('#target');
         api.engine.manual(true);
+        await api.record(target, { duration: 4, fps: 30, format: 'gif', scale: 1, background: '#fff' });
         api.animate(target, { color: ['#243044', '#8b2540'] }, { duration: 1, ease: 'linear', repeat: -1 });
         const cards = Array.from(target.querySelectorAll('.card')).slice(0, 5);
         cards.forEach((card, i) => api.animate(card, { x: [0, 10 + i], rotate: [0, i + 2] }, { duration: 1, ease: 'linear', repeat: -1 }));
@@ -402,7 +403,7 @@ if (oldBundle) {
   }
   checks.benchmark = {
     rasterize: { old: summarize(rasterSamples.old), newer: summarize(rasterSamples.newer), iterations: 40, warmups: 5 },
-    record: { old: summarize(recordSamples.old), newer: summarize(recordSamples.newer), runs: 2, duration: 1, fps: 30 },
+    record: { old: summarize(recordSamples.old), newer: summarize(recordSamples.newer), runs: 2, duration: 1, fps: 30, warmupFrames: 120 },
   };
 }
 await browser.close();
@@ -426,7 +427,7 @@ if (checks.documentElement) {
   const b = checks.benchmark;
   lines.push('');
   lines.push(`Rasterize warm-up/samples: ${b.rasterize.warmups}/${b.rasterize.iterations}; mean/median ms per call old/new: ${b.rasterize.old.mean.toFixed(3)}/${b.rasterize.newer.mean.toFixed(3)} / ${b.rasterize.old.median.toFixed(3)}/${b.rasterize.newer.median.toFixed(3)}`);
-  lines.push(`Animated GIF record runs: ${b.record.runs} each, ${b.record.duration}s at ${b.record.fps} fps; mean/median ms per frame old/new: ${b.record.old.mean.toFixed(3)}/${b.record.newer.mean.toFixed(3)} / ${b.record.old.median.toFixed(3)}/${b.record.newer.median.toFixed(3)}`);
+  lines.push(`Animated GIF record runs: ${b.record.runs} each, ${b.record.duration}s at ${b.record.fps} fps; ${b.record.warmupFrames}-frame warm-up per page; mean/median ms per frame old/new: ${b.record.old.mean.toFixed(3)}/${b.record.newer.mean.toFixed(3)} / ${b.record.old.median.toFixed(3)}/${b.record.newer.median.toFixed(3)}`);
   const failed =
     results.some((r) => r.pixels !== 0 || r.max !== 0) ||
     checks.documentElement.max !== 0 ||
