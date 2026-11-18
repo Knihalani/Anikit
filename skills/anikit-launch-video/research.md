@@ -12,13 +12,19 @@ The best launch films come from people who know the subject's world and have tri
 Use web search if you have it. Otherwise reason it out carefully, and mark which details you're sure of and which you're guessing.
 
 **2. Professional reference work, in `refs/refs.md`.**
-- **What to collect:** 6–10 launch or brand films in this product's category and in neighbouring ones, from top studios. Also gather 2–3 references from **outside motion entirely**: a photographer, a painter, a print designer, a film-maker or an architect whose world fits.
-- **Where to look:**
-  - web search for studio case studies and award pages (Vimeo Staff Picks, Motion Awards, ADC, D&AD, studio sites such as Buck, ManvsMachine, Tendril, Ordinary Folk, Gretel and DixonBaxi);
-  - `docs/video/judge/benchmark/<category>/*.md`, which already holds 87 professional pieces in 14 categories, each with notes on what makes it work;
-  - `docs/video/craft/launch-research.md`, with 14 launch films analysed.
-- **For each reference:** write the **moves** worth stealing, not the look. That means the idea, how the product appears, the structure, how type behaves, the light and material, the sound, and the ending.
-- **Then write:** "what all the good ones do that ours usually don't", and "the cliché of this category to avoid".
+- **See real frames:** `python3 scripts/judge.py refsheet --tags product-launch,<style> --format <aspect> -k 6 --out launch/refs/sheets` writes frame sheets of 6 professional films for your style tags, plus `INDEX.md` linking each to notes on what makes it work. Look at them at full size. (The style tags are listed in `review.md`. References used for evaluation are never shown.)
+- **Curated reference lists, with URLs and the move to borrow:**
+  - `docs/video/craft/launch-ai-viral.md` §5: 20 AI and software launches;
+  - `launch-visual-craft.md`: 20 studio pieces across UI-led, type-led, graphic, product and illustrated;
+  - `launch-research.md`: 14 launch films;
+  - `docs/video/judge/benchmark/<category>/*.md`: 87 professional pieces with notes.
+- **Web search,** if you have it: studio case studies and award pages (Vimeo Staff Picks, Motion Awards, ADC, D&AD, studio sites), and the product category's best launches on X and YouTube.
+- **Also gather 2–3 references from outside motion:** a photographer, print designer, architect or document whose world fits.
+- **For each reference,** write the **moves**, not the look: the idea, how the product appears, structure, type behaviour, light and material, sound, and ending.
+- **Then write:**
+  - what all the good ones do that ours usually don't;
+  - the category's cliché to avoid;
+  - which reference your film is closest to, and how it will differ.
 
 **3. A look board (optional, when you have images).** Save 3–6 reference images you're allowed to use, such as your own renders or freely licensed photos, then run `anikit-video board refs/img/ -o refs/board.json --sheet refs/board.jpg`. It measures palette, value, texture and composition, and gives you tokens to use. Take their colour, light and composition, never their artwork.
 
@@ -58,7 +64,7 @@ Before locking the world, try things. Make **4–8 quick technique tests**, each
 
 **Then:**
 1. Put the tests side by side on one sheet: `launch/tests/sheet.png`.
-2. In `tests/notes.md`, write which one made you stop, which looked stock, and what you learned about the engine's limits (what can't be made convincing yet).
+2. In `tests/notes.md`, write which one made you stop, which looked stock, **which looked artificial or simulated** (drop those), and what you learned about the engine's limits.
 3. Build the world (step 3) around the strongest test.
 
 A test that surprises you is worth more than a plan that sounded good. A technique that only looks "fine" won't carry a launch film.

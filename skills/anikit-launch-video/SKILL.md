@@ -1,80 +1,106 @@
 ---
 name: anikit-launch-video
-description: Make a launch, announcement, teaser or product video with anikit-video that stands next to studio work. A gated process (promise → ideas → one world → style frames → beat sheet → pass 1 → outside critique → pass 2) built from blind tests against professional launch films. It is a method, not a template; every film gets its own idea, world and structure. Use for any launch, product, feature, announcement or teaser video.
+description: Make a launch, announcement, teaser or product video with anikit-video that looks designed by a top studio and is built to be shared. A gated process (film type → promise and shareable moment → research and references → ideas → visual system → technique tests → style frames → beats → pass 1 → critique → pass 2 → platform cuts and post copy), built from blind tests against professional films and research on 60+ viral and AI product launches. It is a method, not a template. Use for any launch, product, feature, announcement or teaser video.
 ---
 
 # Launch video
 
-Read `skills/anikit-video/SKILL.md` first for the spec, the docs, previews and the render. This skill adds the launch method. Each step writes a file in your work folder (`launch/`), and the next step reads it. **Don't skip a step, and don't start the next one until its file exists.** The steps exist because each one fixes a failure we measured in blind tests against professional films (`docs/video/craft/launch-evidence.md`, `launch-research.md`).
+Read `skills/anikit-video/SKILL.md` for the spec, docs, previews and render. This skill adds the launch method. Each step writes a file in `launch/`, and the next step reads it. **Don't skip steps or start the next before its file exists.** Every step fixes a failure we measured or that users rejected (`docs/video/quality/BAR.md`).
 
-## Why films fail (what the blind jury said about ours)
+## What we learned (the short version)
 
-- **Literal idea:** the product's name or mechanism drawn as a picture, or one beat per feature with a caption under each ("effect demos").
-- **No world:** each shot has a different look, so the film reads as "three templates stitched together". Or the opposite: the same layout in every frame with the words changed.
-- **Slide type:** a centred headline, or a tiny tracked-caps label over a gradient, sitting on the image instead of living in it.
-- **Flat light:** glows and gradients instead of a key light with falloff on real material.
+- **What spreads** (`docs/video/craft/launch-viral.md`, `launch-ai-viral.md`):
+  - the product's real output or a live, unedited magic moment;
+  - one event a viewer can retell in a sentence;
+  - a hook in the first frame;
+  - honesty.
 
-Professional launch films do the reverse. They hold **one material world, one light logic and one palette family** for the whole film. They change **the subject, scale and composition** in every shot. And they show **one promise** through a device built from the subject.
+  Every famous backfire (staged Gemini demo, Humane, Apple "Crush") was a proof failure or contempt.
+- **What looks expensive** (`launch-visual-craft.md`): a visual system *derived from the product's own behaviour*, real UI with real strings in close crops, strict type and grid, a small motion vocabulary, nothing moving without a cause.
+- **What users rejected as artificial or "AI slop":**
+  - simulated real-world scenes (a CG marching band on a field);
+  - cream paper with an editorial serif;
+  - warm dark ground with a glowing serif;
+  - fogged terrain;
+  - chrome type;
+  - the tasteful-AI kit (tiny tracked label plus centred headline on dark).
+- **What the blind jury punishes:**
+  - a literal idea;
+  - one beat per feature;
+  - a new look per shot;
+  - slide type;
+  - flat light.
+- **The judge is not the bar.** A film it passed was rejected by the user as artificial. Ship only what a person would also call designed, not generated.
 
 ## The steps
 
-1. **`launch/1-promise.md`: the one promise** (see `idea.md`).
-   - Write the single benefit the audience should believe afterwards, as ≤ 15 words without the product's name.
-   - Choose the mode: **proof** (the real product or UI visible by 5 s) or **teaser** (withheld until the end).
-   - List the brief's other facts under "not in this film". A film carries one promise; the rest goes on the end card at most.
+0. **`launch/0-type.md`: film type and cuts** (see `modes.md`).
+   - **Pick one film type:**
+     - **Proof**, the product working (most software and AI launches);
+     - **Idea film**, a brand film told through type, diagram or graphic system;
+     - **Object teaser**, a physical product as the only 3D subject.
+   - **Pick the cuts:** which platforms and aspect ratios (X 16:9 hero 30–60 s; Reels/TikTok 9:16 15–34 s; teaser 6–10 s). Each cut gets its own composition.
+1. **`launch/1-promise.md`: promise, truth, moment** (see `idea.md`, `viral.md`).
+   - **The unownable truth:** what competitors can't claim.
+   - **The promise:** ≤ 15 words, without the product name.
+   - **The shareable moment:** one event, ≤ 15 words. Something *happens*.
+   - **The target emotion:** awe or amusement.
+   - **The send test:** who would DM this, to whom, and why.
+   - **The hostile retell:** the cruelest one-line description, which must not be damning.
+   - **Not in this film:** list the brief's other facts.
 1b. **`launch/refs/`: research and references** (see `research.md`).
-   - **Subject:** research the subject's world: users, rituals, materials and insider details (`refs/world.md`).
-   - **References:** collect 6–10 professional films in this category and neighbouring ones, plus 2–3 from outside motion. For each, write the moves worth stealing (`refs/refs.md`).
-   - **Assets:** gather real assets (HDRIs, materials, models, fonts, the brand's own material) and, if you have images, run `board`.
-   - **Gate:** every idea in step 2 must cite one insider detail and one reference move.
-2. **`launch/2-ideas.md`: four ideas, then pick one.**
-   - Write ≥ 4 ideas, each a different metaphor or device, one deliberately out there.
-   - Run the **literal test** and the **swap test** on each (`idea.md`), then pick one and say why.
-   - The winner states the device in one sentence: what visibly changes in the world because the product exists.
-3. **`launch/3-world.md`: one world** (see `world.md`). Fix these once for the whole film:
-   - the material and surface;
-   - the key light (direction, quality, colour);
-   - the palette family (an arc is fine, a swap is not);
-   - the type voice (a face chosen for this world, and how type lives *in* it);
-   - the sound world (instruments and foley taken from the subject);
-   - the Anikit means (scene3d, shader, illo, graphic print, footage-like grade…).
-
-   Then write what will **change** shot to shot: subject, scale, camera.
+   - **The subject's world and users:** insider details, in `refs/world.md`.
+   - **Professional work, with the moves to steal** (`refs/refs.md`):
+     - `python3 scripts/judge.py refsheet --tags product-launch,<style> --out launch/refs/sheets` gives frame sheets of professional films;
+     - the curated reference lists in `docs/video/craft/launch-ai-viral.md` §5 and `launch-visual-craft.md`;
+     - web search.
+   - **The product's real material:** UI, screenshots, logo, colours, its actual output.
+2. **`launch/2-ideas.md`: ≥ 4 ideas, then pick one** (see `idea.md`).
+   - Use different families, one out there, each citing an insider detail and a reference move.
+   - **Gates:**
+     - **literal:** the idea survives deleting the product name and mechanism;
+     - **swap:** it fails with a competitor's name on it;
+     - **renderable:** no simulated reality;
+     - **fresh:** it doesn't repeat an earlier film's look;
+     - **proof-inside-the-moment:** delete the product and the moment no longer makes sense.
+3. **`launch/3-system.md`: one visual system** (see `world.md`).
+   - **The derivation line:** *product behaviour → visual rule*.
+   - **One material world, light logic and palette family**, from the brand and product.
+   - **Type:** ≤ 2 families, ≤ 3 sizes, on a declared grid.
+   - **Motion:** ≤ 3 easing curves and ≤ 3 duration tiers.
+   - **The CG blacklist and banned looks.**
+   - **What changes per shot:** subject, scale, camera.
 3b. **`launch/tests/`: play** (see `research.md`).
-   - Before locking the world, make 4–8 quick technique tests (2–4 s clips or stills) that could carry the idea.
-   - Use at least three different engine capabilities (3D, shaders, simulation, type as image, print, illustration, motion, sound-driven picture), including one you haven't used.
-   - Compare them on one sheet and write in `tests/notes.md` what surprised you, what looked stock, and what can't be made convincing.
-   - Build the world around the strongest test.
-4. **`launch/frames/`: three style frames, compared.**
-   - Make three `still`s of the same key moment, varying one decision (material, light, or type treatment), each a finished poster.
-   - Put them side by side, pick one, and write in `3-world.md` why.
-   - If none is a poster you'd hang, go back to step 3.
-5. **`launch/4-beats.md`: the beat sheet on the music** (see `shape.md`).
-   - Generate or choose the music first.
-   - Write 5–9 shots against bars: what we see, what changes, where the device escalates, the one hard stop before the payoff, and the end.
-   - Frame 0 is the hook.
-6. **Pass 1.** Build the full film, preview it, then render it and its contact sheet: `render --sheet launch/pass1.png` (6+ frames, evenly spaced).
-7. **`launch/5-crit.md`: compare against professional films** (see `review.md`).
-   - Run the blind comparison against real professional launch films: `judge.py run … --practice`, about 3 min.
-   - Paste every gap, and sort each one into IDEA, WORLD or CRAFT.
-   - **Any IDEA gap means a new idea from a different family:** go back to step 2. Don't polish.
-   - Cut the weakest third.
-8. **Pass 2.** Rebuild, render (`ANIKIT_RENDER_CACHE=0`, foreground), and run crit 2 the same way.
-   - Ship the higher-scoring pass; a difference under 0.75 is a tie. At most 3 passes.
-   - Copy the shipped pass to `final.mp4`.
+   - Make 4–8 quick technique tests across ≥ 3 engine capabilities, one new to you.
+   - Compare them on one sheet. Note what surprised you, what looked stock, and **what looked artificial**.
+4. **`launch/frames/`: three style frames** of the key moment, compared side by side.
+   - Run the **fake-look check** (`review.md`) on them before going on. If any frame looks simulated, templated or AI-made, change the system, not the polish.
+5. **`launch/4-beats.md`: the beat sheet on the music** (see `shape.md`, `viral.md`).
+   - **Frame 0:** a poster, never a title card.
+   - **Product in motion:** by 2 s.
+   - **The moment:** by 3 s in short cuts.
+   - **The magic shot:** input and result in one unbroken shot.
+   - **One hard stop** before the payoff.
+   - **An ending made of the film's world**, with the real URL or handle.
+   - **Mute test:** it reads with the sound off.
+   - **Loop:** vertical cuts loop.
+6. **Pass 1.** Build, preview, then render with a contact sheet: `render --sheet launch/pass1.png`.
+7. **`launch/5-crit.md`: two critiques** (see `review.md`).
+   - **The blind comparison** against professional films (`judge.py run … --practice`).
+   - **A fresh human-eye critic.** It sees 6 stills and answers: does any frame look like a simulation, template or AI? What does the product do? What's the hostile retell?
+   - **Sort every gap** into IDEA, WORLD or CRAFT. **An IDEA gap or a fake-look YES forces a new idea or system, not polish.** Cut the weakest third.
+8. **Pass 2.** Rebuild, render (`ANIKIT_RENDER_CACHE=0`, foreground), and critique again.
+   - Ship the better pass (a difference under 0.75 on the judge is a tie; the fake-look check decides).
+   - At most 3 passes. Copy the shipped pass to `final.mp4`.
+9. **`launch/6-ship.md`: cuts and post.**
+   - Render each platform cut as its own composition.
+   - **The post copy:** a concrete first line stating the outcome; one explicit ask; the real URL.
+   - **The proof object:** a real metric, file, repo or "unedited" label.
+   - **Honest labels:** "sped up" wherever time is compressed.
 
 ## Ground rules
 
-- **Honesty:** use only the brief's real facts, names and UI. No invented numbers, customers, testimonials or interface.
-- **Vary across films, not within one:** if this film looks like your last launch film (palette, type, layout family), change the world.
-- **Looks already rejected as generic or AI-made:**
-  - warm dark ground with a glowing serif;
-  - cream paper with an editorial serif and aphorisms;
-  - dark ground with one accent and a mono label;
-  - tiles or dominoes on a cyc with chrome type;
-  - fogged terrain;
-  - landing-page furniture (pills, numbered eyebrows, LIVE dots).
-
-  If your world resembles one of these, it needs a reason from the subject.
-- **The ending performs:** the name lands through an action of the film's world in the last 5–10% of the film. A specific call to action holds 1.5–3 s. Never "Learn more".
-- **Cost:** keep the final render under ~5 min (check `preview`'s estimate). Full-frame shaders and ray-traced 3D are the expensive parts; spend them on the shots that carry the device.
+- **Honesty floor:** use only the brief's real facts, names, UI and output. No invented numbers, quotes, reviews, logos, customers or capabilities. No staged demos presented as live. No engagement bait.
+- **If the product makes media** (video, images, music, code, text), the film is its own proof: show real output it made, and say so.
+- **Vary across films, hold within one.** Don't repeat the last film's world (check `deliverables/launch*/`, `deliverables/demo/`).
+- **Cost:** keep a final render under ~5 min (check the `preview` estimate).

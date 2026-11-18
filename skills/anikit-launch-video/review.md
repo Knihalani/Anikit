@@ -1,4 +1,4 @@
-# Critique against professional work (steps 7 and 9)
+# Critique (steps 4, 7 and 8)
 
 You can't see your own film fresh, and a critic who sees only your film shares your blind spots. In our tests, the only changes that beat noise came from rebuilding against a **blind comparison with professional films**. So the critique puts your film next to real professional launch films and asks a fresh jury which is which.
 
@@ -16,6 +16,18 @@ python3 scripts/judge.py run launch/pass1.mp4 --practice --trials 2 --format <16
 
 If `scripts/judge.py` can't run (no `claude` CLI, no network), spawn a fresh subagent with the prompt at the end of this page and the contact sheet, and answer the checks.
 
+## The fake-look critic (always, alongside the comparison)
+
+The blind judge compares stills against professional films and rewards idea and composition. It passed a film the user rejected as "horrid, so artificial and weird" (a CG marching band). So a second critic looks with a person's eye. Spawn a fresh subagent and give it **only** 6 evenly spaced stills at full size (or the contact sheet) plus the one-line brief:
+
+> You are a senior designer who hates AI-generated and template-looking work. Look at these 6 frames from a product launch video. Answer bluntly, with frame numbers:
+> (1) Does any frame look like a simulation, a video-game render, a template, stock motion graphics, or AI-generated imagery? Which, and what gives it away?
+> (2) From the frames alone, what does the product do? What is the one moment someone would describe to a friend?
+> (3) Write the cruelest one-line description a critic could post about this film.
+> (4) Would a top studio (Buck, ManvsMachine, Pentagram, Apple, Linear) have shipped this? If not, what's the single biggest reason?
+
+Paste its answers into `5-crit.md`. **Ship only if (1) is "no",** (2) matches your promise and moment, and (3) isn't damning. A YES on (1) is a WORLD or IDEA gap: change the system or the medium, not the polish.
+
 ## Read it honestly, in `5-crit.md`
 
 Paste the overall score, the ranking, and every gap verbatim. Then sort each gap into one of three kinds:
@@ -26,9 +38,9 @@ Paste the overall score, the ranking, and every gap verbatim. Then sort each gap
 
 ## The rules (binding)
 
-1. **Any IDEA gap means the idea is replaced, not polished.**
+1. **Any IDEA gap, or a YES from the fake-look critic about the idea itself, means the idea is replaced, not polished.**
    - Go back to `2-ideas.md` and choose an idea from a **different family** (a different device and a different world), not a variation.
-   - Run the literal and swap tests again, write `3-world.md` again, and do style frames again.
+   - Run the literal and swap tests again, write `3-system.md` again, and do style frames again.
    - We measured this: polishing a literal idea plateaus at the same score, every time.
 2. **WORLD gaps** mean rebuilding the world at full fidelity:
    - real material at 100% crop;

@@ -1,40 +1,55 @@
-# One world (steps 3–4)
+# One visual system (steps 3–4)
 
-Professional launch films in our benchmark (Coinbase, JPMorgan, XREAL, Nothing, Bang & Olufsen) hold one material, one light logic and one palette family for the whole film. They change the subject, scale and camera in every shot. Our failed films did the opposite: a new look per beat, or one layout repeated.
+Sources: `docs/video/craft/launch-visual-craft.md` (studio systems: Pentagram, Ordinary Folk, DixonBaxi, Instrument, ManvsMachine, BUCK, Linear, Vercel, Apple), `launch-evidence.md` (what our blind jury punished), and `BAR.md` (what the user rejected).
 
-## Decide once, in `3-world.md`
+The best-documented launch films derive their whole visual system from **the product's own behaviour or material**. Ordinary Folk made Spline's launch film *in Spline*. DixonBaxi built ROLI's motion from the instrument's gestures. Instrument used real customers' real Dropbox folders. Professional films hold one material, light logic and palette for the whole film, and change subject, scale and camera in every shot.
 
-- **Material:** one family, taken from the subject's own world: the place, objects and rituals of the people it's for, or the product's own surfaces. Don't pick from a list of nice materials. Not "dark ground with a glow".
-- **Fidelity:** the shots that carry the device are built at full fidelity. That means real geometry and texture at 100% crop, atmosphere, and secondary motion. The jury's most common complaint about our 3D was "placeholder-level modelling". If a shot can't be made convincing, choose a medium where it can, such as illustration, print or type, rather than shipping a primitive.
-- **Light:** a key light with direction, falloff and colour temperature, motivated by something in the world (window, lamp, screen, sun, the product itself). An arc over the film is good (dawn → noon, cold → warm). Radial glows and gradient washes are the tell.
-- **Palette:** a family drawn from the material and light, with one accent reserved for the device. An arc within the family is good; swapping to an unrelated palette between shots is not.
-- **Type voice:**
-  - **The face:** choose it for this world (`anikit-video fonts`), and write why in one line.
-  - **Placement:** type lives *in* the scene. It's printed on, carved, cast in light, made of the material, the UI's own content, or a `matte` window onto the world.
-  - **Avoid:** centred headlines on fills and tiny tracked-caps eyebrows.
-  - **Scale:** keep contrast high (one huge word beats three medium lines).
-- **Sound world:** the instruments and the foley come from the subject: the product's sounds, the place's room tone, materials touching. Use `"sound": "auto"` plus explicit cues on the device's moments. Generate the music for the film's tempo (`docs music`).
-- **Change per shot:** subject, scale (macro ↔ wide), camera angle and move. No two shots may share a layout.
+## Write in `3-system.md`
 
-## Anikit means (pick what the world needs, not what's new)
+1. **Derivation line:** *product behaviour → visual rule*, in one sentence, cited by every scene. For example: "settles instantly → nothing in frame ever waits; every element arrives on the cut", or "reads the soil → the frame is a cross-section; the reading is the light". Fail if a competitor's logo could be swapped in.
+2. **Subject per shot:** the product (real UI, its output, the object), a diagram of how it works, or type stating the claim. **Never a simulated real-world place or event** (field, office, street, crowd, band, nature, food), unless drawn in a clearly non-photoreal illustration style.
+3. **CG blacklist** (for 3D): humans, animals, plants, grass, terrain, water, fog banks, food, crowds, chrome or metallic type on a sweep or cyc, physics props used as metaphor (dominoes, tiles, balls, cloth, marbles). The count must be 0. 3D is for the product object and for abstract forms driven by a product parameter.
+4. **Banned looks:**
+   - indigo-to-violet gradients;
+   - cream + terracotta;
+   - near-black with one acid accent;
+   - a serif that glows, or sits as the hero on paper;
+   - chrome type;
+   - glass or glow without a depth reason;
+   - the tasteful-AI kit (tiny tracked caps or mono label + centred bold headline on dark);
+   - robots, brains, glowing particle nets, "neural" gradients.
 
-| World | Tools |
+   Critics now name cream/terracotta, near-black/acid accent and high-contrast serif as the *second wave* of AI defaults. Don't flee one cliché into the next. Take colour from the brand assets or sampled product screenshots.
+5. **Colour lives on the product:** one neutral ground (tinted, not pure black or white), the brand's colours, and ≤ 1 accent. Saturated pixels outside the product, UI or accent stay under ~10% of the frame.
+6. **Type:**
+   - ≤ 2 families (one may be mono), chosen for this product and why (`anikit-video fonts`);
+   - ≤ 3 sizes per frame;
+   - every text box on a declared column grid, outer margins ≥ 5% of the width;
+   - high scale contrast (one huge word beats three medium lines);
+   - type is inside the scene in at least half of the text frames: the UI's own content, printed on the product, part of the diagram, or a `matte` window.
+7. **Motion vocabulary:**
+   - **Easing:** ≤ 3 named curves. Entries ease out or use a critically damped spring; exits are faster than entries; moves ease in-out. No `linear` except constant scrolls. Scale starts ≥ 0.9; overshoot ≤ 5% unless the product causes the event.
+   - **Duration:** ≤ 3 tiers (e.g. 0.4 / 0.8 / 1.6 s, scaled to tempo).
+   - **Causes:** **nothing moves without a cause.** No float, drift, glow pulse, particle haze or camera wobble. One primary mover per shot and at most one secondary.
+8. **Texture:** at most one (grain, halftone or boil), applied to the whole film. CG materials need roughness or albedo variation. Holds over 2 s aren't pixel-frozen: grain or a caused change satisfies this, drift doesn't.
+9. **Depth:** build it from layered flat planes (overlap, scale, parallax). Use a perspective camera only on 3D objects. Never orbit a flat screen.
+10. **What changes per shot:** subject, scale (macro ↔ context) and camera. No two shots share a layout.
+
+## Anikit means (pick what the system needs)
+
+| Need | Tools |
 |---|---|
-| Physical product, objects, places | `scene3d` with `env.hdri`, `material.texture` (ambientcg PBR), `rig`, `set`, `camera.lens`, `focus`, `fog`, practicals, decals |
-| Illustrated | `illo`, `landscape`, `plants` with one `light` and a `hand` |
-| Print and graphic | halftone, riso, `print` presets, `brush`, `grid`, editorial charts |
-| Generative and natural | library shaders and `ak_` blocks, `fluid`, particles with `layers`/`glint`, `physarum`, cloth |
-| Type-led | variable `axes`, `animator`, `matte` (type as window), text on a path, `extrude` |
-| UI products | the real screens as lit planes in scene3d, or `product-shot`, at ≥ 26 px text |
-
-Look things up with `anikit-video docs <topic>` / `docs key <name>`, one section at a time.
+| Real UI as hero | the product's screenshots as image layers or lit `scene3d` planes; `product-shot`; macro crops via `camera` zoom; cursor paths |
+| Kinetic type | variable `axes`, `animator`, `matte`, text on path, `fit` (`docs type`, `docs type-craft`) |
+| Graphic systems | `grid`, halftone, riso, `print`, brush, editorial charts (`docs graphic`) |
+| Product object | `scene3d` with PBR `material.texture`, machined `pattern`s, `decal`, `rig`, `lens`, `focus`, practicals (`docs 3d`, `recipes precision-macro`) |
+| Abstract worlds | library shaders and `ak_` blocks, `fluid`, particles (`docs shader`, `docs fluid`) |
+| Motion craft | `inertia`, `smear`, `carry`, `zoomThrough`, `dolly`, `timeRemap` (`docs mograph`) |
+| Sound | `music` (real instruments), `"sound": "auto"`, `onNotes` (`docs music`, `docs sound`) |
 
 ## Style frames (step 4)
 
-Render three `still`s of the same key moment, each varying one decision, and view them side by side.
-
-**Pick:**
-- the one that's a finished poster, with one focal subject and no more than ~40% flat background;
-- the one that holds up at 100% crop.
-
-**Write in `3-world.md`:** which one you picked, and the one sentence that made it the winner.
+1. Render three `still`s of the key moment, each varying one decision (type treatment, crop, light, colour), and view them side by side at full size.
+2. Run the fake-look check from `review.md` on them.
+3. Pick the one that's a finished poster: one focal subject, holds up at 100% crop, and **looks designed rather than generated**.
+4. Write why in `3-system.md`.

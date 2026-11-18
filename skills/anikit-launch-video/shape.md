@@ -2,7 +2,7 @@
 
 ## Length and shots
 
-- **Length:** teaser 15–40 s; hero film 30–60 s; proof demo up to 75 s.
+- **Length:** per platform (`modes.md` table). X hero 30–60 s; Reels and TikTok 15–34 s; teaser 6–10 s.
 - **Shot count:** 5–9 authored shots for 15–30 s. Every shot changes subject, scale or camera.
 - **Each beat answers:** "What belief gets weaker if this beat is cut?" If the answer is nothing, cut the beat.
 
@@ -28,7 +28,7 @@ The device shows in every beat and escalates. For example: a hint (1) → the ch
 
 ## First and last frames
 
-- **Frame 0 is the hook:** a surprising image already in motion. Never a logo, a fade from black or a typed prompt.
-- **The name** lands in the last 5–10% through an action of the world (the device resolves into it), at 15–30% of frame width.
-- **The call to action** is specific ("Available today", a URL, a command) and holds 1.5–3 s.
-- **No static end card longer than 2 s:** keep something alive in it (light, grain, the device settling).
+- **Frame 0 is a poster** already moving by frame 2: the product, its output or the anomaly. Never black, a fade, a logo or a title card. In proof films the product is *changing* by 1.5 s (`modes.md`).
+- **The shareable moment** lands by 3 s in cuts ≤ 15 s; in longer cuts a first version lands by 3 s and the full payoff by 40% (`viral.md`).
+- **The name** lands in the last 5–10% through an action of the film's world, at 15–30% of frame width, with the **real URL or handle**.
+- **No static end card longer than 1.5–2 s.** Vertical cuts loop: the last 0.5 s matches the first frame.
