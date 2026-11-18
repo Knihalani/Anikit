@@ -592,6 +592,16 @@ impl Built {
     }
 }
 
+/// Spring names whose anikit-core defaults overshoot more than motion design wants by default:
+/// `bouncy` lands at ~8% here (core's is ~39%); `springy` keeps the big bounce on request.
+fn spring_alias(name: &str) -> Option<&'static str> {
+    match name {
+        "bouncy" | "spring.bouncy" => Some("spring(300, 22)"),
+        "springy" => Some("spring(300, 10)"),
+        _ => None,
+    }
+}
+
 fn empty_node(kind: Kind) -> Node {
     Node {
         kind,
@@ -1045,7 +1055,7 @@ impl C<'_> {
             "expressiveExit" => Some("cubic-bezier(0.4, 0.14, 1, 1)"),
             _ => None,
         };
-        match Easing::parse(named.unwrap_or(name)) {
+        match Easing::parse(named.or(spring_alias(name)).unwrap_or(name)) {
             Some(e) => {
                 let i = self.easings.len() as u32;
                 self.easings.push(e);
@@ -1062,6 +1072,7 @@ impl C<'_> {
     /// Spring easing and its settle duration.
     fn spring(&mut self, s: &spec::SpringSpec, path: &str) -> (u32, f32) {
         let e = match s {
+            spec::SpringSpec::Name(n) if spring_alias(n).is_some() => Easing::parse(spring_alias(n).unwrap()),
             spec::SpringSpec::Name(n) => {
                 if val::check_word(n, val::SPRINGS).is_err() {
                     self.d.push(Diagnostic::error(path, format!("unknown spring '{n}'")).suggest(suggest(n, val::SPRINGS)));
@@ -2342,10 +2353,13 @@ impl C<'_> {
             let p = format!("{path}.inertia");
             // (stiffness, damping, mass): damping ratio ≈ damping / (2·sqrt(stiffness·mass)).
             let preset = |name: &str| match name {
-                "soft" => Some((90.0, 9.0, 1.0)),
-                "bouncy" => Some((220.0, 9.0, 1.0)),
+                // Overshoot on a step: soft 5%, bouncy 7%, tight 3%, heavy 2% (tasteful range); springy 37%, wobbly 18% go further.
+                "soft" => Some((90.0, 13.0, 1.0)),
+                "bouncy" => Some((220.0, 19.0, 1.0)),
                 "tight" => Some((400.0, 30.0, 1.0)),
-                "heavy" => Some((120.0, 16.0, 2.2)),
+                "heavy" => Some((120.0, 25.0, 2.2)),
+                "springy" => Some((220.0, 9.0, 1.0)),
+                "wobbly" => Some((90.0, 9.0, 1.0)),
                 "" | "default" => Some((170.0, 14.0, 1.0)),
                 _ => None,
             };
@@ -2356,7 +2370,7 @@ impl C<'_> {
                 serde_json::Value::String(s) => {
                     let r = preset(s);
                     if r.is_none() {
-                        self.d.push(Diagnostic::error(&p, format!("unknown inertia preset '{s}'")).suggest(suggest(s, &["soft", "bouncy", "tight", "heavy"])));
+                        self.d.push(Diagnostic::error(&p, format!("unknown inertia preset '{s}'")).suggest(suggest(s, &["soft", "bouncy", "tight", "heavy", "springy", "wobbly"])));
                     }
                     r
                 }
@@ -2625,7 +2639,28 @@ impl C<'_> {
                 let maxw = mw.unwrap_or(pc.size[0] * 0.9);
                 if given_w.is_none() && l0.width > maxw && (!pc.in_box || mw.is_some()) {
                     tspec.width = Some(maxw);
-                    self.assets.fonts.layout(&tspec)
+                    let lw = self.assets.fonts.layout(&tspec);
+                    // Balanced breaks for headlines (CSS text-wrap: balance): the narrowest
+                    // width with the same line count, so no line is a stub.
+                    let n_lines = lw.lines.len();
+                    let headline = tspec.style.size >= self.h * 0.04;
+                    if n_lines >= 2 && l.balance.unwrap_or(headline) {
+                        let (mut lo, mut hi) = (maxw / n_lines as f32 * 0.8, maxw);
+                        for _ in 0..10 {
+                            let mid = (lo + hi) * 0.5;
+                            let mut probe = tspec.clone();
+                            probe.width = Some(mid);
+                            if self.assets.fonts.layout(&probe).lines.len() > n_lines {
+                                lo = mid;
+                            } else {
+                                hi = mid;
+                            }
+                        }
+                        tspec.width = Some((hi + 1.0).min(maxw));
+                        self.assets.fonts.layout(&tspec)
+                    } else {
+                        lw
+                    }
                 } else {
                     l0
                 }
@@ -4436,14 +4471,31 @@ impl C<'_> {
         let mut slots = Vec::new();
         let mut fixed = Vec::new();
         let mut off = 0;
-        for u in &shader.uniforms {
+        // Animation slots go first to uniforms that need them: given as an
+        // expression, or named by the layer's keyframes/animations; the rest
+        // follow in declaration order. Static values past the slots are fixed.
+        let anim_keys = {
+            let mut v = serde_json::to_value(l).unwrap_or_default();
+            if let Some(o) = v.as_object_mut() {
+                for k in ["uniforms", "shader", "src", "buffers"] {
+                    o.remove(k);
+                }
+            }
+            v.to_string()
+        };
+        let animated = |name: &str| vals.iter().any(|(k, v)| k == name && v.is_err()) || anim_keys.contains(&format!("\"{name}\":"));
+        let mut order: Vec<&anikit_shader::DeclaredUniform> = shader.uniforms.iter().collect();
+        order.sort_by_key(|u| !animated(&u.name));
+        for u in order {
             let len = u.ty.components();
             let given = vals.iter().find(|(k, _)| *k == u.name).map(|(_, v)| v.clone());
             if off + len > UNIFORM_SLOTS {
                 if let Some(Ok(v)) = given.clone().or(u.default.clone().map(Ok)) {
                     fixed.push((u.name.clone(), v));
                 }
-                self.d.push(Diagnostic::warning(format!("{path}.uniforms.{}", u.name), format!("more than {UNIFORM_SLOTS} uniform floats: '{}' can't be animated", u.name)));
+                if animated(&u.name) {
+                    self.d.push(Diagnostic::warning(format!("{path}.uniforms.{}", u.name), format!("more than {UNIFORM_SLOTS} animated uniform floats: '{}' can't be animated (it keeps its first value)", u.name)));
+                }
                 continue;
             }
             if let Some(d) = &u.default {
@@ -4557,6 +4609,7 @@ impl C<'_> {
             alpha: l.alpha.unwrap_or(false),
             label: super::shader::label(path, l.shader.as_deref().or(l.src.as_deref())),
             audio: self.shader_audio(&text, path),
+            faithful: passes.is_none() && !text.contains("texelFetch"),
             passes,
         };
         Some((Kind::Shader(Box::new(sc)), size))
@@ -4628,9 +4681,12 @@ impl C<'_> {
             return None;
         }
         if self.music.is_none() {
-            let r = match self.beat_marks.music() {
-                None => Err("iAudio/iBeat need music: add a top-level `audio` track with a `src` (they stay 0)".to_string()),
-                Some((p, at, trim)) => super::audio_react::AudioFeatures::load(p, *at, *trim).map(Arc::new).map_err(|e| format!("iAudio/iBeat: {e}")),
+            // Generated `music` first (its exact grid, the same one expressions use),
+            // then the first music `audio` track.
+            let r = match (self.beat_marks.generated(), self.beat_marks.music()) {
+                (Some(g), _) => g.map(|(mono, rate, beats, bars, at)| Arc::new(super::audio_react::AudioFeatures::from_mono(&mono, rate, beats, bars, at))).map_err(|e| format!("iAudio/iBeat: {e}")),
+                (None, None) => Err("iAudio/iBeat need music: add generated `music` or a top-level `audio` track with a `src` (they stay 0)".to_string()),
+                (None, Some((p, at, trim))) => super::audio_react::AudioFeatures::load(p, *at, *trim).map(Arc::new).map_err(|e| format!("iAudio/iBeat: {e}")),
             };
             self.music = Some(r);
         }
@@ -4675,6 +4731,7 @@ impl C<'_> {
             label: super::shader::label(path, Some(src)),
             audio: self.shader_audio(&text, path),
             passes: None,
+            faithful: !text.contains("texelFetch"),
         })))
     }
 
@@ -5117,11 +5174,12 @@ impl C<'_> {
                 };
                 (vec![(OPACITY, 1, ValS::Abs(0.0)), (slot, 1, pd(v))], 0.7, "outExpo")
             }
-            "pop" => (vec![(SX, 2, ValS::Abs(0.0)), (OPACITY, 1, ValS::Abs(0.0))], 0.5, "outBack"),
+            // Overshoot kept in the tasteful 3–8% range (docs/video/craft/motion-design.md); `back.out(1.7)` / `springy` go further.
+            "pop" => (vec![(SX, 2, ValS::Abs(0.0)), (OPACITY, 1, ValS::Abs(0.0))], 0.5, "back.out(1.2)"),
             "scale" => (vec![(SX, 2, ValS::Mul(0.8)), (OPACITY, 1, ValS::Abs(0.0))], 0.5, "outCubic"),
             "zoom" => (vec![(SX, 2, ValS::Mul(1.4)), (OPACITY, 1, ValS::Abs(0.0)), (BLUR, 1, ValS::Abs(20.0))], 0.7, "outExpo"),
             "blur" => (vec![(BLUR, 1, ValS::Abs(30.0)), (OPACITY, 1, ValS::Abs(0.0))], 0.6, "outCubic"),
-            "rotate" => (vec![(ROT, 1, ValS::Add(-90.0)), (SX, 2, ValS::Mul(0.6)), (OPACITY, 1, ValS::Abs(0.0))], 0.6, "outBack"),
+            "rotate" => (vec![(ROT, 1, ValS::Add(-90.0)), (SX, 2, ValS::Mul(0.6)), (OPACITY, 1, ValS::Abs(0.0))], 0.6, "back.out(1.2)"),
             "flip" => (vec![(SX, 1, ValS::Abs(0.0))], 0.5, "outCubic"),
             "bounce" => (vec![(Y, 1, ValS::Add(-dist.unwrap_or(h * 0.3))), (OPACITY, 1, ValS::Abs(0.0))], 0.9, "bouncy"),
             "draw" => {

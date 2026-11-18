@@ -48,6 +48,7 @@ pub const RECIPES: &[(&str, &str)] = &[
     ("kinetic-slam", include_str!("../recipes/kinetic-slam.json")),
     ("whip-transition", include_str!("../recipes/whip-transition.json")),
     ("chrome-hero", include_str!("../recipes/chrome-hero.json")),
+    ("precision-macro", include_str!("../recipes/precision-macro.json")),
     ("particle-ignite", include_str!("../recipes/particle-ignite.json")),
     ("domino-cascade", include_str!("../recipes/domino-cascade.json")),
     ("raymarch-world", include_str!("../recipes/raymarch-world.json")),
@@ -109,7 +110,7 @@ pub fn docs(topic: Option<&str>) -> Result<String, String> {
 }
 
 /// `uniform float speed; // = 1.0  doc` → ("speed", "float", "1.0").
-fn uniforms(src: &str) -> Vec<(String, String, String)> {
+fn uniforms(src: &str) -> Vec<(String, String, String, String)> {
     src.lines()
         .filter_map(|l| {
             let l = l.trim();
@@ -121,8 +122,17 @@ fn uniforms(src: &str) -> Vec<(String, String, String)> {
             if ty.starts_with("sampler") {
                 return None;
             }
-            let def = comment.trim().strip_prefix("//").map(|c| c.trim().trim_start_matches('=').trim().split("  ").next().unwrap_or("").to_string()).unwrap_or_default();
-            Some((name, ty, def))
+            // `// = <value> <description>`; the value may be `vec3(…)`.
+            let c = comment.trim().strip_prefix("//").unwrap_or("").trim();
+            let (def, about) = match c.strip_prefix('=') {
+                Some(v) => {
+                    let v = v.trim_start();
+                    let end = if v.contains('(') && v.find('(') < v.find(char::is_whitespace) { v.find(')').map_or(v.len(), |i| i + 1) } else { v.find(char::is_whitespace).unwrap_or(v.len()) };
+                    (v[..end].to_string(), v[end..].trim().to_string())
+                }
+                None => (String::new(), c.to_string()),
+            };
+            Some((name, ty, def, about))
         })
         .collect()
 }
@@ -175,7 +185,7 @@ pub fn recipes(name: Option<&str>) -> Result<String, String> {
     }
     if let Some(e) = lib.iter().find(|e| e.name == n) {
         let us = uniforms(e.src);
-        let ex: Vec<String> = us.iter().filter(|(_, t, d)| t == "float" && !d.is_empty()).map(|(n, _, d)| format!("\"{n}\": {d}")).collect();
+        let ex: Vec<String> = us.iter().filter(|(_, t, d, _)| t == "float" && !d.is_empty()).map(|(n, _, d, _)| format!("\"{n}\": {d}")).collect();
         let use_ = format!("{:?}", e.use_).to_lowercase();
         let snippet = if use_.contains("transition") {
             format!("\"transition\": {{ \"type\": \"{}\", \"duration\": 0.6 }}", e.name)
@@ -183,8 +193,12 @@ pub fn recipes(name: Option<&str>) -> Result<String, String> {
             format!("{{ \"shader\": \"{}\"{}, \"uniforms\": {{ {} }} }}", e.name, if use_.contains("filter") { ", \"filter\": true" } else { "" }, ex.join(", "))
         };
         let mut s = format!("# {} ({use_})\n\n{}\n\nUniforms:\n", e.name, e.about);
-        for (n, t, d) in &us {
-            s += &format!("- `{n}` {t} = {d}\n");
+        for (n, t, d, about) in &us {
+            let about = if about.is_empty() { String::new() } else { format!(": {about}") };
+            s += &format!("- `{n}` {t} = {d}{about}\n");
+        }
+        if us.is_empty() {
+            s += "- (none: copy the source and edit its constants)\n";
         }
         s += &format!("\n```json\n{snippet}\n```\n\nSource (copy and edit as your own shader): crates/anikit-shader/library/{}.glsl\n", e.name);
         return Ok(s);
@@ -274,23 +288,73 @@ fn key_doc(name: &str) -> Result<String, String> {
     Ok(out)
 }
 
-/// A shader-library entry as a minimal ready spec (layer, filter or transition).
+/// A uniform's default as JSON: a number, or an array for `vecN(…)`.
+fn default_json(d: &str) -> Option<Value> {
+    if let Some(inner) = d.split_once('(').and_then(|(_, r)| r.strip_suffix(')')) {
+        let v: Vec<f64> = inner.split(',').filter_map(|x| x.trim().parse().ok()).collect();
+        let n: usize = d.trim_start_matches(|c: char| c.is_ascii_alphabetic()).split('(').next().and_then(|n| n.parse().ok()).unwrap_or(v.len());
+        return match v.len() {
+            0 => None,
+            1 => Some(serde_json::json!(vec![v[0]; n.max(1)])),
+            _ => Some(serde_json::json!(v)),
+        };
+    }
+    d.parse::<f64>().ok().map(|x| serde_json::json!(x))
+}
+
+/// A shader-library entry as a minimal ready spec (layer, filter or
+/// transition) with every tunable uniform at its default, and notes listing
+/// what each one does: the preset is a starting point, not a ceiling.
 fn library_spec(n: &str) -> Option<(String, Value)> {
     let e = anikit_shader::library::ALL.iter().find(|e| e.name == n)?;
     let use_ = format!("{:?}", e.use_).to_lowercase();
+    let us = uniforms(e.src);
+    let unis: serde_json::Map<String, Value> = us.iter().filter_map(|(n, _, d, _)| Some((n.clone(), default_json(d)?))).collect();
+    let mut layer = serde_json::json!({ "shader": e.name });
+    if !unis.is_empty() {
+        layer["uniforms"] = Value::Object(unis.clone());
+    }
     let spec = if use_.contains("transition") {
-        serde_json::json!({ "scenes": [ "Before", { "transition": { "type": e.name, "duration": 0.6 }, "layers": [ "After" ] } ] })
+        let mut t = serde_json::json!({ "type": e.name, "duration": 0.6 });
+        if !unis.is_empty() {
+            t["uniforms"] = Value::Object(unis);
+        }
+        serde_json::json!({ "scenes": [ "Before", { "transition": t, "layers": [ "After" ] } ] })
     } else if use_.contains("filter") {
-        serde_json::json!({ "scenes": [ { "layers": [ { "text": "Filtered", "style": "title" }, { "shader": e.name, "filter": true } ] } ] })
+        layer["filter"] = Value::Bool(true);
+        serde_json::json!({ "scenes": [ { "layers": [ { "text": "Filtered", "style": "title" }, layer ] } ] })
     } else {
-        serde_json::json!({ "scenes": [ { "duration": 4, "layers": [ { "shader": e.name } ] } ] })
+        serde_json::json!({ "scenes": [ { "duration": 4, "layers": [ layer ] } ] })
     };
-    Some((e.about.to_string(), spec))
+    let mut about = e.about.to_string();
+    if !us.is_empty() {
+        about += "\nUniforms (any value, animate with keyframes or \"=expr\"):";
+        for (n, t, d, a) in &us {
+            about += &format!("\n  {n} ({t}, default {d}){}", if a.is_empty() { String::new() } else { format!(": {a}") });
+        }
+    }
+    about += &format!("\nSource to copy and edit: crates/anikit-shader/library/{}.glsl", e.name);
+    Some((about, spec))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn library_recipes_expose_every_uniform() {
+        for e in anikit_shader::library::ALL {
+            let (about, spec) = library_spec(e.name).unwrap();
+            let n = uniforms(e.src).iter().filter(|u| default_json(&u.2).is_some()).count();
+            let text = spec.to_string();
+            assert_eq!(text.matches("\"uniforms\"").count(), usize::from(n > 0), "{}: {text}", e.name);
+            assert!(n == 0 || about.contains("Uniforms"), "{}", e.name);
+            let p = crate::spec::parse::from_value(spec.clone()).unwrap_or_else(|d| panic!("{}: {:?}", e.name, d.iter().map(|x| x.to_string()).collect::<Vec<_>>()));
+            let (_, d) = crate::eval::Evaluator::build(&p.spec, &crate::eval::Options::default());
+            assert!(d.iter().all(|m| !m.to_string().contains("uniform")), "{}: {:?}", e.name, d.iter().map(|x| x.to_string()).collect::<Vec<_>>());
+        }
+        assert_eq!(default_json("vec3(0.98, 0.97, 0.93)"), Some(serde_json::json!([0.98, 0.97, 0.93])));
+        assert_eq!(default_json("0.8"), Some(serde_json::json!(0.8)));
+    }
     #[test]
     fn every_snippet_compiles_in_place() {
         let all: Vec<Value> = serde_json::from_str(SNIPPETS).unwrap();
@@ -309,7 +373,7 @@ mod tests {
         assert!(docs(Some("key anchor")).unwrap().contains("anchor"));
         assert!(docs(Some("key ancor")).unwrap_err().contains("anchor"));
         let e = docs(Some("essentials")).unwrap();
-        assert!(e.len() < 15_000 && e.contains("compositions") && e.contains("shader"), "{}", e.len());
+        assert!(e.len() < 16_000 && e.contains("compositions") && e.contains("shader"), "{}", e.len());
         assert!(snippets(Some("snap-zoom")).unwrap().contains("\"shake\""));
     }
 

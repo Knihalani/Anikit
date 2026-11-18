@@ -857,6 +857,9 @@ pub struct Layer {
     /// Text: wrap at this width (px, `"40vw"`, `"60%"`) without fixing the box
     /// width (`width` wraps *and* sets the box).
     pub max_width: Option<Num>,
+    /// Balanced line breaks when the text wraps (default on for headlines,
+    /// 4% of the frame height and up): every line about the same length.
+    pub balance: Option<bool>,
     /// `chars`, `words`, `lines`.
     pub split: Option<String>,
     pub reveal: Option<Num>,
