@@ -99,6 +99,17 @@ You are not limited to the preset shapes. These types build a mesh from your des
 
 Proof of animated open geometry in an abstract piece: `docs/video/shots/3d-abstract/ribbon.mp4` (5 s, 1080p30, rendered in about 105 s on 4 cores; a flowing surface ribbon, a growing tube and a bouncing sphere on a yellow sweep). Shapes whose expressions use `t` (seconds) are rebuilt every frame: waves, growing tubes, morphing surfaces (`examples/video/lookdev/wave.json`). This costs about 44 ms per frame for a 160² heightfield plus a 300-segment tube, and turns off the baked floor. Shapes without `t` are built once. Motion blur follows object motion, not deformation. To generate many objects, put `{ "script": "..." }` in `objects`; it expands to the items it returns. Cost: tracing a mesh costs about the same as the preset shapes of similar screen size. A 160×32 surface or a 128² heightfield adds under 5 ms to scene build, and render time is set by pixels covered, not by triangle count.
 
+## Decals: print on any surface
+
+Dial numerals, a logo on a can, a label on a bottle: put a `plane` just above the surface with `"material": "decal"` and a composition `texture`. A decal is a clear, index-1 layer: no reflection, no refraction and no shadow. Only its print shows, lit like the surface under it.
+
+`{ "type": "plane", "size": [0.6, 0.6], "pos": [0, 0.0805, 0], "rot": [-90, 0, 0], "texture": "#dial", "material": "decal", "thin": true, "shadow": false }`
+
+- Leave the composition's `background` out, so it's transparent.
+- Lift the plane about 0.5 mm off the surface.
+
+Proof: `docs/video/shots/3d-decals/dial.jpg` (type and an index printed on a guilloché dial; spec beside it).
+
 ## Imperfections
 
 Perfect CG surfaces read as fake. Real products have fingerprints, wipes, fine scratches that show only in a highlight, uneven sheen and dust. Add them on any material:

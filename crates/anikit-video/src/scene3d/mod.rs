@@ -1503,6 +1503,8 @@ mod tests {
 
     #[test]
     fn errors_suggest_fixes() {
+        let d = spec::material(&json!("decal"), &HashMap::new(), "m").unwrap();
+        assert!(d.transmission == 1.0 && d.ior == 1.0);
         let m = spec::material(&json!({ "extends": "aluminium", "pattern": "guilloche", "pattern_scale": 0.002 }), &HashMap::new(), "m").unwrap();
         assert_eq!(m.pattern, (3, 0.002, 1.0));
         assert!(spec::material(&json!({ "extends": "aluminium", "pattern": "guiloche" }), &HashMap::new(), "m").err().unwrap().contains("did you mean `guilloche`"));

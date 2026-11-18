@@ -176,7 +176,7 @@ pub fn check_keys(m: &Map<String, Value>, allowed: &[&str], path: &str) -> Res<(
 
 // ------------------------------------------------------------ materials
 
-pub const MATERIALS: &[&str] = &["chrome", "mirror", "glass", "aluminium", "aluminum", "aluminium-bead", "titanium", "copper", "gold", "matte", "white", "black", "plastic", "ceramic", "rubber", "car-paint", "lacquer", "emissive", "toon", "clay", "paper", "cardboard", "gouache", "hatch"];
+pub const MATERIALS: &[&str] = &["chrome", "mirror", "glass", "aluminium", "aluminum", "aluminium-bead", "titanium", "copper", "gold", "matte", "white", "black", "plastic", "ceramic", "rubber", "car-paint", "lacquer", "emissive", "decal", "toon", "clay", "paper", "cardboard", "gouache", "hatch"];
 
 pub fn builtin_material(name: &str) -> Option<Material> {
     let c = Material::chrome();
@@ -208,6 +208,9 @@ pub fn builtin_material(name: &str) -> Option<Material> {
         // Glossy black piano lacquer.
         "lacquer" => Material { base: v3(0.012, 0.012, 0.014), metallic: 0.0, roughness: 0.3, clearcoat: 1.0, ..c },
         "emissive" => Material { base: v3(0.02, 0.02, 0.02), metallic: 0.0, roughness: 0.4, emissive: v3(4.0, 4.0, 4.0), ..c },
+        // A print on another surface: a clear, index-1 layer (no reflection, no
+        // refraction) that shows only its texture. Use it on a thin `plane`.
+        "decal" => Material { base: v3(1.0, 1.0, 1.0), metallic: 0.0, roughness: 0.0, transmission: 1.0, ior: 1.0, absorb: v3(0.0, 0.0, 0.0), tex_glow: 0.0, ..c },
         // Non-photoreal styles (see `Material::style`); `base` sets the colour.
         "toon" => Material { base: v3(0.85, 0.32, 0.22), metallic: 0.0, roughness: 0.3, style: 1, ..c },
         "clay" => Material { base: v3(0.72, 0.45, 0.33), metallic: 0.0, roughness: 0.7, style: 2, ..c },
