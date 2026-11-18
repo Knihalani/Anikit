@@ -1382,7 +1382,7 @@ pub fn estimate(ev: &Evaluator, opts: &RenderOptions, heavy_after: f64) -> Estim
             let mut best: Option<(f64, u32)> = None;
             // A layer's cost: its share of the render plus its eval work (shader / 3D images are
             // made while evaluating, so re-time those by forcing a fresh evaluation of the frame).
-            for tag in &tags {
+            for tag in tags.iter().filter(|t| t.ops.end <= dl.ops.len() && t.ops.start < t.ops.end) {
                 let sub = DisplayList { width: dl.width, height: dl.height, background: dl.background, ops: dl.ops[tag.ops.clone()].to_vec() };
                 let t = Instant::now();
                 with_renderer(ev, |r, _| {

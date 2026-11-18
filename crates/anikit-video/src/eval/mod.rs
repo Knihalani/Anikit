@@ -696,7 +696,12 @@ impl Evaluator {
         let saved_tags = TAGS.with(|tg| std::mem::replace(&mut *tg.borrow_mut(), tags));
         let saved_shader = shader::begin_frame();
         self.eval_frame(t, out);
-        let tags = TAGS.with(|tg| std::mem::replace(&mut *tg.borrow_mut(), saved_tags));
+        let mut tags = TAGS.with(|tg| std::mem::replace(&mut *tg.borrow_mut(), saved_tags));
+        // A parent can drop ops after its children were tagged (an empty matte):
+        // only ranges that still fit the list are kept.
+        if let Some(v) = &mut tags {
+            v.retain(|t| t.ops.start < t.ops.end && t.ops.end <= out.ops.len());
+        }
         COMP_SCALE.with(|c| *c.borrow_mut() = saved_comp);
         shader::end_frame(saved_shader);
         tags

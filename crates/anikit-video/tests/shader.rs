@@ -254,3 +254,25 @@ fn composition_shaders_render_at_displayed_size() {
     let s = &both.shader_stats()[0];
     assert_eq!((s.width, s.height, s.renders), (400, 200, 1), "{s:?}");
 }
+
+/// Tagged evaluation (used by the render estimate) gives op ranges inside the
+/// list for a shader reading a named composition, frame after frame (a crash
+/// in an agent's final render: a tag past the end of the list).
+#[test]
+fn tagged_eval_with_a_composition_channel_stays_in_range() {
+    let ev = build(
+        r##"{ "size": [160, 90], "compositions": { "word": { "size": [160, 90], "duration": 2, "layers": [ { "text": "SIGNAL", "size": 30 } ] } },
+            "scenes": [ { "duration": 2, "layers": [
+              { "shader": "void mainImage(out vec4 c, in vec2 p) { c = texture(iChannel0, p / iResolution.xy); }", "channels": ["#word"] },
+              { "text": "over", "size": 20, "y": 70 } ] } ] }"##,
+    );
+    for f in 0..6 {
+        let (dl, tags) = ev.eval_tagged(f as f32 * 0.3);
+        assert!(!tags.is_empty());
+        for t in &tags {
+            assert!(t.ops.start < t.ops.end && t.ops.end <= dl.ops.len(), "frame {f}: {:?} of {} ops", t.ops, dl.ops.len());
+        }
+        // Rendering in between (the estimate does) leaves the next tagged eval intact.
+        render_rgba(&ev, f as f32 * 0.3, 1.0);
+    }
+}
