@@ -1,0 +1,6562 @@
+{
+ "size": "16:9",
+ "fps": 30,
+ "background": "#0E1A2E",
+ "intent": {
+  "pace": "fast"
+ },
+ "music": {
+  "style": "pop",
+  "bpm": 120,
+  "key": "D",
+  "mood": "bright",
+  "sections": [
+   {
+    "name": "intro",
+    "bars": 3,
+    "energy": 0.35
+   },
+   {
+    "name": "build",
+    "bars": 4,
+    "energy": 0.6
+   },
+   {
+    "name": "drop",
+    "bars": 7,
+    "energy": 1.0,
+    "stop": 2
+   },
+   {
+    "name": "outro",
+    "bars": 2,
+    "energy": 0.5
+   }
+  ],
+  "hits": [
+   "@bar8"
+  ],
+  "end": "ring"
+ },
+ "sound": "auto",
+ "post": {
+  "grain": 0.02,
+  "vignette": 0.12
+ },
+ "scenes": [
+  {
+   "duration": 2.0,
+   "layers": [
+    {
+     "shader": "uniform float hour; // = 0.0\nvoid mainImage(out vec4 o, in vec2 f){\n  vec2 uv = f / iResolution.xy;            // y = 0 at the bottom\n  float k = clamp(hour, 0.0, 1.0);         // 0 = night, 1 = 07:00 daylight\n  float k2 = k*k*(3.0-2.0*k);\n  vec3 nTop = vec3(0.047, 0.086, 0.157), nBot = vec3(0.085, 0.140, 0.235);\n  vec3 dTop = vec3(0.780, 0.835, 0.885), dBot = vec3(0.995, 0.900, 0.745);\n  float y = pow(1.0 - uv.y, 1.5);\n  vec3 c = mix(mix(nTop, nBot, y), mix(dTop, dBot, y), k2);\n  // first light: a warm band at the horizon that rises then settles\n  float band = exp(-7.0 * uv.y) * sin(3.14159 * clamp(k * 1.15, 0.0, 1.0));\n  c += band * vec3(0.55, 0.30, 0.10) * 0.55;\n  // gentle falloff toward the corners (one light: the sky)\n  vec2 d = uv - vec2(0.5, 0.15);\n  c *= 1.0 - 0.18 * dot(d, d);\n  o = vec4(c, 1.0);\n}",
+     "uniforms": {
+      "hour": 0.0
+     },
+     "width": "130%",
+     "height": "130%"
+    },
+    {
+     "text": "23:58",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 0.0,
+     "end": 2.0
+    },
+    {
+     "x": 360,
+     "y": 456,
+     "anchor": "topLeft",
+     "width": 1920,
+     "height": 1080,
+     "layers": [
+      {
+       "shape": "rect",
+       "x": 0,
+       "y": 0,
+       "width": 1200,
+       "height": 168,
+       "fill": "#17253B",
+       "radius": 28,
+       "anchor": "topLeft",
+       "stroke": "#FFFFFF14",
+       "strokeWidth": 2
+      },
+      {
+       "shape": "circle",
+       "x": 24,
+       "y": 54,
+       "width": 10,
+       "height": 10,
+       "fill": "#EEF2F8",
+       "anchor": "center",
+       "end": 1.05
+      },
+      {
+       "text": "Dana Whitfield",
+       "font": "Host Grotesk",
+       "weight": 650,
+       "size": 38,
+       "color": "#EEF2F8",
+       "x": 44,
+       "y": 30,
+       "anchor": "topLeft"
+      },
+      {
+       "text": "11:58 PM",
+       "font": "Host Grotesk",
+       "weight": 500,
+       "size": 30,
+       "color": "#8193AD",
+       "x": 1160,
+       "y": 34,
+       "anchor": "topRight",
+       "features": "tnum"
+      },
+      {
+       "text": "One small thing before tomorrow",
+       "font": "Host Grotesk",
+       "weight": 550,
+       "size": 32,
+       "color": "#C9D3E1",
+       "x": 44,
+       "y": 80,
+       "anchor": "topLeft"
+      },
+      {
+       "text": "Can you send the Q3 numbers to the board before 9?",
+       "font": "Host Grotesk",
+       "weight": 400,
+       "size": 28,
+       "color": "#8193AD",
+       "x": 44,
+       "y": 122,
+       "anchor": "topLeft"
+      },
+      {
+       "shape": "path",
+       "d": "M0 0 L1144 0",
+       "stroke": "#FFB23E",
+       "strokeWidth": 3,
+       "x": 28,
+       "y": 166,
+       "anchor": "topLeft",
+       "start": 1.05,
+       "animate": [
+        {
+         "from": {
+          "trimEnd": 0
+         },
+         "to": {
+          "trimEnd": 1
+         },
+         "duration": 0.5,
+         "ease": "outExpo"
+        }
+       ]
+      },
+      {
+       "text": "Draft ready",
+       "font": "Host Grotesk",
+       "weight": 650,
+       "size": 28,
+       "color": "#FFB23E",
+       "x": 1160,
+       "y": 84,
+       "anchor": "topRight",
+       "start": 1.25,
+       "enter": {
+        "preset": "fadeUp",
+        "duration": 0.25,
+        "distance": 10
+       }
+      }
+     ],
+     "start": 0.0,
+     "animate": [
+      {
+       "from": {
+        "y": 520,
+        "opacity": 0.0
+       },
+       "to": {
+        "y": 456,
+        "opacity": 1
+       },
+       "duration": 0.45,
+       "ease": "outExpo",
+       "at": 0.0
+      }
+     ]
+    }
+   ],
+   "camera": {
+    "animate": [
+     {
+      "from": {
+       "zoom": 1.62,
+       "x": 0,
+       "y": 0
+      },
+      "to": {
+       "zoom": 1.5,
+       "x": 0,
+       "y": 0
+      },
+      "duration": 2.0,
+      "ease": "inOutCubic"
+     }
+    ]
+   }
+  },
+  {
+   "duration": 4.0,
+   "layers": [
+    {
+     "shader": "uniform float hour; // = 0.0\nvoid mainImage(out vec4 o, in vec2 f){\n  vec2 uv = f / iResolution.xy;            // y = 0 at the bottom\n  float k = clamp(hour, 0.0, 1.0);         // 0 = night, 1 = 07:00 daylight\n  float k2 = k*k*(3.0-2.0*k);\n  vec3 nTop = vec3(0.047, 0.086, 0.157), nBot = vec3(0.085, 0.140, 0.235);\n  vec3 dTop = vec3(0.780, 0.835, 0.885), dBot = vec3(0.995, 0.900, 0.745);\n  float y = pow(1.0 - uv.y, 1.5);\n  vec3 c = mix(mix(nTop, nBot, y), mix(dTop, dBot, y), k2);\n  // first light: a warm band at the horizon that rises then settles\n  float band = exp(-7.0 * uv.y) * sin(3.14159 * clamp(k * 1.15, 0.0, 1.0));\n  c += band * vec3(0.55, 0.30, 0.10) * 0.55;\n  // gentle falloff toward the corners (one light: the sky)\n  vec2 d = uv - vec2(0.5, 0.15);\n  c *= 1.0 - 0.18 * dot(d, d);\n  o = vec4(c, 1.0);\n}",
+     "uniforms": {
+      "hour": 0.0
+     },
+     "width": "130%",
+     "height": "130%",
+     "animate": [
+      {
+       "from": {
+        "hour": 0.0
+       },
+       "to": {
+        "hour": 0.04
+       },
+       "duration": 4.0,
+       "ease": "inOutCubic",
+       "at": 0
+      }
+     ]
+    },
+    {
+     "text": "23:59",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 0.0,
+     "end": 0.0333
+    },
+    {
+     "text": "23:58",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 0.0333,
+     "end": 0.2333
+    },
+    {
+     "text": "23:57",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 0.2333,
+     "end": 0.2667
+    },
+    {
+     "text": "23:56",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 0.2667,
+     "end": 0.3333
+    },
+    {
+     "text": "23:54",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 0.3333,
+     "end": 0.3667
+    },
+    {
+     "text": "23:53",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 0.3667,
+     "end": 0.4
+    },
+    {
+     "text": "23:51",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 0.4,
+     "end": 0.4333
+    },
+    {
+     "text": "23:49",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 0.4333,
+     "end": 0.4667
+    },
+    {
+     "text": "23:47",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 0.4667,
+     "end": 0.5
+    },
+    {
+     "text": "23:45",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 0.5,
+     "end": 0.5333
+    },
+    {
+     "text": "23:42",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 0.5333,
+     "end": 0.5667
+    },
+    {
+     "text": "23:38",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 0.5667,
+     "end": 0.6
+    },
+    {
+     "text": "23:35",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 0.6,
+     "end": 0.6333
+    },
+    {
+     "text": "23:30",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 0.6333,
+     "end": 0.6667
+    },
+    {
+     "text": "23:26",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 0.6667,
+     "end": 0.7
+    },
+    {
+     "text": "23:20",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 0.7,
+     "end": 0.7333
+    },
+    {
+     "text": "23:15",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 0.7333,
+     "end": 0.7667
+    },
+    {
+     "text": "23:09",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 0.7667,
+     "end": 0.8
+    },
+    {
+     "text": "23:02",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 0.8,
+     "end": 0.8333
+    },
+    {
+     "text": "22:54",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 0.8333,
+     "end": 0.8667
+    },
+    {
+     "text": "22:46",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 0.8667,
+     "end": 0.9
+    },
+    {
+     "text": "22:38",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 0.9,
+     "end": 0.9333
+    },
+    {
+     "text": "22:28",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 0.9333,
+     "end": 0.9667
+    },
+    {
+     "text": "22:18",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 0.9667,
+     "end": 1.0
+    },
+    {
+     "text": "22:08",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 1.0,
+     "end": 1.0333
+    },
+    {
+     "text": "21:56",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 1.0333,
+     "end": 1.0667
+    },
+    {
+     "text": "21:44",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 1.0667,
+     "end": 1.1
+    },
+    {
+     "text": "21:31",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 1.1,
+     "end": 1.1333
+    },
+    {
+     "text": "21:17",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 1.1333,
+     "end": 1.1667
+    },
+    {
+     "text": "21:02",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 1.1667,
+     "end": 1.2
+    },
+    {
+     "text": "20:47",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 1.2,
+     "end": 1.2333
+    },
+    {
+     "text": "20:31",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 1.2333,
+     "end": 1.2667
+    },
+    {
+     "text": "20:13",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 1.2667,
+     "end": 1.3
+    },
+    {
+     "text": "19:55",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 1.3,
+     "end": 1.3333
+    },
+    {
+     "text": "19:36",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 1.3333,
+     "end": 1.3667
+    },
+    {
+     "text": "19:16",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 1.3667,
+     "end": 1.4
+    },
+    {
+     "text": "18:54",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 1.4,
+     "end": 1.4333
+    },
+    {
+     "text": "18:32",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 1.4333,
+     "end": 1.4667
+    },
+    {
+     "text": "18:09",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 1.4667,
+     "end": 1.5
+    },
+    {
+     "text": "17:44",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 1.5,
+     "end": 1.5333
+    },
+    {
+     "text": "17:19",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 1.5333,
+     "end": 1.5667
+    },
+    {
+     "text": "16:52",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 1.5667,
+     "end": 1.6
+    },
+    {
+     "text": "16:24",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 1.6,
+     "end": 1.6333
+    },
+    {
+     "text": "15:55",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 1.6333,
+     "end": 1.6667
+    },
+    {
+     "text": "15:25",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 1.6667,
+     "end": 1.7
+    },
+    {
+     "text": "14:54",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 1.7,
+     "end": 1.7333
+    },
+    {
+     "text": "14:21",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 1.7333,
+     "end": 1.7667
+    },
+    {
+     "text": "13:47",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 1.7667,
+     "end": 1.8
+    },
+    {
+     "text": "13:12",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 1.8,
+     "end": 1.8333
+    },
+    {
+     "text": "12:37",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 1.8333,
+     "end": 1.8667
+    },
+    {
+     "text": "12:03",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 1.8667,
+     "end": 1.9
+    },
+    {
+     "text": "11:30",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 1.9,
+     "end": 1.9333
+    },
+    {
+     "text": "10:59",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 1.9333,
+     "end": 1.9667
+    },
+    {
+     "text": "10:29",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 1.9667,
+     "end": 2.0
+    },
+    {
+     "text": "10:00",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 2.0,
+     "end": 2.0333
+    },
+    {
+     "text": "09:32",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 2.0333,
+     "end": 2.0667
+    },
+    {
+     "text": "09:05",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 2.0667,
+     "end": 2.1
+    },
+    {
+     "text": "08:40",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 2.1,
+     "end": 2.1333
+    },
+    {
+     "text": "08:15",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 2.1333,
+     "end": 2.1667
+    },
+    {
+     "text": "07:52",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 2.1667,
+     "end": 2.2
+    },
+    {
+     "text": "07:30",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 2.2,
+     "end": 2.2333
+    },
+    {
+     "text": "07:08",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 2.2333,
+     "end": 2.2667
+    },
+    {
+     "text": "06:48",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 2.2667,
+     "end": 2.3
+    },
+    {
+     "text": "06:29",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 2.3,
+     "end": 2.3333
+    },
+    {
+     "text": "06:11",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 2.3333,
+     "end": 2.3667
+    },
+    {
+     "text": "05:53",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 2.3667,
+     "end": 2.4
+    },
+    {
+     "text": "05:37",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 2.4,
+     "end": 2.4333
+    },
+    {
+     "text": "05:22",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 2.4333,
+     "end": 2.4667
+    },
+    {
+     "text": "05:07",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 2.4667,
+     "end": 2.5
+    },
+    {
+     "text": "04:53",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 2.5,
+     "end": 2.5333
+    },
+    {
+     "text": "04:40",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 2.5333,
+     "end": 2.5667
+    },
+    {
+     "text": "04:28",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 2.5667,
+     "end": 2.6
+    },
+    {
+     "text": "04:16",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 2.6,
+     "end": 2.6333
+    },
+    {
+     "text": "04:06",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 2.6333,
+     "end": 2.6667
+    },
+    {
+     "text": "03:56",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 2.6667,
+     "end": 2.7
+    },
+    {
+     "text": "03:46",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 2.7,
+     "end": 2.7333
+    },
+    {
+     "text": "03:38",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 2.7333,
+     "end": 2.7667
+    },
+    {
+     "text": "03:30",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 2.7667,
+     "end": 2.8
+    },
+    {
+     "text": "03:22",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 2.8,
+     "end": 2.8333
+    },
+    {
+     "text": "03:15",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 2.8333,
+     "end": 2.8667
+    },
+    {
+     "text": "03:09",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 2.8667,
+     "end": 2.9
+    },
+    {
+     "text": "03:04",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 2.9,
+     "end": 2.9333
+    },
+    {
+     "text": "02:58",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 2.9333,
+     "end": 2.9667
+    },
+    {
+     "text": "02:54",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 2.9667,
+     "end": 3.0
+    },
+    {
+     "text": "02:49",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 3.0,
+     "end": 3.0333
+    },
+    {
+     "text": "02:46",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 3.0333,
+     "end": 3.0667
+    },
+    {
+     "text": "02:42",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 3.0667,
+     "end": 3.1
+    },
+    {
+     "text": "02:39",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 3.1,
+     "end": 3.1333
+    },
+    {
+     "text": "02:37",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 3.1333,
+     "end": 3.1667
+    },
+    {
+     "text": "02:35",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 3.1667,
+     "end": 3.2
+    },
+    {
+     "text": "02:33",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 3.2,
+     "end": 3.2333
+    },
+    {
+     "text": "02:31",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 3.2333,
+     "end": 3.2667
+    },
+    {
+     "text": "02:30",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 3.2667,
+     "end": 3.3
+    },
+    {
+     "text": "02:28",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 3.3,
+     "end": 3.3667
+    },
+    {
+     "text": "02:27",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 3.3667,
+     "end": 3.4
+    },
+    {
+     "text": "02:26",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 3.4,
+     "end": 4.0
+    },
+    {
+     "x": 820,
+     "y": 150,
+     "anchor": "topLeft",
+     "width": 1920,
+     "height": 1080,
+     "layers": [
+      {
+       "shape": "rect",
+       "x": 0,
+       "y": 0,
+       "width": 1000,
+       "height": 168,
+       "fill": "#17253B",
+       "radius": 28,
+       "anchor": "topLeft",
+       "stroke": "#FFFFFF14",
+       "strokeWidth": 2
+      },
+      {
+       "shape": "circle",
+       "x": 24,
+       "y": 54,
+       "width": 10,
+       "height": 10,
+       "fill": "#EEF2F8",
+       "anchor": "center",
+       "end": 0.0
+      },
+      {
+       "text": "Dana Whitfield",
+       "font": "Host Grotesk",
+       "weight": 650,
+       "size": 38,
+       "color": "#EEF2F8",
+       "x": 44,
+       "y": 30,
+       "anchor": "topLeft"
+      },
+      {
+       "text": "11:58 PM",
+       "font": "Host Grotesk",
+       "weight": 500,
+       "size": 30,
+       "color": "#8193AD",
+       "x": 960,
+       "y": 34,
+       "anchor": "topRight",
+       "features": "tnum"
+      },
+      {
+       "text": "One small thing before tomorrow",
+       "font": "Host Grotesk",
+       "weight": 550,
+       "size": 32,
+       "color": "#C9D3E1",
+       "x": 44,
+       "y": 80,
+       "anchor": "topLeft"
+      },
+      {
+       "text": "Can you send the Q3 numbers to the board before 9?",
+       "font": "Host Grotesk",
+       "weight": 400,
+       "size": 28,
+       "color": "#8193AD",
+       "x": 44,
+       "y": 122,
+       "anchor": "topLeft"
+      },
+      {
+       "shape": "path",
+       "d": "M0 0 L944 0",
+       "stroke": "#FFB23E",
+       "strokeWidth": 3,
+       "x": 28,
+       "y": 166,
+       "anchor": "topLeft",
+       "start": 0.0,
+       "animate": [
+        {
+         "from": {
+          "trimEnd": 0
+         },
+         "to": {
+          "trimEnd": 1
+         },
+         "duration": 0.5,
+         "ease": "outExpo"
+        }
+       ]
+      },
+      {
+       "text": "Draft ready",
+       "font": "Host Grotesk",
+       "weight": 650,
+       "size": 28,
+       "color": "#FFB23E",
+       "x": 960,
+       "y": 84,
+       "anchor": "topRight",
+       "start": 0.2,
+       "enter": {
+        "preset": "fadeUp",
+        "duration": 0.25,
+        "distance": 10
+       }
+      }
+     ],
+     "start": 0.0
+    },
+    {
+     "x": 820,
+     "y": 346,
+     "anchor": "topLeft",
+     "width": 1920,
+     "height": 1080,
+     "layers": [
+      {
+       "shape": "rect",
+       "x": 0,
+       "y": 0,
+       "width": 1000,
+       "height": 168,
+       "fill": "#17253B",
+       "radius": 28,
+       "anchor": "topLeft",
+       "stroke": "#FFFFFF14",
+       "strokeWidth": 2
+      },
+      {
+       "shape": "circle",
+       "x": 24,
+       "y": 54,
+       "width": 10,
+       "height": 10,
+       "fill": "#EEF2F8",
+       "anchor": "center",
+       "end": 0.45000000000000007
+      },
+      {
+       "text": "Priya Shah",
+       "font": "Host Grotesk",
+       "weight": 650,
+       "size": 38,
+       "color": "#EEF2F8",
+       "x": 44,
+       "y": 30,
+       "anchor": "topLeft"
+      },
+      {
+       "text": "12:41 AM",
+       "font": "Host Grotesk",
+       "weight": 500,
+       "size": 30,
+       "color": "#8193AD",
+       "x": 960,
+       "y": 34,
+       "anchor": "topRight",
+       "features": "tnum"
+      },
+      {
+       "text": "Design review",
+       "font": "Host Grotesk",
+       "weight": 550,
+       "size": 32,
+       "color": "#C9D3E1",
+       "x": 44,
+       "y": 80,
+       "anchor": "topLeft"
+      },
+      {
+       "text": "Does Thursday work? Happy to move if not.",
+       "font": "Host Grotesk",
+       "weight": 400,
+       "size": 28,
+       "color": "#8193AD",
+       "x": 44,
+       "y": 122,
+       "anchor": "topLeft"
+      },
+      {
+       "shape": "path",
+       "d": "M0 0 L944 0",
+       "stroke": "#FFB23E",
+       "strokeWidth": 3,
+       "x": 28,
+       "y": 166,
+       "anchor": "topLeft",
+       "start": 0.45000000000000007,
+       "animate": [
+        {
+         "from": {
+          "trimEnd": 0
+         },
+         "to": {
+          "trimEnd": 1
+         },
+         "duration": 0.5,
+         "ease": "outExpo"
+        }
+       ]
+      },
+      {
+       "text": "Draft ready",
+       "font": "Host Grotesk",
+       "weight": 650,
+       "size": 28,
+       "color": "#FFB23E",
+       "x": 960,
+       "y": 84,
+       "anchor": "topRight",
+       "start": 0.6500000000000001,
+       "enter": {
+        "preset": "fadeUp",
+        "duration": 0.25,
+        "distance": 10
+       }
+      }
+     ],
+     "start": 0.85,
+     "enter": {
+      "preset": "fadeUp",
+      "duration": 0.5,
+      "distance": 40,
+      "ease": "outExpo"
+     }
+    },
+    {
+     "x": 820,
+     "y": 542,
+     "anchor": "topLeft",
+     "width": 1920,
+     "height": 1080,
+     "layers": [
+      {
+       "shape": "rect",
+       "x": 0,
+       "y": 0,
+       "width": 1000,
+       "height": 168,
+       "fill": "#17253B",
+       "radius": 28,
+       "anchor": "topLeft",
+       "stroke": "#FFFFFF14",
+       "strokeWidth": 2
+      },
+      {
+       "shape": "circle",
+       "x": 24,
+       "y": 54,
+       "width": 10,
+       "height": 10,
+       "fill": "#EEF2F8",
+       "anchor": "center",
+       "end": 0.4500000000000002
+      },
+      {
+       "text": "Stripe",
+       "font": "Host Grotesk",
+       "weight": 650,
+       "size": 38,
+       "color": "#EEF2F8",
+       "x": 44,
+       "y": 30,
+       "anchor": "topLeft"
+      },
+      {
+       "text": "1:07 AM",
+       "font": "Host Grotesk",
+       "weight": 500,
+       "size": 30,
+       "color": "#8193AD",
+       "x": 960,
+       "y": 34,
+       "anchor": "topRight",
+       "features": "tnum"
+      },
+      {
+       "text": "Invoice INV-2291 paid",
+       "font": "Host Grotesk",
+       "weight": 550,
+       "size": 32,
+       "color": "#C9D3E1",
+       "x": 44,
+       "y": 80,
+       "anchor": "topLeft"
+      },
+      {
+       "text": "Payment received from Northwind Ltd.",
+       "font": "Host Grotesk",
+       "weight": 400,
+       "size": 28,
+       "color": "#8193AD",
+       "x": 44,
+       "y": 122,
+       "anchor": "topLeft"
+      },
+      {
+       "shape": "path",
+       "d": "M0 0 L944 0",
+       "stroke": "#FFB23E",
+       "strokeWidth": 3,
+       "x": 28,
+       "y": 166,
+       "anchor": "topLeft",
+       "start": 0.4500000000000002,
+       "animate": [
+        {
+         "from": {
+          "trimEnd": 0
+         },
+         "to": {
+          "trimEnd": 1
+         },
+         "duration": 0.5,
+         "ease": "outExpo"
+        }
+       ]
+      },
+      {
+       "text": "Filed",
+       "font": "Host Grotesk",
+       "weight": 650,
+       "size": 28,
+       "color": "#8193AD",
+       "x": 960,
+       "y": 84,
+       "anchor": "topRight",
+       "start": 0.6500000000000001,
+       "enter": {
+        "preset": "fadeUp",
+        "duration": 0.25,
+        "distance": 10
+       }
+      }
+     ],
+     "start": 1.6,
+     "enter": {
+      "preset": "fadeUp",
+      "duration": 0.5,
+      "distance": 40,
+      "ease": "outExpo"
+     }
+    },
+    {
+     "x": 820,
+     "y": 738,
+     "anchor": "topLeft",
+     "width": 1920,
+     "height": 1080,
+     "layers": [
+      {
+       "shape": "rect",
+       "x": 0,
+       "y": 0,
+       "width": 1000,
+       "height": 168,
+       "fill": "#17253B",
+       "radius": 28,
+       "anchor": "topLeft",
+       "stroke": "#FFFFFF14",
+       "strokeWidth": 2
+      },
+      {
+       "shape": "circle",
+       "x": 24,
+       "y": 54,
+       "width": 10,
+       "height": 10,
+       "fill": "#EEF2F8",
+       "anchor": "center",
+       "end": 0.4500000000000002
+      },
+      {
+       "text": "Lena Fischer",
+       "font": "Host Grotesk",
+       "weight": 650,
+       "size": 38,
+       "color": "#EEF2F8",
+       "x": 44,
+       "y": 30,
+       "anchor": "topLeft"
+      },
+      {
+       "text": "2:26 AM",
+       "font": "Host Grotesk",
+       "weight": 500,
+       "size": 30,
+       "color": "#8193AD",
+       "x": 960,
+       "y": 34,
+       "anchor": "topRight",
+       "features": "tnum"
+      },
+      {
+       "text": "Contract redlines attached",
+       "font": "Host Grotesk",
+       "weight": 550,
+       "size": 32,
+       "color": "#C9D3E1",
+       "x": 44,
+       "y": 80,
+       "anchor": "topLeft"
+      },
+      {
+       "text": "Sorry for the hour, Berlin time. Two small changes.",
+       "font": "Host Grotesk",
+       "weight": 400,
+       "size": 28,
+       "color": "#8193AD",
+       "x": 44,
+       "y": 122,
+       "anchor": "topLeft"
+      },
+      {
+       "shape": "path",
+       "d": "M0 0 L944 0",
+       "stroke": "#FFB23E",
+       "strokeWidth": 3,
+       "x": 28,
+       "y": 166,
+       "anchor": "topLeft",
+       "start": 0.4500000000000002,
+       "animate": [
+        {
+         "from": {
+          "trimEnd": 0
+         },
+         "to": {
+          "trimEnd": 1
+         },
+         "duration": 0.5,
+         "ease": "outExpo"
+        }
+       ]
+      },
+      {
+       "text": "Draft ready",
+       "font": "Host Grotesk",
+       "weight": 650,
+       "size": 28,
+       "color": "#FFB23E",
+       "x": 960,
+       "y": 84,
+       "anchor": "topRight",
+       "start": 0.6500000000000001,
+       "enter": {
+        "preset": "fadeUp",
+        "duration": 0.25,
+        "distance": 10
+       }
+      }
+     ],
+     "start": 2.5,
+     "enter": {
+      "preset": "fadeUp",
+      "duration": 0.5,
+      "distance": 40,
+      "ease": "outExpo"
+     }
+    },
+    {
+     "text": "You sleep.\nIt reads.",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "15vh",
+     "color": "#EEF2F8",
+     "x": 96,
+     "y": 360,
+     "anchor": "topLeft",
+     "letterSpacing": "-0.03em",
+     "lineHeight": 0.92,
+     "start": 0.35,
+     "enter": "mask by line up"
+    }
+   ],
+   "camera": {
+    "animate": [
+     {
+      "from": {
+       "zoom": 1.05,
+       "y": -20
+      },
+      "to": {
+       "zoom": 1.0,
+       "y": 10
+      },
+      "duration": 4.0,
+      "ease": "inOutCubic"
+     }
+    ]
+   }
+  },
+  {
+   "duration": 4.0,
+   "layers": [
+    {
+     "shader": "uniform float hour; // = 0.0\nvoid mainImage(out vec4 o, in vec2 f){\n  vec2 uv = f / iResolution.xy;            // y = 0 at the bottom\n  float k = clamp(hour, 0.0, 1.0);         // 0 = night, 1 = 07:00 daylight\n  float k2 = k*k*(3.0-2.0*k);\n  vec3 nTop = vec3(0.047, 0.086, 0.157), nBot = vec3(0.085, 0.140, 0.235);\n  vec3 dTop = vec3(0.780, 0.835, 0.885), dBot = vec3(0.995, 0.900, 0.745);\n  float y = pow(1.0 - uv.y, 1.5);\n  vec3 c = mix(mix(nTop, nBot, y), mix(dTop, dBot, y), k2);\n  // first light: a warm band at the horizon that rises then settles\n  float band = exp(-7.0 * uv.y) * sin(3.14159 * clamp(k * 1.15, 0.0, 1.0));\n  c += band * vec3(0.55, 0.30, 0.10) * 0.55;\n  // gentle falloff toward the corners (one light: the sky)\n  vec2 d = uv - vec2(0.5, 0.15);\n  c *= 1.0 - 0.18 * dot(d, d);\n  o = vec4(c, 1.0);\n}",
+     "uniforms": {
+      "hour": 0.04
+     },
+     "width": "130%",
+     "height": "130%"
+    },
+    {
+     "text": "03:12",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 0.0,
+     "end": 0.6333
+    },
+    {
+     "text": "03:13",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 0.6333,
+     "end": 0.8
+    },
+    {
+     "text": "03:14",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 0.8,
+     "end": 0.9
+    },
+    {
+     "text": "03:15",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 0.9,
+     "end": 1.0
+    },
+    {
+     "text": "03:16",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 1.0,
+     "end": 1.0667
+    },
+    {
+     "text": "03:17",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 1.0667,
+     "end": 1.1333
+    },
+    {
+     "text": "03:18",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 1.1333,
+     "end": 1.2
+    },
+    {
+     "text": "03:19",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 1.2,
+     "end": 1.2333
+    },
+    {
+     "text": "03:20",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 1.2333,
+     "end": 1.3
+    },
+    {
+     "text": "03:21",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 1.3,
+     "end": 1.3333
+    },
+    {
+     "text": "03:22",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 1.3333,
+     "end": 1.4
+    },
+    {
+     "text": "03:23",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 1.4,
+     "end": 1.4333
+    },
+    {
+     "text": "03:24",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 1.4333,
+     "end": 1.5
+    },
+    {
+     "text": "03:25",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 1.5,
+     "end": 1.5667
+    },
+    {
+     "text": "03:26",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 1.5667,
+     "end": 1.6333
+    },
+    {
+     "text": "03:27",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 1.6333,
+     "end": 1.7333
+    },
+    {
+     "text": "03:28",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 1.7333,
+     "end": 1.8333
+    },
+    {
+     "text": "03:29",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 1.8333,
+     "end": 2.0
+    },
+    {
+     "text": "03:30",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 2.0,
+     "end": 2.6
+    },
+    {
+     "text": "03:31",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 2.6,
+     "end": 3.3
+    },
+    {
+     "text": "03:32",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "78vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF1C",
+     "x": "50%",
+     "y": "47%",
+     "anchor": "center",
+     "start": 3.3,
+     "end": 4.0
+    },
+    {
+     "x": 0,
+     "y": 0,
+     "anchor": "topLeft",
+     "width": 1920,
+     "height": 1080,
+     "layers": [
+      {
+       "x": 360,
+       "y": 120,
+       "anchor": "topLeft",
+       "width": 1920,
+       "height": 1080,
+       "layers": [
+        {
+         "shape": "rect",
+         "x": 0,
+         "y": 0,
+         "width": 1200,
+         "height": 168,
+         "fill": "#17253B",
+         "radius": 28,
+         "anchor": "topLeft",
+         "stroke": "#FFFFFF14",
+         "strokeWidth": 2
+        },
+        {
+         "shape": "circle",
+         "x": 24,
+         "y": 54,
+         "width": 10,
+         "height": 10,
+         "fill": "#EEF2F8",
+         "anchor": "center"
+        },
+        {
+         "text": "Marco Ruiz, Priya, +20",
+         "font": "Host Grotesk",
+         "weight": 650,
+         "size": 38,
+         "color": "#EEF2F8",
+         "x": 44,
+         "y": 30,
+         "anchor": "topLeft"
+        },
+        {
+         "text": "3:12 AM",
+         "font": "Host Grotesk",
+         "weight": 500,
+         "size": 30,
+         "color": "#8193AD",
+         "x": 1160,
+         "y": 34,
+         "anchor": "topRight",
+         "features": "tnum"
+        },
+        {
+         "text": "Re: Fwd: Offsite logistics",
+         "font": "Host Grotesk",
+         "weight": 550,
+         "size": 32,
+         "color": "#C9D3E1",
+         "x": 44,
+         "y": 80,
+         "anchor": "topLeft"
+        },
+        {
+         "text": "Please remove me from this list.",
+         "font": "Host Grotesk",
+         "weight": 400,
+         "size": 28,
+         "color": "#8193AD",
+         "x": 44,
+         "y": 122,
+         "anchor": "topLeft"
+        }
+       ],
+       "start": 0.0,
+       "enter": {
+        "preset": "fadeUp",
+        "duration": 0.5,
+        "distance": 40,
+        "ease": "outExpo"
+       }
+      },
+      {
+       "x": 360,
+       "y": 306,
+       "anchor": "topLeft",
+       "width": 1920,
+       "height": 1080,
+       "layers": [
+        {
+         "shape": "rect",
+         "x": 0,
+         "y": 0,
+         "width": 1200,
+         "height": 168,
+         "fill": "#17253B",
+         "radius": 28,
+         "anchor": "topLeft",
+         "stroke": "#FFFFFF14",
+         "strokeWidth": 2
+        },
+        {
+         "shape": "circle",
+         "x": 24,
+         "y": 54,
+         "width": 10,
+         "height": 10,
+         "fill": "#EEF2F8",
+         "anchor": "center"
+        },
+        {
+         "text": "Tom Becker",
+         "font": "Host Grotesk",
+         "weight": 650,
+         "size": 38,
+         "color": "#EEF2F8",
+         "x": 44,
+         "y": 30,
+         "anchor": "topLeft"
+        },
+        {
+         "text": "3:13 AM",
+         "font": "Host Grotesk",
+         "weight": 500,
+         "size": 30,
+         "color": "#8193AD",
+         "x": 1160,
+         "y": 34,
+         "anchor": "topRight",
+         "features": "tnum"
+        },
+        {
+         "text": "Re: Fwd: Offsite logistics",
+         "font": "Host Grotesk",
+         "weight": 550,
+         "size": 32,
+         "color": "#C9D3E1",
+         "x": 44,
+         "y": 80,
+         "anchor": "topLeft"
+        },
+        {
+         "text": "Same, please remove me.",
+         "font": "Host Grotesk",
+         "weight": 400,
+         "size": 28,
+         "color": "#8193AD",
+         "x": 44,
+         "y": 122,
+         "anchor": "topLeft"
+        }
+       ],
+       "start": 0.11,
+       "enter": {
+        "preset": "fadeUp",
+        "duration": 0.5,
+        "distance": 40,
+        "ease": "outExpo"
+       }
+      },
+      {
+       "x": 360,
+       "y": 492,
+       "anchor": "topLeft",
+       "width": 1920,
+       "height": 1080,
+       "layers": [
+        {
+         "shape": "rect",
+         "x": 0,
+         "y": 0,
+         "width": 1200,
+         "height": 168,
+         "fill": "#17253B",
+         "radius": 28,
+         "anchor": "topLeft",
+         "stroke": "#FFFFFF14",
+         "strokeWidth": 2
+        },
+        {
+         "shape": "circle",
+         "x": 24,
+         "y": 54,
+         "width": 10,
+         "height": 10,
+         "fill": "#EEF2F8",
+         "anchor": "center"
+        },
+        {
+         "text": "Aiko Mori",
+         "font": "Host Grotesk",
+         "weight": 650,
+         "size": 38,
+         "color": "#EEF2F8",
+         "x": 44,
+         "y": 30,
+         "anchor": "topLeft"
+        },
+        {
+         "text": "3:14 AM",
+         "font": "Host Grotesk",
+         "weight": 500,
+         "size": 30,
+         "color": "#8193AD",
+         "x": 1160,
+         "y": 34,
+         "anchor": "topRight",
+         "features": "tnum"
+        },
+        {
+         "text": "Re: Fwd: Offsite logistics",
+         "font": "Host Grotesk",
+         "weight": 550,
+         "size": 32,
+         "color": "#C9D3E1",
+         "x": 44,
+         "y": 80,
+         "anchor": "topLeft"
+        },
+        {
+         "text": "Why am I on this?",
+         "font": "Host Grotesk",
+         "weight": 400,
+         "size": 28,
+         "color": "#8193AD",
+         "x": 44,
+         "y": 122,
+         "anchor": "topLeft"
+        }
+       ],
+       "start": 0.22,
+       "enter": {
+        "preset": "fadeUp",
+        "duration": 0.5,
+        "distance": 40,
+        "ease": "outExpo"
+       }
+      },
+      {
+       "x": 360,
+       "y": 678,
+       "anchor": "topLeft",
+       "width": 1920,
+       "height": 1080,
+       "layers": [
+        {
+         "shape": "rect",
+         "x": 0,
+         "y": 0,
+         "width": 1200,
+         "height": 168,
+         "fill": "#17253B",
+         "radius": 28,
+         "anchor": "topLeft",
+         "stroke": "#FFFFFF14",
+         "strokeWidth": 2
+        },
+        {
+         "shape": "circle",
+         "x": 24,
+         "y": 54,
+         "width": 10,
+         "height": 10,
+         "fill": "#EEF2F8",
+         "anchor": "center"
+        },
+        {
+         "text": "Sam Ortiz",
+         "font": "Host Grotesk",
+         "weight": 650,
+         "size": 38,
+         "color": "#EEF2F8",
+         "x": 44,
+         "y": 30,
+         "anchor": "topLeft"
+        },
+        {
+         "text": "3:15 AM",
+         "font": "Host Grotesk",
+         "weight": 500,
+         "size": 30,
+         "color": "#8193AD",
+         "x": 1160,
+         "y": 34,
+         "anchor": "topRight",
+         "features": "tnum"
+        },
+        {
+         "text": "Re: Re: Fwd: Offsite logistics",
+         "font": "Host Grotesk",
+         "weight": 550,
+         "size": 32,
+         "color": "#C9D3E1",
+         "x": 44,
+         "y": 80,
+         "anchor": "topLeft"
+        },
+        {
+         "text": "Please stop replying all.",
+         "font": "Host Grotesk",
+         "weight": 400,
+         "size": 28,
+         "color": "#8193AD",
+         "x": 44,
+         "y": 122,
+         "anchor": "topLeft"
+        }
+       ],
+       "start": 0.33,
+       "enter": {
+        "preset": "fadeUp",
+        "duration": 0.5,
+        "distance": 40,
+        "ease": "outExpo"
+       }
+      },
+      {
+       "x": 360,
+       "y": 864,
+       "anchor": "topLeft",
+       "width": 1920,
+       "height": 1080,
+       "layers": [
+        {
+         "shape": "rect",
+         "x": 0,
+         "y": 0,
+         "width": 1200,
+         "height": 168,
+         "fill": "#17253B",
+         "radius": 28,
+         "anchor": "topLeft",
+         "stroke": "#FFFFFF14",
+         "strokeWidth": 2
+        },
+        {
+         "shape": "circle",
+         "x": 24,
+         "y": 54,
+         "width": 10,
+         "height": 10,
+         "fill": "#EEF2F8",
+         "anchor": "center"
+        },
+        {
+         "text": "Raj Patel, Priya, +24",
+         "font": "Host Grotesk",
+         "weight": 650,
+         "size": 38,
+         "color": "#EEF2F8",
+         "x": 44,
+         "y": 30,
+         "anchor": "topLeft"
+        },
+        {
+         "text": "3:16 AM",
+         "font": "Host Grotesk",
+         "weight": 500,
+         "size": 30,
+         "color": "#8193AD",
+         "x": 1160,
+         "y": 34,
+         "anchor": "topRight",
+         "features": "tnum"
+        },
+        {
+         "text": "Re: Re: Fwd: Offsite logistics",
+         "font": "Host Grotesk",
+         "weight": 550,
+         "size": 32,
+         "color": "#C9D3E1",
+         "x": 44,
+         "y": 80,
+         "anchor": "topLeft"
+        },
+        {
+         "text": "+1, remove me",
+         "font": "Host Grotesk",
+         "weight": 400,
+         "size": 28,
+         "color": "#8193AD",
+         "x": 44,
+         "y": 122,
+         "anchor": "topLeft"
+        }
+       ],
+       "start": 0.44,
+       "enter": {
+        "preset": "fadeUp",
+        "duration": 0.5,
+        "distance": 40,
+        "ease": "outExpo"
+       }
+      },
+      {
+       "x": 360,
+       "y": 1050,
+       "anchor": "topLeft",
+       "width": 1920,
+       "height": 1080,
+       "layers": [
+        {
+         "shape": "rect",
+         "x": 0,
+         "y": 0,
+         "width": 1200,
+         "height": 168,
+         "fill": "#17253B",
+         "radius": 28,
+         "anchor": "topLeft",
+         "stroke": "#FFFFFF14",
+         "strokeWidth": 2
+        },
+        {
+         "shape": "circle",
+         "x": 24,
+         "y": 54,
+         "width": 10,
+         "height": 10,
+         "fill": "#EEF2F8",
+         "anchor": "center"
+        },
+        {
+         "text": "Chloe Martin",
+         "font": "Host Grotesk",
+         "weight": 650,
+         "size": 38,
+         "color": "#EEF2F8",
+         "x": 44,
+         "y": 30,
+         "anchor": "topLeft"
+        },
+        {
+         "text": "3:17 AM",
+         "font": "Host Grotesk",
+         "weight": 500,
+         "size": 30,
+         "color": "#8193AD",
+         "x": 1160,
+         "y": 34,
+         "anchor": "topRight",
+         "features": "tnum"
+        },
+        {
+         "text": "Re: Re: Fwd: Offsite logistics",
+         "font": "Host Grotesk",
+         "weight": 550,
+         "size": 32,
+         "color": "#C9D3E1",
+         "x": 44,
+         "y": 80,
+         "anchor": "topLeft"
+        },
+        {
+         "text": "Who added this list?",
+         "font": "Host Grotesk",
+         "weight": 400,
+         "size": 28,
+         "color": "#8193AD",
+         "x": 44,
+         "y": 122,
+         "anchor": "topLeft"
+        }
+       ],
+       "start": 0.55,
+       "enter": {
+        "preset": "fadeUp",
+        "duration": 0.5,
+        "distance": 40,
+        "ease": "outExpo"
+       }
+      },
+      {
+       "x": 360,
+       "y": 1236,
+       "anchor": "topLeft",
+       "width": 1920,
+       "height": 1080,
+       "layers": [
+        {
+         "shape": "rect",
+         "x": 0,
+         "y": 0,
+         "width": 1200,
+         "height": 168,
+         "fill": "#17253B",
+         "radius": 28,
+         "anchor": "topLeft",
+         "stroke": "#FFFFFF14",
+         "strokeWidth": 2
+        },
+        {
+         "shape": "circle",
+         "x": 24,
+         "y": 54,
+         "width": 10,
+         "height": 10,
+         "fill": "#EEF2F8",
+         "anchor": "center"
+        },
+        {
+         "text": "Ben Adler",
+         "font": "Host Grotesk",
+         "weight": 650,
+         "size": 38,
+         "color": "#EEF2F8",
+         "x": 44,
+         "y": 30,
+         "anchor": "topLeft"
+        },
+        {
+         "text": "3:18 AM",
+         "font": "Host Grotesk",
+         "weight": 500,
+         "size": 30,
+         "color": "#8193AD",
+         "x": 1160,
+         "y": 34,
+         "anchor": "topRight",
+         "features": "tnum"
+        },
+        {
+         "text": "Re: Re: Re: Fwd: Offsite logistics",
+         "font": "Host Grotesk",
+         "weight": 550,
+         "size": 32,
+         "color": "#C9D3E1",
+         "x": 44,
+         "y": 80,
+         "anchor": "topLeft"
+        },
+        {
+         "text": "Unsubscribe",
+         "font": "Host Grotesk",
+         "weight": 400,
+         "size": 28,
+         "color": "#8193AD",
+         "x": 44,
+         "y": 122,
+         "anchor": "topLeft"
+        }
+       ],
+       "start": 0.66,
+       "enter": {
+        "preset": "fadeUp",
+        "duration": 0.5,
+        "distance": 40,
+        "ease": "outExpo"
+       }
+      },
+      {
+       "x": 360,
+       "y": 1422,
+       "anchor": "topLeft",
+       "width": 1920,
+       "height": 1080,
+       "layers": [
+        {
+         "shape": "rect",
+         "x": 0,
+         "y": 0,
+         "width": 1200,
+         "height": 168,
+         "fill": "#17253B",
+         "radius": 28,
+         "anchor": "topLeft",
+         "stroke": "#FFFFFF14",
+         "strokeWidth": 2
+        },
+        {
+         "shape": "circle",
+         "x": 24,
+         "y": 54,
+         "width": 10,
+         "height": 10,
+         "fill": "#EEF2F8",
+         "anchor": "center"
+        },
+        {
+         "text": "Nora Kim",
+         "font": "Host Grotesk",
+         "weight": 650,
+         "size": 38,
+         "color": "#EEF2F8",
+         "x": 44,
+         "y": 30,
+         "anchor": "topLeft"
+        },
+        {
+         "text": "3:19 AM",
+         "font": "Host Grotesk",
+         "weight": 500,
+         "size": 30,
+         "color": "#8193AD",
+         "x": 1160,
+         "y": 34,
+         "anchor": "topRight",
+         "features": "tnum"
+        },
+        {
+         "text": "Re: Re: Re: Fwd: Offsite logistics",
+         "font": "Host Grotesk",
+         "weight": 550,
+         "size": 32,
+         "color": "#C9D3E1",
+         "x": 44,
+         "y": 80,
+         "anchor": "topLeft"
+        },
+        {
+         "text": "Replying all to say stop replying all.",
+         "font": "Host Grotesk",
+         "weight": 400,
+         "size": 28,
+         "color": "#8193AD",
+         "x": 44,
+         "y": 122,
+         "anchor": "topLeft"
+        }
+       ],
+       "start": 0.77,
+       "enter": {
+        "preset": "fadeUp",
+        "duration": 0.5,
+        "distance": 40,
+        "ease": "outExpo"
+       }
+      },
+      {
+       "x": 360,
+       "y": 1608,
+       "anchor": "topLeft",
+       "width": 1920,
+       "height": 1080,
+       "layers": [
+        {
+         "shape": "rect",
+         "x": 0,
+         "y": 0,
+         "width": 1200,
+         "height": 168,
+         "fill": "#17253B",
+         "radius": 28,
+         "anchor": "topLeft",
+         "stroke": "#FFFFFF14",
+         "strokeWidth": 2
+        },
+        {
+         "shape": "circle",
+         "x": 24,
+         "y": 54,
+         "width": 10,
+         "height": 10,
+         "fill": "#EEF2F8",
+         "anchor": "center"
+        },
+        {
+         "text": "Owen Hale, Priya, +28",
+         "font": "Host Grotesk",
+         "weight": 650,
+         "size": 38,
+         "color": "#EEF2F8",
+         "x": 44,
+         "y": 30,
+         "anchor": "topLeft"
+        },
+        {
+         "text": "3:20 AM",
+         "font": "Host Grotesk",
+         "weight": 500,
+         "size": 30,
+         "color": "#8193AD",
+         "x": 1160,
+         "y": 34,
+         "anchor": "topRight",
+         "features": "tnum"
+        },
+        {
+         "text": "Re: Re: Re: Fwd: Offsite logistics",
+         "font": "Host Grotesk",
+         "weight": 550,
+         "size": 32,
+         "color": "#C9D3E1",
+         "x": 44,
+         "y": 80,
+         "anchor": "topLeft"
+        },
+        {
+         "text": "Please remove me from this list.",
+         "font": "Host Grotesk",
+         "weight": 400,
+         "size": 28,
+         "color": "#8193AD",
+         "x": 44,
+         "y": 122,
+         "anchor": "topLeft"
+        }
+       ],
+       "start": 0.88,
+       "enter": {
+        "preset": "fadeUp",
+        "duration": 0.5,
+        "distance": 40,
+        "ease": "outExpo"
+       }
+      },
+      {
+       "x": 360,
+       "y": 1794,
+       "anchor": "topLeft",
+       "width": 1920,
+       "height": 1080,
+       "layers": [
+        {
+         "shape": "rect",
+         "x": 0,
+         "y": 0,
+         "width": 1200,
+         "height": 168,
+         "fill": "#17253B",
+         "radius": 28,
+         "anchor": "topLeft",
+         "stroke": "#FFFFFF14",
+         "strokeWidth": 2
+        },
+        {
+         "shape": "circle",
+         "x": 24,
+         "y": 54,
+         "width": 10,
+         "height": 10,
+         "fill": "#EEF2F8",
+         "anchor": "center"
+        },
+        {
+         "text": "Iris Lund",
+         "font": "Host Grotesk",
+         "weight": 650,
+         "size": 38,
+         "color": "#EEF2F8",
+         "x": 44,
+         "y": 30,
+         "anchor": "topLeft"
+        },
+        {
+         "text": "3:21 AM",
+         "font": "Host Grotesk",
+         "weight": 500,
+         "size": 30,
+         "color": "#8193AD",
+         "x": 1160,
+         "y": 34,
+         "anchor": "topRight",
+         "features": "tnum"
+        },
+        {
+         "text": "Re: Re: Re: Re: Fwd: Offsite logistics",
+         "font": "Host Grotesk",
+         "weight": 550,
+         "size": 32,
+         "color": "#C9D3E1",
+         "x": 44,
+         "y": 80,
+         "anchor": "topLeft"
+        },
+        {
+         "text": "Same, please remove me.",
+         "font": "Host Grotesk",
+         "weight": 400,
+         "size": 28,
+         "color": "#8193AD",
+         "x": 44,
+         "y": 122,
+         "anchor": "topLeft"
+        }
+       ],
+       "start": 0.99,
+       "enter": {
+        "preset": "fadeUp",
+        "duration": 0.5,
+        "distance": 40,
+        "ease": "outExpo"
+       }
+      },
+      {
+       "x": 360,
+       "y": 1980,
+       "anchor": "topLeft",
+       "width": 1920,
+       "height": 1080,
+       "layers": [
+        {
+         "shape": "rect",
+         "x": 0,
+         "y": 0,
+         "width": 1200,
+         "height": 168,
+         "fill": "#17253B",
+         "radius": 28,
+         "anchor": "topLeft",
+         "stroke": "#FFFFFF14",
+         "strokeWidth": 2
+        },
+        {
+         "shape": "circle",
+         "x": 24,
+         "y": 54,
+         "width": 10,
+         "height": 10,
+         "fill": "#EEF2F8",
+         "anchor": "center"
+        },
+        {
+         "text": "Femi Ade",
+         "font": "Host Grotesk",
+         "weight": 650,
+         "size": 38,
+         "color": "#EEF2F8",
+         "x": 44,
+         "y": 30,
+         "anchor": "topLeft"
+        },
+        {
+         "text": "3:22 AM",
+         "font": "Host Grotesk",
+         "weight": 500,
+         "size": 30,
+         "color": "#8193AD",
+         "x": 1160,
+         "y": 34,
+         "anchor": "topRight",
+         "features": "tnum"
+        },
+        {
+         "text": "Re: Re: Re: Re: Fwd: Offsite logistics",
+         "font": "Host Grotesk",
+         "weight": 550,
+         "size": 32,
+         "color": "#C9D3E1",
+         "x": 44,
+         "y": 80,
+         "anchor": "topLeft"
+        },
+        {
+         "text": "Why am I on this?",
+         "font": "Host Grotesk",
+         "weight": 400,
+         "size": 28,
+         "color": "#8193AD",
+         "x": 44,
+         "y": 122,
+         "anchor": "topLeft"
+        }
+       ],
+       "start": 1.1,
+       "enter": {
+        "preset": "fadeUp",
+        "duration": 0.5,
+        "distance": 40,
+        "ease": "outExpo"
+       }
+      },
+      {
+       "x": 360,
+       "y": 2166,
+       "anchor": "topLeft",
+       "width": 1920,
+       "height": 1080,
+       "layers": [
+        {
+         "shape": "rect",
+         "x": 0,
+         "y": 0,
+         "width": 1200,
+         "height": 168,
+         "fill": "#17253B",
+         "radius": 28,
+         "anchor": "topLeft",
+         "stroke": "#FFFFFF14",
+         "strokeWidth": 2
+        },
+        {
+         "shape": "circle",
+         "x": 24,
+         "y": 54,
+         "width": 10,
+         "height": 10,
+         "fill": "#EEF2F8",
+         "anchor": "center"
+        },
+        {
+         "text": "Jo Park",
+         "font": "Host Grotesk",
+         "weight": 650,
+         "size": 38,
+         "color": "#EEF2F8",
+         "x": 44,
+         "y": 30,
+         "anchor": "topLeft"
+        },
+        {
+         "text": "3:23 AM",
+         "font": "Host Grotesk",
+         "weight": 500,
+         "size": 30,
+         "color": "#8193AD",
+         "x": 1160,
+         "y": 34,
+         "anchor": "topRight",
+         "features": "tnum"
+        },
+        {
+         "text": "Re: Re: Re: Re: Fwd: Offsite logistics",
+         "font": "Host Grotesk",
+         "weight": 550,
+         "size": 32,
+         "color": "#C9D3E1",
+         "x": 44,
+         "y": 80,
+         "anchor": "topLeft"
+        },
+        {
+         "text": "Please stop replying all.",
+         "font": "Host Grotesk",
+         "weight": 400,
+         "size": 28,
+         "color": "#8193AD",
+         "x": 44,
+         "y": 122,
+         "anchor": "topLeft"
+        }
+       ],
+       "start": 1.21,
+       "enter": {
+        "preset": "fadeUp",
+        "duration": 0.5,
+        "distance": 40,
+        "ease": "outExpo"
+       }
+      },
+      {
+       "x": 360,
+       "y": 2352,
+       "anchor": "topLeft",
+       "width": 1920,
+       "height": 1080,
+       "layers": [
+        {
+         "shape": "rect",
+         "x": 0,
+         "y": 0,
+         "width": 1200,
+         "height": 168,
+         "fill": "#17253B",
+         "radius": 28,
+         "anchor": "topLeft",
+         "stroke": "#FFFFFF14",
+         "strokeWidth": 2
+        },
+        {
+         "shape": "circle",
+         "x": 24,
+         "y": 54,
+         "width": 10,
+         "height": 10,
+         "fill": "#EEF2F8",
+         "anchor": "center"
+        },
+        {
+         "text": "Luca Bassi, Priya, +32",
+         "font": "Host Grotesk",
+         "weight": 650,
+         "size": 38,
+         "color": "#EEF2F8",
+         "x": 44,
+         "y": 30,
+         "anchor": "topLeft"
+        },
+        {
+         "text": "3:24 AM",
+         "font": "Host Grotesk",
+         "weight": 500,
+         "size": 30,
+         "color": "#8193AD",
+         "x": 1160,
+         "y": 34,
+         "anchor": "topRight",
+         "features": "tnum"
+        },
+        {
+         "text": "Re: Re: Re: Re: Re: Fwd: Offsite logistics",
+         "font": "Host Grotesk",
+         "weight": 550,
+         "size": 32,
+         "color": "#C9D3E1",
+         "x": 44,
+         "y": 80,
+         "anchor": "topLeft"
+        },
+        {
+         "text": "+1, remove me",
+         "font": "Host Grotesk",
+         "weight": 400,
+         "size": 28,
+         "color": "#8193AD",
+         "x": 44,
+         "y": 122,
+         "anchor": "topLeft"
+        }
+       ],
+       "start": 1.32,
+       "enter": {
+        "preset": "fadeUp",
+        "duration": 0.5,
+        "distance": 40,
+        "ease": "outExpo"
+       }
+      },
+      {
+       "x": 360,
+       "y": 2538,
+       "anchor": "topLeft",
+       "width": 1920,
+       "height": 1080,
+       "layers": [
+        {
+         "shape": "rect",
+         "x": 0,
+         "y": 0,
+         "width": 1200,
+         "height": 168,
+         "fill": "#17253B",
+         "radius": 28,
+         "anchor": "topLeft",
+         "stroke": "#FFFFFF14",
+         "strokeWidth": 2
+        },
+        {
+         "shape": "circle",
+         "x": 24,
+         "y": 54,
+         "width": 10,
+         "height": 10,
+         "fill": "#EEF2F8",
+         "anchor": "center"
+        },
+        {
+         "text": "Mei Chen",
+         "font": "Host Grotesk",
+         "weight": 650,
+         "size": 38,
+         "color": "#EEF2F8",
+         "x": 44,
+         "y": 30,
+         "anchor": "topLeft"
+        },
+        {
+         "text": "3:25 AM",
+         "font": "Host Grotesk",
+         "weight": 500,
+         "size": 30,
+         "color": "#8193AD",
+         "x": 1160,
+         "y": 34,
+         "anchor": "topRight",
+         "features": "tnum"
+        },
+        {
+         "text": "Re: Re: Re: Re: Re: Fwd: Offsite logistics",
+         "font": "Host Grotesk",
+         "weight": 550,
+         "size": 32,
+         "color": "#C9D3E1",
+         "x": 44,
+         "y": 80,
+         "anchor": "topLeft"
+        },
+        {
+         "text": "Who added this list?",
+         "font": "Host Grotesk",
+         "weight": 400,
+         "size": 28,
+         "color": "#8193AD",
+         "x": 44,
+         "y": 122,
+         "anchor": "topLeft"
+        }
+       ],
+       "start": 1.43,
+       "enter": {
+        "preset": "fadeUp",
+        "duration": 0.5,
+        "distance": 40,
+        "ease": "outExpo"
+       }
+      },
+      {
+       "x": 360,
+       "y": 2724,
+       "anchor": "topLeft",
+       "width": 1920,
+       "height": 1080,
+       "layers": [
+        {
+         "shape": "rect",
+         "x": 0,
+         "y": 0,
+         "width": 1200,
+         "height": 168,
+         "fill": "#17253B",
+         "radius": 28,
+         "anchor": "topLeft",
+         "stroke": "#FFFFFF14",
+         "strokeWidth": 2
+        },
+        {
+         "shape": "circle",
+         "x": 24,
+         "y": 54,
+         "width": 10,
+         "height": 10,
+         "fill": "#EEF2F8",
+         "anchor": "center"
+        },
+        {
+         "text": "Kai Weber",
+         "font": "Host Grotesk",
+         "weight": 650,
+         "size": 38,
+         "color": "#EEF2F8",
+         "x": 44,
+         "y": 30,
+         "anchor": "topLeft"
+        },
+        {
+         "text": "3:26 AM",
+         "font": "Host Grotesk",
+         "weight": 500,
+         "size": 30,
+         "color": "#8193AD",
+         "x": 1160,
+         "y": 34,
+         "anchor": "topRight",
+         "features": "tnum"
+        },
+        {
+         "text": "Re: Re: Re: Re: Re: Fwd: Offsite logistics",
+         "font": "Host Grotesk",
+         "weight": 550,
+         "size": 32,
+         "color": "#C9D3E1",
+         "x": 44,
+         "y": 80,
+         "anchor": "topLeft"
+        },
+        {
+         "text": "Unsubscribe",
+         "font": "Host Grotesk",
+         "weight": 400,
+         "size": 28,
+         "color": "#8193AD",
+         "x": 44,
+         "y": 122,
+         "anchor": "topLeft"
+        }
+       ],
+       "start": 1.54,
+       "enter": {
+        "preset": "fadeUp",
+        "duration": 0.5,
+        "distance": 40,
+        "ease": "outExpo"
+       }
+      },
+      {
+       "x": 360,
+       "y": 2910,
+       "anchor": "topLeft",
+       "width": 1920,
+       "height": 1080,
+       "layers": [
+        {
+         "shape": "rect",
+         "x": 0,
+         "y": 0,
+         "width": 1200,
+         "height": 168,
+         "fill": "#17253B",
+         "radius": 28,
+         "anchor": "topLeft",
+         "stroke": "#FFFFFF14",
+         "strokeWidth": 2
+        },
+        {
+         "shape": "circle",
+         "x": 24,
+         "y": 54,
+         "width": 10,
+         "height": 10,
+         "fill": "#EEF2F8",
+         "anchor": "center"
+        },
+        {
+         "text": "Ana Silva",
+         "font": "Host Grotesk",
+         "weight": 650,
+         "size": 38,
+         "color": "#EEF2F8",
+         "x": 44,
+         "y": 30,
+         "anchor": "topLeft"
+        },
+        {
+         "text": "3:27 AM",
+         "font": "Host Grotesk",
+         "weight": 500,
+         "size": 30,
+         "color": "#8193AD",
+         "x": 1160,
+         "y": 34,
+         "anchor": "topRight",
+         "features": "tnum"
+        },
+        {
+         "text": "Re: Re: Re: Re: Re: Fwd: Offsite logistics",
+         "font": "Host Grotesk",
+         "weight": 550,
+         "size": 32,
+         "color": "#C9D3E1",
+         "x": 44,
+         "y": 80,
+         "anchor": "topLeft"
+        },
+        {
+         "text": "Replying all to say stop replying all.",
+         "font": "Host Grotesk",
+         "weight": 400,
+         "size": 28,
+         "color": "#8193AD",
+         "x": 44,
+         "y": 122,
+         "anchor": "topLeft"
+        }
+       ],
+       "start": 1.65,
+       "enter": {
+        "preset": "fadeUp",
+        "duration": 0.5,
+        "distance": 40,
+        "ease": "outExpo"
+       }
+      },
+      {
+       "x": 360,
+       "y": 3096,
+       "anchor": "topLeft",
+       "width": 1920,
+       "height": 1080,
+       "layers": [
+        {
+         "shape": "rect",
+         "x": 0,
+         "y": 0,
+         "width": 1200,
+         "height": 168,
+         "fill": "#17253B",
+         "radius": 28,
+         "anchor": "topLeft",
+         "stroke": "#FFFFFF14",
+         "strokeWidth": 2
+        },
+        {
+         "shape": "circle",
+         "x": 24,
+         "y": 54,
+         "width": 10,
+         "height": 10,
+         "fill": "#EEF2F8",
+         "anchor": "center"
+        },
+        {
+         "text": "Tariq Aziz, Priya, +36",
+         "font": "Host Grotesk",
+         "weight": 650,
+         "size": 38,
+         "color": "#EEF2F8",
+         "x": 44,
+         "y": 30,
+         "anchor": "topLeft"
+        },
+        {
+         "text": "3:28 AM",
+         "font": "Host Grotesk",
+         "weight": 500,
+         "size": 30,
+         "color": "#8193AD",
+         "x": 1160,
+         "y": 34,
+         "anchor": "topRight",
+         "features": "tnum"
+        },
+        {
+         "text": "Re: Re: Re: Re: Re: Fwd: Offsite logistics",
+         "font": "Host Grotesk",
+         "weight": 550,
+         "size": 32,
+         "color": "#C9D3E1",
+         "x": 44,
+         "y": 80,
+         "anchor": "topLeft"
+        },
+        {
+         "text": "Please remove me from this list.",
+         "font": "Host Grotesk",
+         "weight": 400,
+         "size": 28,
+         "color": "#8193AD",
+         "x": 44,
+         "y": 122,
+         "anchor": "topLeft"
+        }
+       ],
+       "start": 1.76,
+       "enter": {
+        "preset": "fadeUp",
+        "duration": 0.5,
+        "distance": 40,
+        "ease": "outExpo"
+       }
+      },
+      {
+       "x": 360,
+       "y": 3282,
+       "anchor": "topLeft",
+       "width": 1920,
+       "height": 1080,
+       "layers": [
+        {
+         "shape": "rect",
+         "x": 0,
+         "y": 0,
+         "width": 1200,
+         "height": 168,
+         "fill": "#17253B",
+         "radius": 28,
+         "anchor": "topLeft",
+         "stroke": "#FFFFFF14",
+         "strokeWidth": 2
+        },
+        {
+         "shape": "circle",
+         "x": 24,
+         "y": 54,
+         "width": 10,
+         "height": 10,
+         "fill": "#EEF2F8",
+         "anchor": "center"
+        },
+        {
+         "text": "Zoe Grant",
+         "font": "Host Grotesk",
+         "weight": 650,
+         "size": 38,
+         "color": "#EEF2F8",
+         "x": 44,
+         "y": 30,
+         "anchor": "topLeft"
+        },
+        {
+         "text": "3:29 AM",
+         "font": "Host Grotesk",
+         "weight": 500,
+         "size": 30,
+         "color": "#8193AD",
+         "x": 1160,
+         "y": 34,
+         "anchor": "topRight",
+         "features": "tnum"
+        },
+        {
+         "text": "Re: Re: Re: Re: Re: Fwd: Offsite logistics",
+         "font": "Host Grotesk",
+         "weight": 550,
+         "size": 32,
+         "color": "#C9D3E1",
+         "x": 44,
+         "y": 80,
+         "anchor": "topLeft"
+        },
+        {
+         "text": "Same, please remove me.",
+         "font": "Host Grotesk",
+         "weight": 400,
+         "size": 28,
+         "color": "#8193AD",
+         "x": 44,
+         "y": 122,
+         "anchor": "topLeft"
+        }
+       ],
+       "start": 1.87,
+       "enter": {
+        "preset": "fadeUp",
+        "duration": 0.5,
+        "distance": 40,
+        "ease": "outExpo"
+       }
+      }
+     ],
+     "animate": [
+      {
+       "from": {
+        "y": 0
+       },
+       "to": {
+        "y": -2604
+       },
+       "duration": 2.4,
+       "ease": "inOutCubic",
+       "at": 0.15
+      },
+      {
+       "to": {
+        "scaleY": 0.0,
+        "opacity": 0.0
+       },
+       "duration": 0.35,
+       "ease": "inExpo",
+       "at": 2.65
+      }
+     ]
+    },
+    {
+     "shape": "path",
+     "d": "M0 0 L0 820",
+     "stroke": "#FFB23E",
+     "strokeWidth": 4,
+     "x": 320,
+     "y": 130,
+     "anchor": "topLeft",
+     "start": 2.2,
+     "end": 3.0,
+     "animate": [
+      {
+       "from": {
+        "trimEnd": 0
+       },
+       "to": {
+        "trimEnd": 1
+       },
+       "duration": 0.4,
+       "ease": "outExpo"
+      }
+     ]
+    },
+    {
+     "x": 360,
+     "y": 456,
+     "anchor": "topLeft",
+     "width": 1920,
+     "height": 1080,
+     "layers": [
+      {
+       "shape": "rect",
+       "x": 0,
+       "y": 0,
+       "width": 1200,
+       "height": 168,
+       "fill": "#17253B",
+       "radius": 28,
+       "anchor": "topLeft",
+       "stroke": "#FFFFFF14",
+       "strokeWidth": 2
+      },
+      {
+       "shape": "circle",
+       "x": 24,
+       "y": 54,
+       "width": 10,
+       "height": 10,
+       "fill": "#EEF2F8",
+       "anchor": "center",
+       "end": 0.09999999999999964
+      },
+      {
+       "text": "Offsite logistics \u00b7 41 replies",
+       "font": "Host Grotesk",
+       "weight": 650,
+       "size": 38,
+       "color": "#EEF2F8",
+       "x": 44,
+       "y": 30,
+       "anchor": "topLeft"
+      },
+      {
+       "text": "3:31 AM",
+       "font": "Host Grotesk",
+       "weight": 500,
+       "size": 30,
+       "color": "#8193AD",
+       "x": 1160,
+       "y": 34,
+       "anchor": "topRight",
+       "features": "tnum"
+      },
+      {
+       "text": "Reply-all thread, nothing needs you",
+       "font": "Host Grotesk",
+       "weight": 550,
+       "size": 32,
+       "color": "#C9D3E1",
+       "x": 44,
+       "y": 80,
+       "anchor": "topLeft"
+      },
+      {
+       "text": "Relay muted it and left it out of your brief.",
+       "font": "Host Grotesk",
+       "weight": 400,
+       "size": 28,
+       "color": "#8193AD",
+       "x": 44,
+       "y": 122,
+       "anchor": "topLeft"
+      },
+      {
+       "shape": "path",
+       "d": "M0 0 L1144 0",
+       "stroke": "#FFB23E",
+       "strokeWidth": 3,
+       "x": 28,
+       "y": 166,
+       "anchor": "topLeft",
+       "start": 0.09999999999999964,
+       "animate": [
+        {
+         "from": {
+          "trimEnd": 0
+         },
+         "to": {
+          "trimEnd": 1
+         },
+         "duration": 0.5,
+         "ease": "outExpo"
+        }
+       ]
+      },
+      {
+       "text": "Muted",
+       "font": "Host Grotesk",
+       "weight": 650,
+       "size": 28,
+       "color": "#8193AD",
+       "x": 1160,
+       "y": 84,
+       "anchor": "topRight",
+       "start": 0.29999999999999966,
+       "enter": {
+        "preset": "fadeUp",
+        "duration": 0.25,
+        "distance": 10
+       }
+      }
+     ],
+     "start": 2.95,
+     "animate": [
+      {
+       "from": {
+        "scaleY": 0.2,
+        "opacity": 0
+       },
+       "to": {
+        "scaleY": 1,
+        "opacity": 1
+       },
+       "duration": 0.45,
+       "ease": "outExpo"
+      }
+     ]
+    }
+   ],
+   "camera": {
+    "animate": [
+     {
+      "from": {
+       "zoom": 1.0
+      },
+      "to": {
+       "zoom": 1.06
+      },
+      "duration": 2.6,
+      "ease": "inOutCubic"
+     },
+     {
+      "to": {
+       "zoom": 1.45,
+       "x": 0
+      },
+      "duration": 0.6,
+      "ease": "outExpo",
+      "at": 2.9
+     }
+    ]
+   }
+  },
+  {
+   "duration": 4.0,
+   "layers": [
+    {
+     "shader": "uniform float hour; // = 0.0\nvoid mainImage(out vec4 o, in vec2 f){\n  vec2 uv = f / iResolution.xy;            // y = 0 at the bottom\n  float k = clamp(hour, 0.0, 1.0);         // 0 = night, 1 = 07:00 daylight\n  float k2 = k*k*(3.0-2.0*k);\n  vec3 nTop = vec3(0.047, 0.086, 0.157), nBot = vec3(0.085, 0.140, 0.235);\n  vec3 dTop = vec3(0.780, 0.835, 0.885), dBot = vec3(0.995, 0.900, 0.745);\n  float y = pow(1.0 - uv.y, 1.5);\n  vec3 c = mix(mix(nTop, nBot, y), mix(dTop, dBot, y), k2);\n  // first light: a warm band at the horizon that rises then settles\n  float band = exp(-7.0 * uv.y) * sin(3.14159 * clamp(k * 1.15, 0.0, 1.0));\n  c += band * vec3(0.55, 0.30, 0.10) * 0.55;\n  // gentle falloff toward the corners (one light: the sky)\n  vec2 d = uv - vec2(0.5, 0.15);\n  c *= 1.0 - 0.18 * dot(d, d);\n  o = vec4(c, 1.0);\n}",
+     "uniforms": {
+      "hour": 0.06
+     },
+     "width": "130%",
+     "height": "130%",
+     "animate": [
+      {
+       "from": {
+        "hour": 0.06
+       },
+       "to": {
+        "hour": 0.62
+       },
+       "duration": 3.0,
+       "ease": "inOutCubic",
+       "at": 0
+      }
+     ]
+    },
+    {
+     "text": "03:33",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "62vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF30",
+     "x": "50%",
+     "y": "50%",
+     "anchor": "center",
+     "start": 0.0,
+     "end": 0.3333
+    },
+    {
+     "text": "03:34",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "62vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF30",
+     "x": "50%",
+     "y": "50%",
+     "anchor": "center",
+     "start": 0.3333,
+     "end": 0.4333
+    },
+    {
+     "text": "03:35",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "62vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF30",
+     "x": "50%",
+     "y": "50%",
+     "anchor": "center",
+     "start": 0.4333,
+     "end": 0.4667
+    },
+    {
+     "text": "03:36",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "62vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF30",
+     "x": "50%",
+     "y": "50%",
+     "anchor": "center",
+     "start": 0.4667,
+     "end": 0.5333
+    },
+    {
+     "text": "03:37",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "62vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF30",
+     "x": "50%",
+     "y": "50%",
+     "anchor": "center",
+     "start": 0.5333,
+     "end": 0.5667
+    },
+    {
+     "text": "03:38",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "62vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF30",
+     "x": "50%",
+     "y": "50%",
+     "anchor": "center",
+     "start": 0.5667,
+     "end": 0.6
+    },
+    {
+     "text": "03:39",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "62vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF30",
+     "x": "50%",
+     "y": "50%",
+     "anchor": "center",
+     "start": 0.6,
+     "end": 0.6333
+    },
+    {
+     "text": "03:40",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "62vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF30",
+     "x": "50%",
+     "y": "50%",
+     "anchor": "center",
+     "start": 0.6333,
+     "end": 0.6667
+    },
+    {
+     "text": "03:42",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "62vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF30",
+     "x": "50%",
+     "y": "50%",
+     "anchor": "center",
+     "start": 0.6667,
+     "end": 0.7
+    },
+    {
+     "text": "03:43",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "62vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF30",
+     "x": "50%",
+     "y": "50%",
+     "anchor": "center",
+     "start": 0.7,
+     "end": 0.7333
+    },
+    {
+     "text": "03:45",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "62vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF30",
+     "x": "50%",
+     "y": "50%",
+     "anchor": "center",
+     "start": 0.7333,
+     "end": 0.7667
+    },
+    {
+     "text": "03:46",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "62vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF30",
+     "x": "50%",
+     "y": "50%",
+     "anchor": "center",
+     "start": 0.7667,
+     "end": 0.8
+    },
+    {
+     "text": "03:48",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "62vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF30",
+     "x": "50%",
+     "y": "50%",
+     "anchor": "center",
+     "start": 0.8,
+     "end": 0.8333
+    },
+    {
+     "text": "03:50",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "62vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF30",
+     "x": "50%",
+     "y": "50%",
+     "anchor": "center",
+     "start": 0.8333,
+     "end": 0.8667
+    },
+    {
+     "text": "03:52",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "62vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF30",
+     "x": "50%",
+     "y": "50%",
+     "anchor": "center",
+     "start": 0.8667,
+     "end": 0.9
+    },
+    {
+     "text": "03:55",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "62vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF30",
+     "x": "50%",
+     "y": "50%",
+     "anchor": "center",
+     "start": 0.9,
+     "end": 0.9333
+    },
+    {
+     "text": "03:57",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "62vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF30",
+     "x": "50%",
+     "y": "50%",
+     "anchor": "center",
+     "start": 0.9333,
+     "end": 0.9667
+    },
+    {
+     "text": "04:00",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "62vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF30",
+     "x": "50%",
+     "y": "50%",
+     "anchor": "center",
+     "start": 0.9667,
+     "end": 1.0
+    },
+    {
+     "text": "04:03",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "62vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF30",
+     "x": "50%",
+     "y": "50%",
+     "anchor": "center",
+     "start": 1.0,
+     "end": 1.0333
+    },
+    {
+     "text": "04:06",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "62vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF30",
+     "x": "50%",
+     "y": "50%",
+     "anchor": "center",
+     "start": 1.0333,
+     "end": 1.0667
+    },
+    {
+     "text": "04:10",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "62vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF30",
+     "x": "50%",
+     "y": "50%",
+     "anchor": "center",
+     "start": 1.0667,
+     "end": 1.1
+    },
+    {
+     "text": "04:13",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "62vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF30",
+     "x": "50%",
+     "y": "50%",
+     "anchor": "center",
+     "start": 1.1,
+     "end": 1.1333
+    },
+    {
+     "text": "04:17",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "62vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF30",
+     "x": "50%",
+     "y": "50%",
+     "anchor": "center",
+     "start": 1.1333,
+     "end": 1.1667
+    },
+    {
+     "text": "04:21",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "62vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF30",
+     "x": "50%",
+     "y": "50%",
+     "anchor": "center",
+     "start": 1.1667,
+     "end": 1.2
+    },
+    {
+     "text": "04:25",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "62vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF30",
+     "x": "50%",
+     "y": "50%",
+     "anchor": "center",
+     "start": 1.2,
+     "end": 1.2333
+    },
+    {
+     "text": "04:30",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "62vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF30",
+     "x": "50%",
+     "y": "50%",
+     "anchor": "center",
+     "start": 1.2333,
+     "end": 1.2667
+    },
+    {
+     "text": "04:35",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "62vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF30",
+     "x": "50%",
+     "y": "50%",
+     "anchor": "center",
+     "start": 1.2667,
+     "end": 1.3
+    },
+    {
+     "text": "04:40",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "62vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF30",
+     "x": "50%",
+     "y": "50%",
+     "anchor": "center",
+     "start": 1.3,
+     "end": 1.3333
+    },
+    {
+     "text": "04:45",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "62vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF30",
+     "x": "50%",
+     "y": "50%",
+     "anchor": "center",
+     "start": 1.3333,
+     "end": 1.3667
+    },
+    {
+     "text": "04:50",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "62vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF30",
+     "x": "50%",
+     "y": "50%",
+     "anchor": "center",
+     "start": 1.3667,
+     "end": 1.4
+    },
+    {
+     "text": "04:56",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "62vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF30",
+     "x": "50%",
+     "y": "50%",
+     "anchor": "center",
+     "start": 1.4,
+     "end": 1.4333
+    },
+    {
+     "text": "05:02",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "62vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF30",
+     "x": "50%",
+     "y": "50%",
+     "anchor": "center",
+     "start": 1.4333,
+     "end": 1.4667
+    },
+    {
+     "text": "05:09",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "62vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF30",
+     "x": "50%",
+     "y": "50%",
+     "anchor": "center",
+     "start": 1.4667,
+     "end": 1.5
+    },
+    {
+     "text": "05:16",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "62vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF30",
+     "x": "50%",
+     "y": "50%",
+     "anchor": "center",
+     "start": 1.5,
+     "end": 1.5333
+    },
+    {
+     "text": "05:22",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "62vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF30",
+     "x": "50%",
+     "y": "50%",
+     "anchor": "center",
+     "start": 1.5333,
+     "end": 1.5667
+    },
+    {
+     "text": "05:29",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "62vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF30",
+     "x": "50%",
+     "y": "50%",
+     "anchor": "center",
+     "start": 1.5667,
+     "end": 1.6
+    },
+    {
+     "text": "05:35",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "62vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF30",
+     "x": "50%",
+     "y": "50%",
+     "anchor": "center",
+     "start": 1.6,
+     "end": 1.6333
+    },
+    {
+     "text": "05:41",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "62vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF30",
+     "x": "50%",
+     "y": "50%",
+     "anchor": "center",
+     "start": 1.6333,
+     "end": 1.6667
+    },
+    {
+     "text": "05:46",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "62vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF30",
+     "x": "50%",
+     "y": "50%",
+     "anchor": "center",
+     "start": 1.6667,
+     "end": 1.7
+    },
+    {
+     "text": "05:51",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "62vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF30",
+     "x": "50%",
+     "y": "50%",
+     "anchor": "center",
+     "start": 1.7,
+     "end": 1.7333
+    },
+    {
+     "text": "05:56",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "62vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF30",
+     "x": "50%",
+     "y": "50%",
+     "anchor": "center",
+     "start": 1.7333,
+     "end": 1.7667
+    },
+    {
+     "text": "06:01",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "62vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF30",
+     "x": "50%",
+     "y": "50%",
+     "anchor": "center",
+     "start": 1.7667,
+     "end": 1.8
+    },
+    {
+     "text": "06:06",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "62vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF30",
+     "x": "50%",
+     "y": "50%",
+     "anchor": "center",
+     "start": 1.8,
+     "end": 1.8333
+    },
+    {
+     "text": "06:10",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "62vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF30",
+     "x": "50%",
+     "y": "50%",
+     "anchor": "center",
+     "start": 1.8333,
+     "end": 1.8667
+    },
+    {
+     "text": "06:14",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "62vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF30",
+     "x": "50%",
+     "y": "50%",
+     "anchor": "center",
+     "start": 1.8667,
+     "end": 1.9
+    },
+    {
+     "text": "06:18",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "62vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF30",
+     "x": "50%",
+     "y": "50%",
+     "anchor": "center",
+     "start": 1.9,
+     "end": 1.9333
+    },
+    {
+     "text": "06:21",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "62vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF30",
+     "x": "50%",
+     "y": "50%",
+     "anchor": "center",
+     "start": 1.9333,
+     "end": 1.9667
+    },
+    {
+     "text": "06:25",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "62vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF30",
+     "x": "50%",
+     "y": "50%",
+     "anchor": "center",
+     "start": 1.9667,
+     "end": 2.0
+    },
+    {
+     "text": "06:28",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "62vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF30",
+     "x": "50%",
+     "y": "50%",
+     "anchor": "center",
+     "start": 2.0,
+     "end": 2.0333
+    },
+    {
+     "text": "06:31",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "62vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF30",
+     "x": "50%",
+     "y": "50%",
+     "anchor": "center",
+     "start": 2.0333,
+     "end": 2.0667
+    },
+    {
+     "text": "06:34",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "62vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF30",
+     "x": "50%",
+     "y": "50%",
+     "anchor": "center",
+     "start": 2.0667,
+     "end": 2.1
+    },
+    {
+     "text": "06:36",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "62vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF30",
+     "x": "50%",
+     "y": "50%",
+     "anchor": "center",
+     "start": 2.1,
+     "end": 2.1333
+    },
+    {
+     "text": "06:39",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "62vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF30",
+     "x": "50%",
+     "y": "50%",
+     "anchor": "center",
+     "start": 2.1333,
+     "end": 2.1667
+    },
+    {
+     "text": "06:41",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "62vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF30",
+     "x": "50%",
+     "y": "50%",
+     "anchor": "center",
+     "start": 2.1667,
+     "end": 2.2
+    },
+    {
+     "text": "06:43",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "62vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF30",
+     "x": "50%",
+     "y": "50%",
+     "anchor": "center",
+     "start": 2.2,
+     "end": 2.2333
+    },
+    {
+     "text": "06:45",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "62vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF30",
+     "x": "50%",
+     "y": "50%",
+     "anchor": "center",
+     "start": 2.2333,
+     "end": 2.2667
+    },
+    {
+     "text": "06:46",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "62vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF30",
+     "x": "50%",
+     "y": "50%",
+     "anchor": "center",
+     "start": 2.2667,
+     "end": 2.3
+    },
+    {
+     "text": "06:48",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "62vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF30",
+     "x": "50%",
+     "y": "50%",
+     "anchor": "center",
+     "start": 2.3,
+     "end": 2.3333
+    },
+    {
+     "text": "06:49",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "62vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF30",
+     "x": "50%",
+     "y": "50%",
+     "anchor": "center",
+     "start": 2.3333,
+     "end": 2.3667
+    },
+    {
+     "text": "06:51",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "62vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF30",
+     "x": "50%",
+     "y": "50%",
+     "anchor": "center",
+     "start": 2.3667,
+     "end": 2.4
+    },
+    {
+     "text": "06:52",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "62vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF30",
+     "x": "50%",
+     "y": "50%",
+     "anchor": "center",
+     "start": 2.4,
+     "end": 2.4333
+    },
+    {
+     "text": "06:53",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "62vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF30",
+     "x": "50%",
+     "y": "50%",
+     "anchor": "center",
+     "start": 2.4333,
+     "end": 2.4667
+    },
+    {
+     "text": "06:54",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "62vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF30",
+     "x": "50%",
+     "y": "50%",
+     "anchor": "center",
+     "start": 2.4667,
+     "end": 2.5
+    },
+    {
+     "text": "06:55",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "62vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF30",
+     "x": "50%",
+     "y": "50%",
+     "anchor": "center",
+     "start": 2.5,
+     "end": 2.5667
+    },
+    {
+     "text": "06:56",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "62vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF30",
+     "x": "50%",
+     "y": "50%",
+     "anchor": "center",
+     "start": 2.5667,
+     "end": 2.6
+    },
+    {
+     "text": "06:57",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "62vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF30",
+     "x": "50%",
+     "y": "50%",
+     "anchor": "center",
+     "start": 2.6,
+     "end": 2.7
+    },
+    {
+     "text": "06:58",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "62vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF30",
+     "x": "50%",
+     "y": "50%",
+     "anchor": "center",
+     "start": 2.7,
+     "end": 3.0
+    },
+    {
+     "text": "06:59",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "62vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#FFFFFF30",
+     "x": "50%",
+     "y": "50%",
+     "anchor": "center",
+     "start": 3.0,
+     "end": 4.0
+    },
+    {
+     "x": 100,
+     "y": 120,
+     "anchor": "topLeft",
+     "width": 1920,
+     "height": 1080,
+     "layers": [
+      {
+       "shape": "rect",
+       "x": 0,
+       "y": 0,
+       "width": 1200,
+       "height": 168,
+       "fill": "#17253B",
+       "radius": 28,
+       "anchor": "topLeft",
+       "stroke": "#FFFFFF14",
+       "strokeWidth": 2
+      },
+      {
+       "shape": "circle",
+       "x": 24,
+       "y": 54,
+       "width": 10,
+       "height": 10,
+       "fill": "#EEF2F8",
+       "anchor": "center",
+       "end": 0.35
+      },
+      {
+       "text": "Delta",
+       "font": "Host Grotesk",
+       "weight": 650,
+       "size": 38,
+       "color": "#EEF2F8",
+       "x": 44,
+       "y": 30,
+       "anchor": "topLeft"
+      },
+      {
+       "text": "5:02 AM",
+       "font": "Host Grotesk",
+       "weight": 500,
+       "size": 30,
+       "color": "#8193AD",
+       "x": 1160,
+       "y": 34,
+       "anchor": "topRight",
+       "features": "tnum"
+      },
+      {
+       "text": "Check-in is open for DL 412",
+       "font": "Host Grotesk",
+       "weight": 550,
+       "size": 32,
+       "color": "#C9D3E1",
+       "x": 44,
+       "y": 80,
+       "anchor": "topLeft"
+      },
+      {
+       "text": "Seat 14C. Boarding 10:40.",
+       "font": "Host Grotesk",
+       "weight": 400,
+       "size": 28,
+       "color": "#8193AD",
+       "x": 44,
+       "y": 122,
+       "anchor": "topLeft"
+      },
+      {
+       "shape": "path",
+       "d": "M0 0 L1144 0",
+       "stroke": "#FFB23E",
+       "strokeWidth": 3,
+       "x": 28,
+       "y": 166,
+       "anchor": "topLeft",
+       "start": 0.35,
+       "animate": [
+        {
+         "from": {
+          "trimEnd": 0
+         },
+         "to": {
+          "trimEnd": 1
+         },
+         "duration": 0.5,
+         "ease": "outExpo"
+        }
+       ]
+      },
+      {
+       "text": "Filed",
+       "font": "Host Grotesk",
+       "weight": 650,
+       "size": 28,
+       "color": "#8193AD",
+       "x": 1160,
+       "y": 84,
+       "anchor": "topRight",
+       "start": 0.55,
+       "enter": {
+        "preset": "fadeUp",
+        "duration": 0.25,
+        "distance": 10
+       }
+      }
+     ],
+     "start": 0.5,
+     "enter": {
+      "preset": "fadeUp",
+      "duration": 0.5,
+      "distance": 40,
+      "ease": "outExpo"
+     },
+     "end": 3.0,
+     "exit": {
+      "preset": "fadeOut",
+      "duration": 0.25
+     }
+    },
+    {
+     "x": 620,
+     "y": 760,
+     "anchor": "topLeft",
+     "width": 1920,
+     "height": 1080,
+     "layers": [
+      {
+       "shape": "rect",
+       "x": 0,
+       "y": 0,
+       "width": 1200,
+       "height": 168,
+       "fill": "#17253B",
+       "radius": 28,
+       "anchor": "topLeft",
+       "stroke": "#FFFFFF14",
+       "strokeWidth": 2
+      },
+      {
+       "shape": "circle",
+       "x": 24,
+       "y": 54,
+       "width": 10,
+       "height": 10,
+       "fill": "#EEF2F8",
+       "anchor": "center",
+       "end": 0.3500000000000001
+      },
+      {
+       "text": "Ravi Menon",
+       "font": "Host Grotesk",
+       "weight": 650,
+       "size": 38,
+       "color": "#EEF2F8",
+       "x": 44,
+       "y": 30,
+       "anchor": "topLeft"
+      },
+      {
+       "text": "6:18 AM",
+       "font": "Host Grotesk",
+       "weight": 500,
+       "size": 30,
+       "color": "#8193AD",
+       "x": 1160,
+       "y": 34,
+       "anchor": "topRight",
+       "features": "tnum"
+      },
+      {
+       "text": "Quick question",
+       "font": "Host Grotesk",
+       "weight": 550,
+       "size": 32,
+       "color": "#C9D3E1",
+       "x": 44,
+       "y": 80,
+       "anchor": "topLeft"
+      },
+      {
+       "text": "Is the 10:00 still on? Running 5 late.",
+       "font": "Host Grotesk",
+       "weight": 400,
+       "size": 28,
+       "color": "#8193AD",
+       "x": 44,
+       "y": 122,
+       "anchor": "topLeft"
+      },
+      {
+       "shape": "path",
+       "d": "M0 0 L1144 0",
+       "stroke": "#FFB23E",
+       "strokeWidth": 3,
+       "x": 28,
+       "y": 166,
+       "anchor": "topLeft",
+       "start": 0.3500000000000001,
+       "animate": [
+        {
+         "from": {
+          "trimEnd": 0
+         },
+         "to": {
+          "trimEnd": 1
+         },
+         "duration": 0.5,
+         "ease": "outExpo"
+        }
+       ]
+      },
+      {
+       "text": "Draft ready",
+       "font": "Host Grotesk",
+       "weight": 650,
+       "size": 28,
+       "color": "#FFB23E",
+       "x": 1160,
+       "y": 84,
+       "anchor": "topRight",
+       "start": 0.55,
+       "enter": {
+        "preset": "fadeUp",
+        "duration": 0.25,
+        "distance": 10
+       }
+      }
+     ],
+     "start": 1.6,
+     "enter": {
+      "preset": "fadeUp",
+      "duration": 0.5,
+      "distance": 40,
+      "ease": "outExpo"
+     },
+     "end": 3.0,
+     "exit": {
+      "preset": "fadeOut",
+      "duration": 0.25
+     }
+    }
+   ],
+   "camera": {
+    "animate": [
+     {
+      "from": {
+       "zoom": 1.0
+      },
+      "to": {
+       "zoom": 1.18
+      },
+      "duration": 4.0,
+      "ease": "inOutCubic"
+     }
+    ]
+   }
+  },
+  {
+   "duration": 2.0,
+   "layers": [
+    {
+     "shader": "uniform float hour; // = 0.0\nvoid mainImage(out vec4 o, in vec2 f){\n  vec2 uv = f / iResolution.xy;            // y = 0 at the bottom\n  float k = clamp(hour, 0.0, 1.0);         // 0 = night, 1 = 07:00 daylight\n  float k2 = k*k*(3.0-2.0*k);\n  vec3 nTop = vec3(0.047, 0.086, 0.157), nBot = vec3(0.085, 0.140, 0.235);\n  vec3 dTop = vec3(0.780, 0.835, 0.885), dBot = vec3(0.995, 0.900, 0.745);\n  float y = pow(1.0 - uv.y, 1.5);\n  vec3 c = mix(mix(nTop, nBot, y), mix(dTop, dBot, y), k2);\n  // first light: a warm band at the horizon that rises then settles\n  float band = exp(-7.0 * uv.y) * sin(3.14159 * clamp(k * 1.15, 0.0, 1.0));\n  c += band * vec3(0.55, 0.30, 0.10) * 0.55;\n  // gentle falloff toward the corners (one light: the sky)\n  vec2 d = uv - vec2(0.5, 0.15);\n  c *= 1.0 - 0.18 * dot(d, d);\n  o = vec4(c, 1.0);\n}",
+     "uniforms": {
+      "hour": 0.75
+     },
+     "width": "130%",
+     "height": "130%",
+     "animate": [
+      {
+       "from": {
+        "hour": 0.75
+       },
+       "to": {
+        "hour": 1.0
+       },
+       "duration": 0.5,
+       "ease": "outExpo",
+       "at": 0
+      }
+     ]
+    },
+    {
+     "text": "07:00",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "62vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#14181F14",
+     "x": "50%",
+     "y": "50%",
+     "anchor": "center",
+     "start": 0.0,
+     "end": 2.0
+    },
+    {
+     "x": 410,
+     "y": 160,
+     "anchor": "topLeft",
+     "width": 1920,
+     "height": 1080,
+     "layers": [
+      {
+       "shape": "rect",
+       "x": 0,
+       "y": 0,
+       "width": 1100,
+       "height": 760,
+       "fill": "#FBFAF7",
+       "radius": 36,
+       "anchor": "topLeft",
+       "stroke": "#14181F10",
+       "strokeWidth": 2,
+       "shadow": {
+        "color": "#5A4A3040",
+        "blur": 60,
+        "y": 24
+       }
+      },
+      {
+       "text": "Good morning.",
+       "font": "Host Grotesk",
+       "weight": 700,
+       "size": 64,
+       "color": "#14181F",
+       "x": 64,
+       "y": 56,
+       "anchor": "topLeft"
+      },
+      {
+       "text": "Your brief \u00b7 2 min",
+       "font": "Host Grotesk",
+       "weight": 500,
+       "size": 32,
+       "color": "#5B6573",
+       "x": 64,
+       "y": 140,
+       "anchor": "topLeft"
+      },
+      {
+       "shape": "rect",
+       "x": 64,
+       "y": 210,
+       "width": 972,
+       "height": 2,
+       "fill": "#14181F14",
+       "radius": 0,
+       "anchor": "topLeft"
+      },
+      {
+       "text": "Needs you",
+       "font": "Host Grotesk",
+       "weight": 700,
+       "size": 28,
+       "color": "#A0650A",
+       "x": 64,
+       "y": 244,
+       "anchor": "topLeft"
+      },
+      {
+       "text": "Dana \u00b7 Q3 numbers to the board before 9",
+       "font": "Host Grotesk",
+       "weight": 550,
+       "size": 32,
+       "color": "#2E3642",
+       "x": 64,
+       "y": 296,
+       "anchor": "topLeft"
+      },
+      {
+       "text": "Priya \u00b7 Thursday for the design review?",
+       "font": "Host Grotesk",
+       "weight": 550,
+       "size": 32,
+       "color": "#2E3642",
+       "x": 64,
+       "y": 352,
+       "anchor": "topLeft"
+      },
+      {
+       "text": "Lena \u00b7 Two contract redlines",
+       "font": "Host Grotesk",
+       "weight": 550,
+       "size": 32,
+       "color": "#2E3642",
+       "x": 64,
+       "y": 408,
+       "anchor": "topLeft"
+      },
+      {
+       "text": "Ravi \u00b7 Is 10:00 still on?",
+       "font": "Host Grotesk",
+       "weight": 550,
+       "size": 32,
+       "color": "#2E3642",
+       "x": 64,
+       "y": 464,
+       "anchor": "topLeft"
+      },
+      {
+       "text": "4 replies drafted",
+       "font": "Host Grotesk",
+       "weight": 700,
+       "size": 28,
+       "color": "#A0650A",
+       "x": 1036,
+       "y": 244,
+       "anchor": "topRight"
+      },
+      {
+       "shape": "rect",
+       "x": 64,
+       "y": 530,
+       "width": 972,
+       "height": 2,
+       "fill": "#14181F14",
+       "radius": 0,
+       "anchor": "topLeft"
+      },
+      {
+       "text": "Handled",
+       "font": "Host Grotesk",
+       "weight": 700,
+       "size": 28,
+       "color": "#5B6573",
+       "x": 64,
+       "y": 562,
+       "anchor": "topLeft"
+      },
+      {
+       "text": "Invoice paid \u00b7 Flight check-in \u00b7 Offsite thread muted",
+       "font": "Host Grotesk",
+       "weight": 500,
+       "size": 32,
+       "color": "#5B6573",
+       "x": 64,
+       "y": 614,
+       "anchor": "topLeft"
+      }
+     ],
+     "start": 0.1,
+     "animate": [
+      {
+       "from": {
+        "y": 420,
+        "scale": 0.92,
+        "opacity": 0
+       },
+       "to": {
+        "y": 160,
+        "scale": 1,
+        "opacity": 1
+       },
+       "duration": 0.5,
+       "ease": "outExpo"
+      }
+     ]
+    }
+   ],
+   "camera": {
+    "animate": [
+     {
+      "from": {
+       "zoom": 1.0
+      },
+      "to": {
+       "zoom": 1.05
+      },
+      "duration": 2.0,
+      "ease": "inOutCubic"
+     }
+    ],
+    "shake": {
+     "amount": 4,
+     "at": 0.0,
+     "duration": 0.2
+    }
+   }
+  },
+  {
+   "duration": 6.0,
+   "layers": [
+    {
+     "shader": "uniform float hour; // = 0.0\nvoid mainImage(out vec4 o, in vec2 f){\n  vec2 uv = f / iResolution.xy;            // y = 0 at the bottom\n  float k = clamp(hour, 0.0, 1.0);         // 0 = night, 1 = 07:00 daylight\n  float k2 = k*k*(3.0-2.0*k);\n  vec3 nTop = vec3(0.047, 0.086, 0.157), nBot = vec3(0.085, 0.140, 0.235);\n  vec3 dTop = vec3(0.780, 0.835, 0.885), dBot = vec3(0.995, 0.900, 0.745);\n  float y = pow(1.0 - uv.y, 1.5);\n  vec3 c = mix(mix(nTop, nBot, y), mix(dTop, dBot, y), k2);\n  // first light: a warm band at the horizon that rises then settles\n  float band = exp(-7.0 * uv.y) * sin(3.14159 * clamp(k * 1.15, 0.0, 1.0));\n  c += band * vec3(0.55, 0.30, 0.10) * 0.55;\n  // gentle falloff toward the corners (one light: the sky)\n  vec2 d = uv - vec2(0.5, 0.15);\n  c *= 1.0 - 0.18 * dot(d, d);\n  o = vec4(c, 1.0);\n}",
+     "uniforms": {
+      "hour": 1.0
+     },
+     "width": "130%",
+     "height": "130%"
+    },
+    {
+     "text": "07:00",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "62vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#14181F10",
+     "x": "50%",
+     "y": "50%",
+     "anchor": "center",
+     "start": 0.0,
+     "end": 6.0
+    },
+    {
+     "x": 340,
+     "y": 300,
+     "anchor": "topLeft",
+     "width": 1920,
+     "height": 1080,
+     "layers": [
+      {
+       "shape": "rect",
+       "x": 0,
+       "y": 0,
+       "width": 1240,
+       "height": 470,
+       "fill": "#FBFAF7",
+       "radius": 32,
+       "anchor": "topLeft",
+       "stroke": "#14181F10",
+       "strokeWidth": 2,
+       "shadow": {
+        "color": "#5A4A3033",
+        "blur": 50,
+        "y": 18
+       }
+      },
+      {
+       "text": "Dana Whitfield",
+       "font": "Host Grotesk",
+       "weight": 650,
+       "size": 38,
+       "color": "#14181F",
+       "x": 52,
+       "y": 40,
+       "anchor": "topLeft"
+      },
+      {
+       "text": "One small thing before tomorrow",
+       "font": "Host Grotesk",
+       "weight": 550,
+       "size": 32,
+       "color": "#2E3642",
+       "x": 52,
+       "y": 92,
+       "anchor": "topLeft"
+      },
+      {
+       "text": "Can you send the Q3 numbers to the board before 9? I'll be offline until 10.",
+       "font": "Host Grotesk",
+       "weight": 400,
+       "size": 28,
+       "color": "#5B6573",
+       "x": 52,
+       "y": 140,
+       "anchor": "topLeft"
+      },
+      {
+       "shape": "rect",
+       "x": 52,
+       "y": 196,
+       "width": 1136,
+       "height": 196,
+       "fill": "#FFF4E0",
+       "radius": 22,
+       "anchor": "topLeft"
+      },
+      {
+       "text": "Draft reply",
+       "font": "Host Grotesk",
+       "weight": 700,
+       "size": 28,
+       "color": "#B9760F",
+       "x": 84,
+       "y": 220,
+       "anchor": "topLeft"
+      },
+      {
+       "text": "Done \u2014 Q3 numbers are attached and going to the board this morning.",
+       "font": "Host Grotesk",
+       "weight": 500,
+       "size": 32,
+       "color": "#14181F",
+       "x": 84,
+       "y": 270,
+       "anchor": "topLeft",
+       "maxWidth": 820
+      },
+      {
+       "shape": "rect",
+       "x": 972,
+       "y": 300,
+       "width": 184,
+       "height": 72,
+       "fill": "#FFB23E",
+       "radius": 36,
+       "anchor": "topLeft",
+       "start": 0,
+       "end": 2.2
+      },
+      {
+       "text": "Send",
+       "font": "Host Grotesk",
+       "weight": 700,
+       "size": 32,
+       "color": "#14181F",
+       "x": 1064,
+       "y": 336,
+       "anchor": "center",
+       "end": 2.2
+      },
+      {
+       "shape": "rect",
+       "x": 972,
+       "y": 300,
+       "width": 184,
+       "height": 72,
+       "fill": "#14181F",
+       "radius": 36,
+       "anchor": "topLeft",
+       "start": 2.2
+      },
+      {
+       "text": "Sent \u2713",
+       "font": "Host Grotesk",
+       "weight": 700,
+       "size": 32,
+       "color": "#FBFAF7",
+       "x": 1064,
+       "y": 336,
+       "anchor": "center",
+       "start": 2.2
+      }
+     ],
+     "start": 0.0,
+     "animate": [
+      {
+       "to": {
+        "y": -700
+       },
+       "duration": 0.5,
+       "ease": "inExpo",
+       "at": 2.75
+      }
+     ]
+    },
+    {
+     "x": 340,
+     "y": 1150,
+     "anchor": "topLeft",
+     "width": 1920,
+     "height": 1080,
+     "layers": [
+      {
+       "shape": "rect",
+       "x": 0,
+       "y": 0,
+       "width": 1240,
+       "height": 470,
+       "fill": "#FBFAF7",
+       "radius": 32,
+       "anchor": "topLeft",
+       "stroke": "#14181F10",
+       "strokeWidth": 2,
+       "shadow": {
+        "color": "#5A4A3033",
+        "blur": 50,
+        "y": 18
+       }
+      },
+      {
+       "text": "Priya Shah",
+       "font": "Host Grotesk",
+       "weight": 650,
+       "size": 38,
+       "color": "#14181F",
+       "x": 52,
+       "y": 40,
+       "anchor": "topLeft"
+      },
+      {
+       "text": "Design review",
+       "font": "Host Grotesk",
+       "weight": 550,
+       "size": 32,
+       "color": "#2E3642",
+       "x": 52,
+       "y": 92,
+       "anchor": "topLeft"
+      },
+      {
+       "text": "Does Thursday work? Happy to move if not.",
+       "font": "Host Grotesk",
+       "weight": 400,
+       "size": 28,
+       "color": "#5B6573",
+       "x": 52,
+       "y": 140,
+       "anchor": "topLeft"
+      },
+      {
+       "shape": "rect",
+       "x": 52,
+       "y": 196,
+       "width": 1136,
+       "height": 196,
+       "fill": "#FFF4E0",
+       "radius": 22,
+       "anchor": "topLeft"
+      },
+      {
+       "text": "Draft reply",
+       "font": "Host Grotesk",
+       "weight": 700,
+       "size": 28,
+       "color": "#B9760F",
+       "x": 84,
+       "y": 220,
+       "anchor": "topLeft"
+      },
+      {
+       "text": "Thursday works. 2:30 at your desk?",
+       "font": "Host Grotesk",
+       "weight": 500,
+       "size": 32,
+       "color": "#14181F",
+       "x": 84,
+       "y": 270,
+       "anchor": "topLeft",
+       "maxWidth": 820
+      },
+      {
+       "shape": "rect",
+       "x": 972,
+       "y": 300,
+       "width": 184,
+       "height": 72,
+       "fill": "#FFB23E",
+       "radius": 36,
+       "anchor": "topLeft",
+       "start": 0,
+       "end": 3.9
+      },
+      {
+       "text": "Send",
+       "font": "Host Grotesk",
+       "weight": 700,
+       "size": 32,
+       "color": "#14181F",
+       "x": 1064,
+       "y": 336,
+       "anchor": "center",
+       "end": 3.9
+      },
+      {
+       "shape": "rect",
+       "x": 972,
+       "y": 300,
+       "width": 184,
+       "height": 72,
+       "fill": "#14181F",
+       "radius": 36,
+       "anchor": "topLeft",
+       "start": 3.9
+      },
+      {
+       "text": "Sent \u2713",
+       "font": "Host Grotesk",
+       "weight": 700,
+       "size": 32,
+       "color": "#FBFAF7",
+       "x": 1064,
+       "y": 336,
+       "anchor": "center",
+       "start": 3.9
+      }
+     ],
+     "start": 0.0,
+     "animate": [
+      {
+       "to": {
+        "y": 300
+       },
+       "duration": 0.5,
+       "ease": "outExpo",
+       "at": 2.85
+      },
+      {
+       "to": {
+        "y": -700
+       },
+       "duration": 0.45,
+       "ease": "inExpo",
+       "at": 4.25
+      }
+     ]
+    },
+    {
+     "x": 340,
+     "y": 1150,
+     "anchor": "topLeft",
+     "width": 1920,
+     "height": 1080,
+     "layers": [
+      {
+       "shape": "rect",
+       "x": 0,
+       "y": 0,
+       "width": 1240,
+       "height": 470,
+       "fill": "#FBFAF7",
+       "radius": 32,
+       "anchor": "topLeft",
+       "stroke": "#14181F10",
+       "strokeWidth": 2,
+       "shadow": {
+        "color": "#5A4A3033",
+        "blur": 50,
+        "y": 18
+       }
+      },
+      {
+       "text": "Lena Fischer",
+       "font": "Host Grotesk",
+       "weight": 650,
+       "size": 38,
+       "color": "#14181F",
+       "x": 52,
+       "y": 40,
+       "anchor": "topLeft"
+      },
+      {
+       "text": "Contract redlines attached",
+       "font": "Host Grotesk",
+       "weight": 550,
+       "size": 32,
+       "color": "#2E3642",
+       "x": 52,
+       "y": 92,
+       "anchor": "topLeft"
+      },
+      {
+       "text": "Sorry for the hour, Berlin time. Two small changes.",
+       "font": "Host Grotesk",
+       "weight": 400,
+       "size": 28,
+       "color": "#5B6573",
+       "x": 52,
+       "y": 140,
+       "anchor": "topLeft"
+      },
+      {
+       "shape": "rect",
+       "x": 52,
+       "y": 196,
+       "width": 1136,
+       "height": 196,
+       "fill": "#FFF4E0",
+       "radius": 22,
+       "anchor": "topLeft"
+      },
+      {
+       "text": "Draft reply",
+       "font": "Host Grotesk",
+       "weight": 700,
+       "size": 28,
+       "color": "#B9760F",
+       "x": 84,
+       "y": 220,
+       "anchor": "topLeft"
+      },
+      {
+       "text": "Both changes look fine to me. Sending the signed copy today.",
+       "font": "Host Grotesk",
+       "weight": 500,
+       "size": 32,
+       "color": "#14181F",
+       "x": 84,
+       "y": 270,
+       "anchor": "topLeft",
+       "maxWidth": 820
+      },
+      {
+       "shape": "rect",
+       "x": 972,
+       "y": 300,
+       "width": 184,
+       "height": 72,
+       "fill": "#FFB23E",
+       "radius": 36,
+       "anchor": "topLeft",
+       "start": 0,
+       "end": 5.3
+      },
+      {
+       "text": "Send",
+       "font": "Host Grotesk",
+       "weight": 700,
+       "size": 32,
+       "color": "#14181F",
+       "x": 1064,
+       "y": 336,
+       "anchor": "center",
+       "end": 5.3
+      },
+      {
+       "shape": "rect",
+       "x": 972,
+       "y": 300,
+       "width": 184,
+       "height": 72,
+       "fill": "#14181F",
+       "radius": 36,
+       "anchor": "topLeft",
+       "start": 5.3
+      },
+      {
+       "text": "Sent \u2713",
+       "font": "Host Grotesk",
+       "weight": 700,
+       "size": 32,
+       "color": "#FBFAF7",
+       "x": 1064,
+       "y": 336,
+       "anchor": "center",
+       "start": 5.3
+      }
+     ],
+     "start": 0.0,
+     "animate": [
+      {
+       "to": {
+        "y": 300
+       },
+       "duration": 0.45,
+       "ease": "outExpo",
+       "at": 4.35
+      }
+     ]
+    },
+    {
+     "component": "cursor",
+     "x": 0,
+     "y": 0,
+     "anchor": "topLeft",
+     "width": 1920,
+     "height": 1080,
+     "props": {
+      "path": [
+       [
+        1500,
+        980
+       ],
+       [
+        1404,
+        636
+       ],
+       [
+        1404,
+        636
+       ],
+       [
+        1444,
+        756
+       ],
+       [
+        1404,
+        636
+       ],
+       [
+        1404,
+        636
+       ],
+       [
+        1434,
+        746
+       ],
+       [
+        1404,
+        636
+       ],
+       [
+        1404,
+        636
+       ]
+      ],
+      "times": [
+       0.3,
+       1.75,
+       2.2,
+       2.6,
+       3.5,
+       3.9,
+       4.1,
+       4.95,
+       5.3
+      ],
+      "clicks": [
+       2.2,
+       3.9,
+       5.3
+      ],
+      "size": 44,
+      "style": "arrow",
+      "color": "#14181F",
+      "ripple": "#FFB23E",
+      "trail": false
+     }
+    }
+   ],
+   "camera": {
+    "animate": [
+     {
+      "from": {
+       "zoom": 1.5,
+       "x": 0,
+       "y": -5
+      },
+      "to": {
+       "zoom": 1.4,
+       "x": 0,
+       "y": -5
+      },
+      "duration": 2.0,
+      "ease": "inOutCubic"
+     },
+     {
+      "to": {
+       "zoom": 1.25,
+       "x": 0,
+       "y": -5
+      },
+      "duration": 2.6,
+      "ease": "inOutCubic",
+      "at": 2.4
+     }
+    ]
+   }
+  },
+  {
+   "duration": 4.0,
+   "layers": [
+    {
+     "shader": "uniform float hour; // = 0.0\nvoid mainImage(out vec4 o, in vec2 f){\n  vec2 uv = f / iResolution.xy;            // y = 0 at the bottom\n  float k = clamp(hour, 0.0, 1.0);         // 0 = night, 1 = 07:00 daylight\n  float k2 = k*k*(3.0-2.0*k);\n  vec3 nTop = vec3(0.047, 0.086, 0.157), nBot = vec3(0.085, 0.140, 0.235);\n  vec3 dTop = vec3(0.780, 0.835, 0.885), dBot = vec3(0.995, 0.900, 0.745);\n  float y = pow(1.0 - uv.y, 1.5);\n  vec3 c = mix(mix(nTop, nBot, y), mix(dTop, dBot, y), k2);\n  // first light: a warm band at the horizon that rises then settles\n  float band = exp(-7.0 * uv.y) * sin(3.14159 * clamp(k * 1.15, 0.0, 1.0));\n  c += band * vec3(0.55, 0.30, 0.10) * 0.55;\n  // gentle falloff toward the corners (one light: the sky)\n  vec2 d = uv - vec2(0.5, 0.15);\n  c *= 1.0 - 0.18 * dot(d, d);\n  o = vec4(c, 1.0);\n}",
+     "uniforms": {
+      "hour": 1.0
+     },
+     "width": "130%",
+     "height": "130%"
+    },
+    {
+     "text": "07:01",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "62vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#14181F10",
+     "x": "50%",
+     "y": "50%",
+     "anchor": "center",
+     "start": 0.0,
+     "end": 4.0
+    },
+    {
+     "text": "Approve.\nSend.",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "20vh",
+     "color": "#14181F",
+     "x": 96,
+     "y": 290,
+     "anchor": "topLeft",
+     "letterSpacing": "-0.03em",
+     "lineHeight": 0.92,
+     "start": 0.0,
+     "enter": "mask by line up"
+    },
+    {
+     "x": 1060,
+     "y": 260,
+     "anchor": "topLeft",
+     "width": 1920,
+     "height": 1080,
+     "layers": [
+      {
+       "shape": "rect",
+       "x": 0,
+       "y": 0,
+       "width": 780,
+       "height": 120,
+       "fill": "#FBFAF7",
+       "radius": 26,
+       "anchor": "topLeft",
+       "stroke": "#14181F10",
+       "strokeWidth": 2
+      },
+      {
+       "text": "Dana \u00b7 Q3 numbers",
+       "font": "Host Grotesk",
+       "weight": 600,
+       "size": 36,
+       "color": "#14181F",
+       "x": 40,
+       "y": 38,
+       "anchor": "topLeft"
+      },
+      {
+       "shape": "rect",
+       "x": 584,
+       "y": 24,
+       "width": 160,
+       "height": 72,
+       "fill": "#FFB23E",
+       "radius": 36,
+       "anchor": "topLeft",
+       "end": 0.6
+      },
+      {
+       "text": "Send",
+       "font": "Host Grotesk",
+       "weight": 700,
+       "size": 30,
+       "color": "#14181F",
+       "x": 664,
+       "y": 60,
+       "anchor": "center",
+       "end": 0.6
+      },
+      {
+       "shape": "rect",
+       "x": 584,
+       "y": 24,
+       "width": 160,
+       "height": 72,
+       "fill": "#14181F",
+       "radius": 36,
+       "anchor": "topLeft",
+       "start": 0.6
+      },
+      {
+       "text": "Sent \u2713",
+       "font": "Host Grotesk",
+       "weight": 700,
+       "size": 30,
+       "color": "#FBFAF7",
+       "x": 664,
+       "y": 60,
+       "anchor": "center",
+       "start": 0.6
+      }
+     ],
+     "start": 0.1,
+     "enter": {
+      "preset": "fadeUp",
+      "duration": 0.4,
+      "distance": 30,
+      "ease": "outExpo"
+     },
+     "animate": [
+      {
+       "to": {
+        "x": 2000,
+        "opacity": 0
+       },
+       "duration": 0.35,
+       "ease": "inExpo",
+       "at": 2.9
+      }
+     ]
+    },
+    {
+     "x": 1060,
+     "y": 410,
+     "anchor": "topLeft",
+     "width": 1920,
+     "height": 1080,
+     "layers": [
+      {
+       "shape": "rect",
+       "x": 0,
+       "y": 0,
+       "width": 780,
+       "height": 120,
+       "fill": "#FBFAF7",
+       "radius": 26,
+       "anchor": "topLeft",
+       "stroke": "#14181F10",
+       "strokeWidth": 2
+      },
+      {
+       "text": "Priya \u00b7 Thursday 2:30",
+       "font": "Host Grotesk",
+       "weight": 600,
+       "size": 36,
+       "color": "#14181F",
+       "x": 40,
+       "y": 38,
+       "anchor": "topLeft"
+      },
+      {
+       "shape": "rect",
+       "x": 584,
+       "y": 24,
+       "width": 160,
+       "height": 72,
+       "fill": "#FFB23E",
+       "radius": 36,
+       "anchor": "topLeft",
+       "end": 1.1
+      },
+      {
+       "text": "Send",
+       "font": "Host Grotesk",
+       "weight": 700,
+       "size": 30,
+       "color": "#14181F",
+       "x": 664,
+       "y": 60,
+       "anchor": "center",
+       "end": 1.1
+      },
+      {
+       "shape": "rect",
+       "x": 584,
+       "y": 24,
+       "width": 160,
+       "height": 72,
+       "fill": "#14181F",
+       "radius": 36,
+       "anchor": "topLeft",
+       "start": 1.1
+      },
+      {
+       "text": "Sent \u2713",
+       "font": "Host Grotesk",
+       "weight": 700,
+       "size": 30,
+       "color": "#FBFAF7",
+       "x": 664,
+       "y": 60,
+       "anchor": "center",
+       "start": 1.1
+      }
+     ],
+     "start": 0.18,
+     "enter": {
+      "preset": "fadeUp",
+      "duration": 0.4,
+      "distance": 30,
+      "ease": "outExpo"
+     },
+     "animate": [
+      {
+       "to": {
+        "x": 2000,
+        "opacity": 0
+       },
+       "duration": 0.35,
+       "ease": "inExpo",
+       "at": 2.98
+      }
+     ]
+    },
+    {
+     "x": 1060,
+     "y": 560,
+     "anchor": "topLeft",
+     "width": 1920,
+     "height": 1080,
+     "layers": [
+      {
+       "shape": "rect",
+       "x": 0,
+       "y": 0,
+       "width": 780,
+       "height": 120,
+       "fill": "#FBFAF7",
+       "radius": 26,
+       "anchor": "topLeft",
+       "stroke": "#14181F10",
+       "strokeWidth": 2
+      },
+      {
+       "text": "Lena \u00b7 Signed copy today",
+       "font": "Host Grotesk",
+       "weight": 600,
+       "size": 36,
+       "color": "#14181F",
+       "x": 40,
+       "y": 38,
+       "anchor": "topLeft"
+      },
+      {
+       "shape": "rect",
+       "x": 584,
+       "y": 24,
+       "width": 160,
+       "height": 72,
+       "fill": "#FFB23E",
+       "radius": 36,
+       "anchor": "topLeft",
+       "end": 1.6
+      },
+      {
+       "text": "Send",
+       "font": "Host Grotesk",
+       "weight": 700,
+       "size": 30,
+       "color": "#14181F",
+       "x": 664,
+       "y": 60,
+       "anchor": "center",
+       "end": 1.6
+      },
+      {
+       "shape": "rect",
+       "x": 584,
+       "y": 24,
+       "width": 160,
+       "height": 72,
+       "fill": "#14181F",
+       "radius": 36,
+       "anchor": "topLeft",
+       "start": 1.6
+      },
+      {
+       "text": "Sent \u2713",
+       "font": "Host Grotesk",
+       "weight": 700,
+       "size": 30,
+       "color": "#FBFAF7",
+       "x": 664,
+       "y": 60,
+       "anchor": "center",
+       "start": 1.6
+      }
+     ],
+     "start": 0.26,
+     "enter": {
+      "preset": "fadeUp",
+      "duration": 0.4,
+      "distance": 30,
+      "ease": "outExpo"
+     },
+     "animate": [
+      {
+       "to": {
+        "x": 2000,
+        "opacity": 0
+       },
+       "duration": 0.35,
+       "ease": "inExpo",
+       "at": 3.06
+      }
+     ]
+    },
+    {
+     "x": 1060,
+     "y": 710,
+     "anchor": "topLeft",
+     "width": 1920,
+     "height": 1080,
+     "layers": [
+      {
+       "shape": "rect",
+       "x": 0,
+       "y": 0,
+       "width": 780,
+       "height": 120,
+       "fill": "#FBFAF7",
+       "radius": 26,
+       "anchor": "topLeft",
+       "stroke": "#14181F10",
+       "strokeWidth": 2
+      },
+      {
+       "text": "Ravi \u00b7 10:00 still on",
+       "font": "Host Grotesk",
+       "weight": 600,
+       "size": 36,
+       "color": "#14181F",
+       "x": 40,
+       "y": 38,
+       "anchor": "topLeft"
+      },
+      {
+       "shape": "rect",
+       "x": 584,
+       "y": 24,
+       "width": 160,
+       "height": 72,
+       "fill": "#FFB23E",
+       "radius": 36,
+       "anchor": "topLeft",
+       "end": 2.1
+      },
+      {
+       "text": "Send",
+       "font": "Host Grotesk",
+       "weight": 700,
+       "size": 30,
+       "color": "#14181F",
+       "x": 664,
+       "y": 60,
+       "anchor": "center",
+       "end": 2.1
+      },
+      {
+       "shape": "rect",
+       "x": 584,
+       "y": 24,
+       "width": 160,
+       "height": 72,
+       "fill": "#14181F",
+       "radius": 36,
+       "anchor": "topLeft",
+       "start": 2.1
+      },
+      {
+       "text": "Sent \u2713",
+       "font": "Host Grotesk",
+       "weight": 700,
+       "size": 30,
+       "color": "#FBFAF7",
+       "x": 664,
+       "y": 60,
+       "anchor": "center",
+       "start": 2.1
+      }
+     ],
+     "start": 0.33999999999999997,
+     "enter": {
+      "preset": "fadeUp",
+      "duration": 0.4,
+      "distance": 30,
+      "ease": "outExpo"
+     },
+     "animate": [
+      {
+       "to": {
+        "x": 2000,
+        "opacity": 0
+       },
+       "duration": 0.35,
+       "ease": "inExpo",
+       "at": 3.1399999999999997
+      }
+     ]
+    }
+   ],
+   "camera": {
+    "animate": [
+     {
+      "from": {
+       "zoom": 1.08
+      },
+      "to": {
+       "zoom": 1.0
+      },
+      "duration": 4.0,
+      "ease": "inOutCubic"
+     }
+    ]
+   }
+  },
+  {
+   "duration": 6.0,
+   "layers": [
+    {
+     "shader": "uniform float hour; // = 0.0\nvoid mainImage(out vec4 o, in vec2 f){\n  vec2 uv = f / iResolution.xy;            // y = 0 at the bottom\n  float k = clamp(hour, 0.0, 1.0);         // 0 = night, 1 = 07:00 daylight\n  float k2 = k*k*(3.0-2.0*k);\n  vec3 nTop = vec3(0.047, 0.086, 0.157), nBot = vec3(0.085, 0.140, 0.235);\n  vec3 dTop = vec3(0.780, 0.835, 0.885), dBot = vec3(0.995, 0.900, 0.745);\n  float y = pow(1.0 - uv.y, 1.5);\n  vec3 c = mix(mix(nTop, nBot, y), mix(dTop, dBot, y), k2);\n  // first light: a warm band at the horizon that rises then settles\n  float band = exp(-7.0 * uv.y) * sin(3.14159 * clamp(k * 1.15, 0.0, 1.0));\n  c += band * vec3(0.55, 0.30, 0.10) * 0.55;\n  // gentle falloff toward the corners (one light: the sky)\n  vec2 d = uv - vec2(0.5, 0.15);\n  c *= 1.0 - 0.18 * dot(d, d);\n  o = vec4(c, 1.0);\n}",
+     "uniforms": {
+      "hour": 1.0
+     },
+     "width": "130%",
+     "height": "130%"
+    },
+    {
+     "text": "07:02",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "62vh",
+     "features": "tnum",
+     "letterSpacing": "-0.045em",
+     "color": "#14181F1A",
+     "x": "50%",
+     "y": "40%",
+     "anchor": "center",
+     "start": 0.0,
+     "end": 6.0
+    },
+    {
+     "x": 560,
+     "y": 600,
+     "anchor": "topLeft",
+     "width": 1920,
+     "height": 1080,
+     "layers": [
+      {
+       "shape": "rect",
+       "x": 0,
+       "y": 0,
+       "width": 800,
+       "height": 120,
+       "fill": "#FBFAF7",
+       "radius": 26,
+       "anchor": "topLeft",
+       "stroke": "#14181F10",
+       "strokeWidth": 2
+      },
+      {
+       "shape": "circle",
+       "x": 52,
+       "y": 60,
+       "width": 14,
+       "height": 14,
+       "fill": "#FFB23E",
+       "anchor": "center"
+      },
+      {
+       "text": "Inbox \u00b7 nothing waiting",
+       "font": "Host Grotesk",
+       "weight": 600,
+       "size": 36,
+       "color": "#14181F",
+       "x": 84,
+       "y": 40,
+       "anchor": "topLeft"
+      }
+     ],
+     "start": 0.2,
+     "enter": {
+      "preset": "fadeUp",
+      "duration": 0.5,
+      "distance": 30,
+      "ease": "outExpo"
+     }
+    },
+    {
+     "text": "Relay",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": "16vh",
+     "color": "#14181F",
+     "x": 960,
+     "y": 870,
+     "anchor": "center",
+     "letterSpacing": "-0.03em",
+     "lineHeight": 0.92,
+     "start": 1.2,
+     "enter": {
+      "preset": "fadeUp",
+      "duration": 0.5,
+      "distance": 30
+     }
+    },
+    {
+     "text": "Reads overnight. Ready by morning.",
+     "font": "Host Grotesk",
+     "weight": 500,
+     "size": 34,
+     "color": "#5B6573",
+     "x": 960,
+     "y": 985,
+     "anchor": "center",
+     "start": 1.6,
+     "enter": {
+      "preset": "fadeUp",
+      "duration": 0.5,
+      "distance": 20
+     }
+    }
+   ],
+   "camera": {
+    "animate": [
+     {
+      "from": {
+       "zoom": 1.06
+      },
+      "to": {
+       "zoom": 1.0
+      },
+      "duration": 6.0,
+      "ease": "inOutCubic"
+     }
+    ]
+   }
+  }
+ ]
+}

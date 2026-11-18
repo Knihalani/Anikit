@@ -1,0 +1,13 @@
+{ "size": "16:9", "defs": {
+  "row": { "x": "$x", "y": "$y", "anchor": "topLeft", "width": 1920, "height": 1080, "layers": [
+    { "shape": "rect", "x": 0, "y": 0, "anchor": "topLeft", "width": 1200, "height": 168, "radius": 28, "fill": "#17253B", "stroke": "#FFFFFF14", "strokeWidth": 2 },
+    { "shape": "rect", "x": 0, "y": 0, "anchor": "topLeft", "width": 8, "height": 168, "radius": 4, "fill": "#FFB23E", "start": "$read", "enter": {"preset": "wipe", "duration": 0.25} },
+    { "text": "$from", "font": "Host Grotesk", "weight": 650, "size": 38, "color": "#EEF2F8", "x": 44, "y": 30, "anchor": "topLeft" },
+    { "text": "$time", "font": "Host Grotesk", "weight": 500, "size": 30, "features": "tnum", "color": "#8B9BB3", "x": 1160, "y": 34, "anchor": "topRight" },
+    { "text": "$subject", "font": "Host Grotesk", "weight": 550, "size": 32, "color": "#DCE3EE", "x": 44, "y": 80, "anchor": "topLeft" },
+    { "text": "$snip", "font": "Host Grotesk", "weight": 400, "size": 28, "color": "#7F8FA8", "x": 44, "y": 122, "anchor": "topLeft" }
+  ] } },
+  "scenes": [ { "duration": 3, "background": "#0E1A2E", "layers": [
+    { "use": "row", "with": { "x": 360, "y": 300, "from": "Dana Whitfield", "time": "11:58 PM", "subject": "One small thing before tomorrow", "snip": "Can you send the Q3 numbers to the board before 9? I'll…", "read": 1.0 } },
+    { "use": "row", "with": { "x": 360, "y": 500, "from": "Marco, Priya, +38", "time": "3:12 AM", "subject": "Re: Re: Re: Fwd: Offsite logistics", "snip": "Please remove me from this list.", "read": 1.5 } }
+  ] } ] }
