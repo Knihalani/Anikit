@@ -1,0 +1,1181 @@
+{
+ "size": "16:9",
+ "fps": 30,
+ "intent": {
+  "pace": "steady",
+  "genre": "explainer"
+ },
+ "post": {
+  "bloom": 0.22,
+  "vignette": 0.25,
+  "grain": 0.025
+ },
+ "audio": [
+  {
+   "src": "soundtrack.wav"
+  }
+ ],
+ "scenes": [
+  {
+   "id": "hook",
+   "duration": 3.5,
+   "background": "#0B1422",
+   "camera": {
+    "animate": [
+     {
+      "from": {
+       "zoom": 1.08
+      },
+      "to": {
+       "zoom": 1.0
+      },
+      "duration": 3.5,
+      "ease": "outCubic"
+     }
+    ],
+    "shake": {
+     "amount": 3
+    }
+   },
+   "layers": [
+    {
+     "src": "air.glsl",
+     "uniforms": {
+      "amp": 16,
+      "chaos": 1,
+      "aN": 1,
+      "yN": 640,
+      "lamp": 150,
+      "speed": 380
+     }
+    },
+    {
+     "text": "How do headphones",
+     "font": "Inter",
+     "weight": 800,
+     "size": "8.5vh",
+     "x": "7%",
+     "y": "20%",
+     "anchor": "left",
+     "color": "#F3EEE4",
+     "letterSpacing": "-0.02em",
+     "enter": "mask by line up"
+    },
+    {
+     "text": "erase sound?",
+     "font": "Inter",
+     "weight": 800,
+     "size": "8.5vh",
+     "x": "7%",
+     "y": "31%",
+     "anchor": "left",
+     "color": "#FF6A43",
+     "letterSpacing": "-0.02em",
+     "enter": {
+      "preset": "mask by line up",
+      "delay": 0.25
+     }
+    }
+   ]
+  },
+  {
+   "id": "pressure",
+   "duration": 4,
+   "background": "#0B1422",
+   "transition": "cut",
+   "camera": {
+    "animate": [
+     {
+      "from": {
+       "zoom": 1.0
+      },
+      "to": {
+       "zoom": 1.05
+      },
+      "duration": 4,
+      "ease": "linear"
+     }
+    ]
+   },
+   "layers": [
+    {
+     "src": "air.glsl",
+     "uniforms": {
+      "amp": 18,
+      "chaos": 1,
+      "aN": 1,
+      "yN": 215,
+      "lamp": 70,
+      "speed": 200,
+      "zoomF": 2.2,
+      "xoffN": 150
+     },
+     "animate": [
+      {
+       "to": {
+        "chaos": 0
+       },
+       "duration": 0.9,
+       "ease": "outCubic"
+      }
+     ]
+    },
+    {
+     "text": "Sound is air:",
+     "font": "Inter",
+     "weight": 800,
+     "size": "7vh",
+     "x": "7%",
+     "y": "70%",
+     "anchor": "left",
+     "color": "#F3EEE4",
+     "enter": {
+      "preset": "mask by line up",
+      "delay": 0.4
+     }
+    },
+    {
+     "text": "squeezed, then stretched.",
+     "font": "Inter",
+     "weight": 800,
+     "size": "7vh",
+     "x": "7%",
+     "y": "80%",
+     "anchor": "left",
+     "color": "#FF6A43",
+     "enter": {
+      "preset": "mask by line up",
+      "delay": 0.7
+     }
+    }
+   ]
+  },
+  {
+   "id": "mic",
+   "duration": 4.5,
+   "background": "#0B1422",
+   "transition": "cut",
+   "camera": {
+    "animate": [
+     {
+      "from": {
+       "zoom": 1.0
+      },
+      "to": {
+       "zoom": 1.06
+      },
+      "duration": 4.5,
+      "ease": "inOutSine"
+     }
+    ]
+   },
+   "layers": [
+    {
+     "src": "air.glsl",
+     "uniforms": {
+      "amp": 12,
+      "chaos": 1,
+      "aN": 1,
+      "yN": 540,
+      "lamp": 110,
+      "speed": 300,
+      "x1N": 0,
+      "x0N": 0,
+      "gateX": 1000,
+      "gateM": 0.4,
+      "fieldA": 0.9
+     },
+     "animate": [
+      {
+       "to": {
+        "x1N": 995
+       },
+       "duration": 1.0,
+       "ease": "linear"
+      }
+     ]
+    },
+    {
+     "draw": [
+      {
+       "points": [
+        [
+         1650,
+         0
+        ],
+        [
+         1920,
+         0
+        ],
+        [
+         1920,
+         470
+        ],
+        [
+         1700,
+         470
+        ],
+        [
+         1650,
+         455
+        ]
+       ],
+       "closed": true,
+       "fill": "#16212F"
+      },
+      {
+       "points": [
+        [
+         1650,
+         1080
+        ],
+        [
+         1920,
+         1080
+        ],
+        [
+         1920,
+         610
+        ],
+        [
+         1700,
+         610
+        ],
+        [
+         1650,
+         625
+        ]
+       ],
+       "closed": true,
+       "fill": "#16212F"
+      },
+      {
+       "d": "M1650 0 L1650 455 L1700 470 L1920 470",
+       "stroke": "#C9D3DD",
+       "width": 5,
+       "cap": "round",
+       "join": "round"
+      },
+      {
+       "d": "M1650 1080 L1650 625 L1700 610 L1920 610",
+       "stroke": "#C9D3DD",
+       "width": 5,
+       "cap": "round",
+       "join": "round"
+      },
+      {
+       "rect": [
+        1500,
+        105,
+        150,
+        100
+       ],
+       "radius": 46,
+       "fill": "#2C3D52"
+      },
+      {
+       "rect": [
+        1500,
+        875,
+        150,
+        100
+       ],
+       "radius": 46,
+       "fill": "#2C3D52"
+      },
+      {
+       "d": "M1505 140 C1170 140 1000 300 1000 540 C1000 780 1170 940 1505 940",
+       "stroke": "#C9D3DD",
+       "width": 16,
+       "cap": "round"
+      },
+      {
+       "d": "M1505 178 C1205 178 1040 320 1040 540 C1040 760 1205 902 1505 902",
+       "stroke": "#C9D3DD",
+       "width": 3,
+       "cap": "round",
+       "opacity": 0.45
+      },
+      {
+       "points": [
+        [
+         1185,
+         465
+        ],
+        [
+         1262,
+         410
+        ],
+        [
+         1262,
+         670
+        ],
+        [
+         1185,
+         615
+        ]
+       ],
+       "closed": true,
+       "fill": "#22344A",
+       "stroke": "#C9D3DD",
+       "width": 4,
+       "join": "round"
+      },
+      {
+       "rect": [
+        1150,
+        495,
+        36,
+        90
+       ],
+       "radius": 6,
+       "fill": "#C9D3DD"
+      },
+      {
+       "d": "M1018 540 L1085 540 L1085 345 L1150 345",
+       "stroke": "#5C7088",
+       "width": 4,
+       "cap": "round",
+       "join": "round"
+      },
+      {
+       "d": "M1195 380 L1195 470",
+       "stroke": "#5C7088",
+       "width": 4,
+       "cap": "round"
+      },
+      {
+       "rect": [
+        1150,
+        305,
+        90,
+        76
+       ],
+       "radius": 10,
+       "fill": "#16212F",
+       "stroke": "#C9D3DD",
+       "width": 4
+      },
+      {
+       "circle": [
+        1000,
+        540,
+        17
+       ],
+       "fill": "#0B1422",
+       "stroke": "#F3EEE4",
+       "width": 5
+      },
+      {
+       "circle": [
+        1000,
+        540,
+        6
+       ],
+       "fill": "#F3EEE4"
+      }
+     ],
+     "enter": "draw"
+    },
+    {
+     "draw": [
+      {
+       "d": "M1018 540 L1085 540 L1085 345 L1150 345",
+       "stroke": "#FF6A43",
+       "width": 6,
+       "cap": "round",
+       "join": "round"
+      }
+     ],
+     "start": 1.4,
+     "animate": [
+      {
+       "from": {
+        "trimEnd": 0
+       },
+       "to": {
+        "trimEnd": 1
+       },
+       "duration": 0.5,
+       "ease": "inOutCubic"
+      },
+      {
+       "to": {
+        "trimStart": 1
+       },
+       "at": 0.35,
+       "duration": 0.5,
+       "ease": "inOutCubic"
+      }
+     ]
+    },
+    {
+     "draw": [
+      {
+       "rect": [
+        1150,
+        305,
+        90,
+        76
+       ],
+       "radius": 10,
+       "fill": "#FF6A43"
+      }
+     ],
+     "start": 1.85,
+     "animate": [
+      {
+       "from": {
+        "opacity": 0
+       },
+       "to": {
+        "opacity": 1
+       },
+       "duration": 0.12
+      },
+      {
+       "to": {
+        "opacity": 0.35
+       },
+       "at": 0.3,
+       "duration": 0.8
+      }
+     ]
+    },
+    {
+     "shape": "circle",
+     "width": 34,
+     "height": 34,
+     "x": 1000,
+     "y": 540,
+     "fill": "transparent",
+     "stroke": "#FF6A43",
+     "strokeWidth": 3,
+     "start": 1.0,
+     "animate": [
+      {
+       "from": {
+        "scale": 1,
+        "opacity": 1
+       },
+       "to": {
+        "scale": 4,
+        "opacity": 0
+       },
+       "duration": 0.8,
+       "ease": "outCubic"
+      }
+     ]
+    },
+    {
+     "shape": "circle",
+     "width": 34,
+     "height": 34,
+     "x": 1000,
+     "y": 540,
+     "fill": "transparent",
+     "stroke": "#FF6A43",
+     "strokeWidth": 3,
+     "start": 1.3,
+     "animate": [
+      {
+       "from": {
+        "scale": 1,
+        "opacity": 1
+       },
+       "to": {
+        "scale": 4,
+        "opacity": 0
+       },
+       "duration": 0.8,
+       "ease": "outCubic"
+      }
+     ]
+    },
+    {
+     "src": "air.glsl",
+     "alpha": true,
+     "uniforms": {
+      "bg": 0,
+      "aN": 0.95,
+      "gN": 0.4,
+      "yN": 540,
+      "lamp": 110,
+      "speed": 300,
+      "x0N": 1265,
+      "x1N": 1900
+     }
+    },
+    {
+     "text": "MIC",
+     "font": "JetBrains Mono",
+     "weight": 600,
+     "size": 24,
+     "x": 940,
+     "y": 690,
+     "color": "#DDE5EC",
+     "letterSpacing": "0.15em",
+     "enter": {
+      "preset": "fadeIn",
+      "delay": 0.8
+     }
+    },
+    {
+     "text": "CHIP",
+     "font": "JetBrains Mono",
+     "weight": 600,
+     "size": 24,
+     "x": 1195,
+     "y": 272,
+     "color": "#DDE5EC",
+     "letterSpacing": "0.15em",
+     "enter": {
+      "preset": "fadeIn",
+      "delay": 0.9
+     }
+    },
+    {
+     "text": "SPEAKER",
+     "font": "JetBrains Mono",
+     "weight": 600,
+     "size": 24,
+     "x": 1215,
+     "y": 720,
+     "color": "#DDE5EC",
+     "letterSpacing": "0.15em",
+     "enter": {
+      "preset": "fadeIn",
+      "delay": 1.0
+     }
+    },
+    {
+     "text": "EAR",
+     "font": "JetBrains Mono",
+     "weight": 600,
+     "size": 24,
+     "x": 1745,
+     "y": 660,
+     "color": "#DDE5EC",
+     "letterSpacing": "0.15em",
+     "enter": {
+      "preset": "fadeIn",
+      "delay": 1.1
+     }
+    },
+    {
+     "text": "A tiny microphone",
+     "font": "Inter",
+     "weight": 800,
+     "size": "6.5vh",
+     "x": "7%",
+     "y": "15%",
+     "anchor": "left",
+     "color": "#F3EEE4",
+     "enter": {
+      "preset": "mask by line up",
+      "delay": 0.3
+     }
+    },
+    {
+     "text": "hears the noise first.",
+     "font": "Inter",
+     "weight": 800,
+     "size": "6.5vh",
+     "x": "7%",
+     "y": "24%",
+     "anchor": "left",
+     "color": "#FF6A43",
+     "enter": {
+      "preset": "mask by line up",
+      "delay": 0.55
+     }
+    }
+   ]
+  },
+  {
+   "id": "flip",
+   "duration": 4.4,
+   "background": "#0B1422",
+   "transition": "cut",
+   "layers": [
+    {
+     "src": "air.glsl",
+     "uniforms": {
+      "amp": 5,
+      "chaos": 0.35,
+      "aN": 0.28,
+      "aA": 1,
+      "flip": -1,
+      "yN": 600,
+      "yA": 600,
+      "lamp": 170,
+      "speed": 70,
+      "fieldA": 0.55
+     },
+     "animate": [
+      {
+       "to": {
+        "flip": 1
+       },
+       "at": 1.0,
+       "duration": 1.3,
+       "ease": "inOutCubic"
+      }
+     ]
+    },
+    {
+     "text": "A chip flips it upside down:",
+     "font": "Inter",
+     "weight": 800,
+     "size": "6.5vh",
+     "x": "7%",
+     "y": "15%",
+     "anchor": "left",
+     "color": "#F3EEE4",
+     "enter": {
+      "preset": "mask by line up",
+      "delay": 0.1
+     }
+    },
+    {
+     "text": "every peak becomes a trough.",
+     "font": "Inter",
+     "weight": 800,
+     "size": "6.5vh",
+     "x": "7%",
+     "y": "24%",
+     "anchor": "left",
+     "color": "#5CE0FF",
+     "enter": {
+      "preset": "mask by line up",
+      "delay": 1.4
+     }
+    }
+   ]
+  },
+  {
+   "id": "cancel",
+   "duration": 5.3,
+   "background": "#0B1422",
+   "transition": "cut",
+   "camera": {
+    "animate": [
+     {
+      "from": {
+       "zoom": 1.0
+      },
+      "to": {
+       "zoom": 1.07
+      },
+      "duration": 5.5,
+      "ease": "inOutSine"
+     }
+    ]
+   },
+   "layers": [
+    {
+     "src": "air.glsl",
+     "uniforms": {
+      "amp": 13,
+      "chaos": 1,
+      "aN": 1,
+      "aA": 1,
+      "aS": 0,
+      "yN": 300,
+      "yA": 780,
+      "yS": 540,
+      "lamp": 110,
+      "speed": 300
+     },
+     "animate": [
+      {
+       "to": {
+        "yN": 540,
+        "yA": 540
+       },
+       "at": 0.4,
+       "duration": 1.4,
+       "ease": "inOutCubic"
+      },
+      {
+       "to": {
+        "anti": 1
+       },
+       "at": 1.75,
+       "duration": 0.55,
+       "ease": "outCubic"
+      },
+      {
+       "to": {
+        "aS": 1
+       },
+       "at": 1.7,
+       "duration": 0.25
+      },
+      {
+       "to": {
+        "aN": 0.16,
+        "aA": 0.16
+       },
+       "at": 1.8,
+       "duration": 0.6
+      }
+     ]
+    },
+    {
+     "text": "Played together,",
+     "font": "Inter",
+     "weight": 800,
+     "size": "7vh",
+     "x": "7%",
+     "y": "70%",
+     "anchor": "left",
+     "color": "#F3EEE4",
+     "enter": {
+      "preset": "mask by line up",
+      "delay": 2.4
+     }
+    },
+    {
+     "text": "they cancel out.",
+     "font": "Inter",
+     "weight": 800,
+     "size": "7vh",
+     "x": "7%",
+     "y": "80%",
+     "anchor": "left",
+     "color": "#F3EEE4",
+     "enter": {
+      "preset": "mask by line up",
+      "delay": 2.65
+     }
+    }
+   ]
+  },
+  {
+   "id": "inside",
+   "duration": 4,
+   "background": "#0B1422",
+   "transition": "cut",
+   "layers": [
+    {
+     "src": "air.glsl",
+     "uniforms": {
+      "amp": 12,
+      "chaos": 1,
+      "aN": 1,
+      "yN": 540,
+      "lamp": 110,
+      "speed": 300,
+      "x1N": 995,
+      "gateX": 1000,
+      "gateM": 0.0,
+      "fieldA": 0.9
+     }
+    },
+    {
+     "draw": [
+      {
+       "points": [
+        [
+         1650,
+         0
+        ],
+        [
+         1920,
+         0
+        ],
+        [
+         1920,
+         470
+        ],
+        [
+         1700,
+         470
+        ],
+        [
+         1650,
+         455
+        ]
+       ],
+       "closed": true,
+       "fill": "#16212F"
+      },
+      {
+       "points": [
+        [
+         1650,
+         1080
+        ],
+        [
+         1920,
+         1080
+        ],
+        [
+         1920,
+         610
+        ],
+        [
+         1700,
+         610
+        ],
+        [
+         1650,
+         625
+        ]
+       ],
+       "closed": true,
+       "fill": "#16212F"
+      },
+      {
+       "d": "M1650 0 L1650 455 L1700 470 L1920 470",
+       "stroke": "#C9D3DD",
+       "width": 5,
+       "cap": "round",
+       "join": "round"
+      },
+      {
+       "d": "M1650 1080 L1650 625 L1700 610 L1920 610",
+       "stroke": "#C9D3DD",
+       "width": 5,
+       "cap": "round",
+       "join": "round"
+      },
+      {
+       "rect": [
+        1500,
+        105,
+        150,
+        100
+       ],
+       "radius": 46,
+       "fill": "#2C3D52"
+      },
+      {
+       "rect": [
+        1500,
+        875,
+        150,
+        100
+       ],
+       "radius": 46,
+       "fill": "#2C3D52"
+      },
+      {
+       "d": "M1505 140 C1170 140 1000 300 1000 540 C1000 780 1170 940 1505 940",
+       "stroke": "#C9D3DD",
+       "width": 16,
+       "cap": "round"
+      },
+      {
+       "d": "M1505 178 C1205 178 1040 320 1040 540 C1040 760 1205 902 1505 902",
+       "stroke": "#C9D3DD",
+       "width": 3,
+       "cap": "round",
+       "opacity": 0.45
+      },
+      {
+       "points": [
+        [
+         1185,
+         465
+        ],
+        [
+         1262,
+         410
+        ],
+        [
+         1262,
+         670
+        ],
+        [
+         1185,
+         615
+        ]
+       ],
+       "closed": true,
+       "fill": "#22344A",
+       "stroke": "#5CE0FF",
+       "width": 4,
+       "join": "round"
+      },
+      {
+       "rect": [
+        1150,
+        495,
+        36,
+        90
+       ],
+       "radius": 6,
+       "fill": "#C9D3DD"
+      },
+      {
+       "d": "M1018 540 L1085 540 L1085 345 L1150 345",
+       "stroke": "#5C7088",
+       "width": 4,
+       "cap": "round",
+       "join": "round"
+      },
+      {
+       "d": "M1195 380 L1195 470",
+       "stroke": "#5CE0FF",
+       "width": 4,
+       "cap": "round"
+      },
+      {
+       "rect": [
+        1150,
+        305,
+        90,
+        76
+       ],
+       "radius": 10,
+       "fill": "#16212F",
+       "stroke": "#5CE0FF",
+       "width": 4
+      },
+      {
+       "circle": [
+        1000,
+        540,
+        17
+       ],
+       "fill": "#0B1422",
+       "stroke": "#F3EEE4",
+       "width": 5
+      },
+      {
+       "circle": [
+        1000,
+        540,
+        6
+       ],
+       "fill": "#F3EEE4"
+      }
+     ]
+    },
+    {
+     "src": "air.glsl",
+     "alpha": true,
+     "uniforms": {
+      "bg": 0,
+      "aN": 0.22,
+      "aA": 0.22,
+      "aS": 1,
+      "anti": 1,
+      "gN": 0.4,
+      "gA": 0.4,
+      "yN": 540,
+      "yA": 540,
+      "yS": 540,
+      "lamp": 110,
+      "speed": 300,
+      "x0N": 1265,
+      "x1N": 1900,
+      "x0A": 1265,
+      "x1A": 1900,
+      "x0S": 1265,
+      "x1S": 1900
+     }
+    },
+    {
+     "shape": "circle",
+     "width": 60,
+     "height": 60,
+     "x": 1265,
+     "y": 540,
+     "fill": "transparent",
+     "stroke": "#5CE0FF",
+     "strokeWidth": 3,
+     "start": 0.2,
+     "animate": [
+      {
+       "from": {
+        "scale": 1,
+        "opacity": 0.9
+       },
+       "to": {
+        "scale": 5,
+        "opacity": 0
+       },
+       "duration": 1.2,
+       "ease": "outCubic"
+      }
+     ]
+    },
+    {
+     "shape": "circle",
+     "width": 60,
+     "height": 60,
+     "x": 1265,
+     "y": 540,
+     "fill": "transparent",
+     "stroke": "#5CE0FF",
+     "strokeWidth": 3,
+     "start": 0.7,
+     "animate": [
+      {
+       "from": {
+        "scale": 1,
+        "opacity": 0.9
+       },
+       "to": {
+        "scale": 5,
+        "opacity": 0
+       },
+       "duration": 1.2,
+       "ease": "outCubic"
+      }
+     ]
+    },
+    {
+     "shape": "circle",
+     "width": 60,
+     "height": 60,
+     "x": 1265,
+     "y": 540,
+     "fill": "transparent",
+     "stroke": "#5CE0FF",
+     "strokeWidth": 3,
+     "start": 1.2,
+     "animate": [
+      {
+       "from": {
+        "scale": 1,
+        "opacity": 0.9
+       },
+       "to": {
+        "scale": 5,
+        "opacity": 0
+       },
+       "duration": 1.2,
+       "ease": "outCubic"
+      }
+     ]
+    },
+    {
+     "text": "Your ear hears",
+     "font": "Inter",
+     "weight": 800,
+     "size": "6.5vh",
+     "x": "7%",
+     "y": "15%",
+     "anchor": "left",
+     "color": "#F3EEE4",
+     "enter": {
+      "preset": "mask by line up",
+      "delay": 0.2
+     }
+    },
+    {
+     "text": "almost nothing.",
+     "font": "Inter",
+     "weight": 800,
+     "size": "6.5vh",
+     "x": "7%",
+     "y": "24%",
+     "anchor": "left",
+     "color": "#5CE0FF",
+     "enter": {
+      "preset": "mask by line up",
+      "delay": 0.45
+     }
+    },
+    {
+     "text": "Re-measured thousands of times a second.",
+     "font": "Inter",
+     "weight": 500,
+     "size": "3.6vh",
+     "x": "7%",
+     "y": "84%",
+     "anchor": "left",
+     "color": "#C9D3DD",
+     "enter": {
+      "preset": "fadeUp",
+      "delay": 0.8
+     }
+    }
+   ]
+  },
+  {
+   "id": "end",
+   "duration": 4.3,
+   "background": "#0B1422",
+   "transition": "cut",
+   "camera": {
+    "animate": [
+     {
+      "from": {
+       "zoom": 1.04
+      },
+      "to": {
+       "zoom": 1.0
+      },
+      "duration": 4.3,
+      "ease": "outCubic"
+     }
+    ]
+   },
+   "layers": [
+    {
+     "src": "air.glsl",
+     "uniforms": {
+      "amp": 12,
+      "chaos": 1,
+      "anti": 1,
+      "aS": 1,
+      "yS": 640,
+      "lamp": 110,
+      "speed": 300,
+      "fieldA": 0.8
+     }
+    },
+    {
+     "text": "Silence,",
+     "font": "Inter",
+     "weight": 800,
+     "size": "11vh",
+     "x": "7%",
+     "y": "30%",
+     "anchor": "left",
+     "color": "#F3EEE4",
+     "letterSpacing": "-0.03em",
+     "enter": {
+      "preset": "mask by line up",
+      "delay": 0.4
+     }
+    },
+    {
+     "text": "made of sound.",
+     "font": "Inter",
+     "weight": 800,
+     "size": "11vh",
+     "x": "7%",
+     "y": "44%",
+     "anchor": "left",
+     "color": "#F3EEE4",
+     "letterSpacing": "-0.03em",
+     "enter": {
+      "preset": "mask by line up",
+      "delay": 0.7
+     }
+    },
+    {
+     "text": "ACTIVE NOISE CANCELLATION",
+     "font": "JetBrains Mono",
+     "weight": 600,
+     "size": 26,
+     "x": "7%",
+     "y": "73%",
+     "anchor": "left",
+     "color": "#8FA3B8",
+     "letterSpacing": "0.2em",
+     "enter": {
+      "preset": "fadeIn",
+      "delay": 1.6
+     }
+    }
+   ]
+  }
+ ]
+}
