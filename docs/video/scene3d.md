@@ -81,7 +81,7 @@ You are not limited to the preset shapes. These types build a mesh from your des
 
 - **`extrude`:** any SVG path, as a solid with a rounded bevel. It stands on y = 0, `height` tall. Use it for logos, icons and signs. Inner subpaths cut holes.
   `{ "type": "extrude", "d": "M0 0 L40 0 L40 10 L10 10 L10 30 L0 30 Z", "height": 0.6, "depth": 0.15, "bevel": 0.01, "material": "gold" }`
-- **`lathe`:** a profile `[[radius, y], ...]` revolved about Y. Use it for vases, bottles, lenses, columns and chess pieces. `segments` defaults to 96.
+- **`lathe`:** a profile `[[radius, y], ...]` revolved about Y. Use it for vases, bottles, lenses, columns and chess pieces. `segments` defaults to 96. The profile is smoothed through the points (Catmull-Rom); `"smooth": false` keeps hard corners.
   `{ "type": "lathe", "points": [[0, 0], [0.22, 0.02], [0.3, 0.25], [0.12, 0.6], [0.16, 0.85], [0, 0.86]], "material": "ceramic" }`
 - **`tube`:** a circle swept along a path, for cables, neon, springs and paths through space.
   - The path is `points` `[[x, y, z], ...]` (smoothed) or `path`, an expression of `s` (0→1).

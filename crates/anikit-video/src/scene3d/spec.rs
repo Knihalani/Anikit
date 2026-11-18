@@ -466,7 +466,7 @@ impl ObjDef {
 
 pub const OBJ_KEYS: &[&str] = &[
     "type", "src", "text", "font", "weight", "tracking", "height", "depth", "bevel", "size", "radius", "tube", "material", "pos", "position", "rot", "rotation", "scale", "keys", "spin", "count", "lanes", "texture", "thin", "shadow", "start", "end", "name", "camera", "align", "color", "intensity", "speed", "collide",
-    "d", "path", "points", "segments", "sides", "x", "y", "z", "u", "v", "expr", "res", "vertices", "faces", "flat",
+    "d", "path", "points", "segments", "sides", "x", "y", "z", "u", "v", "expr", "res", "vertices", "faces", "flat", "smooth",
 ];
 const TYPES: &[&str] = &["text", "box", "slab", "pane", "plane", "sphere", "cylinder", "torus", "phone", "model", "card", "extrude", "lathe", "tube", "surface", "heightfield", "mesh"];
 
