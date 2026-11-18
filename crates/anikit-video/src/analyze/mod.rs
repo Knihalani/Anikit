@@ -1,8 +1,8 @@
 //! `anikit-video analyze`: reverse-engineer a reference video.
 //!
-//! Decodes the clip once through ffmpeg (MP4, WebM, GIF, MOV or a frame
-//! sequence) at 640 px wide, keeps a 160 px copy of every frame and a 640 px
-//! frame every quarter second, and measures:
+//! Decodes the clip through ffmpeg (MP4, WebM, GIF, MOV or a frame sequence)
+//! at 640 px wide, spills the 160 px copies and quarter-second 640 px frames
+//! to temp files, and reads back only the frames shots and transitions need:
 //!
 //! - shots: hard cuts (colour-histogram jumps against a local median) and
 //!   gradual transitions (a long-range jump with no single-frame cut), each
@@ -30,9 +30,13 @@ pub use sheet::contact_sheet;
 
 use image_ops::*;
 use serde::Serialize;
-use std::io::Read;
-use std::path::Path;
+use std::collections::{BTreeMap, BTreeSet};
+use std::fs::{File, OpenOptions};
+use std::io::{BufWriter, Read, Seek, SeekFrom, Write};
+use std::ops::Range;
+use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
+use std::time::{SystemTime, UNIX_EPOCH};
 
 /// Width of the stored key frames (and of the decode).
 pub const KEY_W: usize = 640;
@@ -288,10 +292,83 @@ pub(crate) struct KeyFrame {
 struct FrameStat {
     hist: [f32; 64],
     luma: f32,
-    /// Normalised luma plane.
-    l: Vec<f32>,
-    rgb: Vec<u8>,
     sharp: f32,
+    vig: f32,
+}
+
+#[derive(Clone, Copy)]
+struct Pending {
+    c: usize,
+    k: usize,
+    zoom: f32,
+    pan: f32,
+}
+
+struct Spill {
+    keys: Option<BufWriter<File>>,
+    small: Option<BufWriter<File>>,
+    keys_path: PathBuf,
+    small_path: PathBuf,
+}
+
+impl Spill {
+    fn new() -> Result<Self, String> {
+        let nanos = SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default().as_nanos();
+        let prefix = format!("anikit-analyze-{}-{nanos}", std::process::id());
+        let dir = std::env::temp_dir();
+        let keys_path = dir.join(format!("{prefix}-keys.raw"));
+        let small_path = dir.join(format!("{prefix}-small.raw"));
+        let open = |path: &PathBuf| {
+            let mut opts = OpenOptions::new();
+            opts.write(true).create_new(true);
+            #[cfg(unix)]
+            {
+                use std::os::unix::fs::OpenOptionsExt;
+                opts.mode(0o600);
+            }
+            opts.open(path)
+        };
+        let keys = open(&keys_path).map_err(temp_error)?;
+        let small = match open(&small_path) {
+            Ok(file) => file,
+            Err(e) => {
+                drop(keys);
+                let _ = std::fs::remove_file(&keys_path);
+                return Err(temp_error(e));
+            }
+        };
+        Ok(Self { keys: Some(BufWriter::new(keys)), small: Some(BufWriter::new(small)), keys_path, small_path })
+    }
+
+    fn write_key(&mut self, bytes: &[u8]) -> Result<(), String> {
+        self.keys.as_mut().expect("key spill writer open").write_all(bytes).map_err(temp_error)
+    }
+
+    fn write_small(&mut self, bytes: &[u8]) -> Result<(), String> {
+        self.small.as_mut().expect("small spill writer open").write_all(bytes).map_err(temp_error)
+    }
+
+    fn flush(&mut self) -> Result<(), String> {
+        self.keys.as_mut().expect("key spill writer open").flush().map_err(temp_error)?;
+        self.small.as_mut().expect("small spill writer open").flush().map_err(temp_error)
+    }
+
+    fn close(&mut self) {
+        drop(self.keys.take());
+        drop(self.small.take());
+    }
+}
+
+impl Drop for Spill {
+    fn drop(&mut self) {
+        self.close();
+        let _ = std::fs::remove_file(&self.keys_path);
+        let _ = std::fs::remove_file(&self.small_path);
+    }
+}
+
+fn temp_error(e: std::io::Error) -> String {
+    format!("analyze temp file: {e}")
 }
 
 #[derive(Clone, Copy, Default)]
@@ -375,6 +452,9 @@ pub fn analyze(path: &Path, o: &Options) -> Result<Analysis, String> {
     let kh = (((KEY_W as f64 * p.h as f64 / p.w as f64) / 4.0).round() as usize * 4).max(8);
     let kw = KEY_W;
     let (sw, sh) = (kw / 4, kh / 4);
+    let fsz = kw * kh * 3;
+    let key_every = (fps / 4.0).round().max(1.0) as usize;
+    let mut spill = Spill::new()?;
     let mut child = Command::new("ffmpeg")
         .args(["-v", "error", "-threads", "0"])
         .args(&args)
@@ -389,50 +469,116 @@ pub fn analyze(path: &Path, o: &Options) -> Result<Analysis, String> {
         let a = args.clone();
         std::thread::spawn(move || decode_audio(&a))
     });
-    let fsz = kw * kh * 3;
     let mut buf = vec![0u8; fsz];
-    let mut frames: Vec<FrameStat> = Vec::new();
-    let mut keys: Vec<KeyFrame> = Vec::new();
-    let key_every = (fps / 4.0).round().max(1.0) as usize;
+    let mut stats: Vec<FrameStat> = Vec::new();
+    let mut px: Vec<f32> = Vec::new();
+    let mut motion: Vec<Motion> = Vec::new();
+    let mut previous_l = None;
     let mut n = 0usize;
     // Decode and reduce in batches so the per-frame maths runs in parallel.
-    let mut batch: Vec<(usize, Vec<u8>)> = Vec::new();
-    while stdout.read_exact(&mut buf).is_ok() {
-        if n.is_multiple_of(key_every) {
-            keys.push(KeyFrame { t: n as f64 / fps, w: kw, h: kh, rgb: buf.clone() });
+    let mut batch: Vec<Vec<u8>> = Vec::new();
+    let streamed = (|| -> Result<(), String> {
+        while stdout.read_exact(&mut buf).is_ok() {
+            if n.is_multiple_of(key_every) {
+                spill.write_key(&buf)?;
+            }
+            batch.push(buf.clone());
+            n += 1;
+            if batch.len() == 64 {
+                append_batch(std::mem::take(&mut batch), kw, kh, sw, sh, &mut previous_l, &mut stats, &mut px, &mut motion, &mut spill)?;
+            }
         }
-        batch.push((n, buf.clone()));
-        n += 1;
-        if batch.len() == 64 {
-            frames.extend(reduce_batch(std::mem::take(&mut batch), kw, kh));
+        append_batch(batch, kw, kh, sw, sh, &mut previous_l, &mut stats, &mut px, &mut motion, &mut spill)?;
+        Ok(())
+    })();
+    if let Err(e) = streamed {
+        drop(stdout);
+        let _ = child.kill();
+        let _ = child.wait();
+        if let Some(job) = audio_job {
+            let _ = job.join();
         }
+        return Err(e);
     }
-    frames.extend(reduce_batch(batch, kw, kh));
     let st = child.wait_with_output().map_err(|e| e.to_string())?;
-    if frames.is_empty() {
+    spill.flush()?;
+    spill.close();
+    if stats.is_empty() {
         return Err(format!("ffmpeg decoded no frames: {}", String::from_utf8_lossy(&st.stderr).trim()));
     }
     let t_decode = t0.elapsed().as_secs_f64();
     let t1 = std::time::Instant::now();
 
-    // Frame-to-frame motion (parallel).
-    use rayon::prelude::*;
-    let motion: Vec<Motion> = (0..frames.len()).into_par_iter().map(|i| if i == 0 { Motion::default() } else { global_motion(&frames[i - 1].l, &frames[i].l, sw, sh) }).collect();
-
-    let (transitions, flashes) = detect_transitions(&frames, &motion, fps, sw);
-    let duration = frames.len() as f64 / fps;
+    let (mut transitions, flashes, pending) = detect_transitions(&stats, &px, &motion, fps, sw);
+    let duration = stats.len() as f64 / fps;
     // Shot boundaries: cut times.
     let mut bounds = vec![0.0];
     bounds.extend(transitions.iter().map(|t| t.at));
     bounds.push(duration);
-    let shots: Vec<Shot> = (0..bounds.len() - 1)
-        .into_par_iter()
+    let n = stats.len();
+    let shot_frames: Vec<(Range<usize>, Vec<usize>, usize)> = (0..bounds.len() - 1)
         .map(|i| {
-            let tin = if i == 0 { "start".to_string() } else { transitions[i - 1].kind.clone() };
-            // Exclude the transition windows from the shot's own measures.
             let pad_a = if i == 0 { 0.0 } else { transitions[i - 1].duration / 2.0 };
             let pad_b = if i + 1 < bounds.len() - 1 { transitions[i].duration / 2.0 } else { 0.0 };
-            analyse_shot(i, bounds[i], bounds[i + 1], pad_a, pad_b, tin, &frames, &motion, &keys, fps, sw, sh)
+            let range = shot_range(bounds[i], bounds[i + 1], pad_a, pad_b, n, fps);
+            let step = (range.len() / 6).max(1);
+            let palette = range.clone().step_by(step).take(6).collect();
+            let t = (bounds[i] + bounds[i + 1]) / 2.0;
+            let key = (0..n).step_by(key_every).min_by(|&a, &b| (a as f64 / fps - t).abs().total_cmp(&(b as f64 / fps - t).abs())).expect("at least one decoded frame");
+            (range, palette, key)
+        })
+        .collect();
+
+    let mut needed_rgb = BTreeSet::new();
+    let mut needed_keys = BTreeSet::new();
+    for (_, palette, key) in &shot_frames {
+        needed_rgb.extend(palette.iter().copied());
+        needed_keys.insert(*key);
+    }
+    for (_, pending) in &pending {
+        needed_rgb.extend([pending.c - pending.k, pending.c, pending.c + pending.k]);
+    }
+    let mut key_file = File::open(&spill.keys_path).map_err(temp_error)?;
+    let mut small_file = File::open(&spill.small_path).map_err(temp_error)?;
+    let mut key_rgb = BTreeMap::new();
+    let mut rgb160 = BTreeMap::new();
+    let ssz = sw * sh * 3;
+    for idx in needed_keys {
+        let key = read_spilled(&mut key_file, idx / key_every * fsz, fsz)?;
+        key_rgb.insert(idx, key);
+    }
+    for idx in needed_rgb {
+        let small = read_spilled(&mut small_file, idx * ssz, ssz)?;
+        rgb160.insert(idx, small);
+    }
+
+    for (transition_idx, pending) in pending {
+        let a = luma_of(rgb160.get(&(pending.c - pending.k)).expect("transition start frame fetched"));
+        let b = luma_of(rgb160.get(&(pending.c + pending.k)).expect("transition end frame fetched"));
+        let mid = luma_of(rgb160.get(&pending.c).expect("transition middle frame fetched"));
+        let (kind, dir) = if blend_residual(&a, &b, &mid) < 0.4 {
+            ("crossfade", None)
+        } else if let Some(dir) = wipe_dir(&a, &b, &mid, sw) {
+            ("wipe", Some(dir))
+        } else if pending.zoom > 0.02 {
+            ("zoom", None)
+        } else if pending.pan > 2.5 {
+            ("whip", Some(dir_of(&motion, pending.c - pending.k, pending.c + pending.k)))
+        } else {
+            ("crossfade", None)
+        };
+        transitions[transition_idx].kind = kind.into();
+        transitions[transition_idx].direction = dir;
+    }
+
+    use rayon::prelude::*;
+    let shots: Vec<Shot> = shot_frames
+        .par_iter()
+        .enumerate()
+        .map(|(i, (range, palette, key))| {
+            let tin = if i == 0 { "start".to_string() } else { transitions[i - 1].kind.clone() };
+            let key = KeyFrame { t: *key as f64 / fps, w: kw, h: kh, rgb: key_rgb.get(key).expect("shot key frame fetched").clone() };
+            analyse_shot(i, bounds[i], bounds[i + 1], tin, range.clone(), palette, &stats, &motion, &rgb160, &key, fps, sw, sh)
         })
         .collect();
     let t_analyse = t1.elapsed().as_secs_f64();
@@ -448,8 +594,12 @@ pub fn analyze(path: &Path, o: &Options) -> Result<Analysis, String> {
     let t_audio = t2.elapsed().as_secs_f64();
 
     let global = summarise(&p, fps, duration, &shots, &transitions, &audio);
-    let key_ts: Vec<f64> = shots.iter().map(|s| s.key_time).collect();
-    let keyframes = key_ts.iter().map(|&t| nearest_key(&keys, t).clone()).collect();
+    let keyframes = shot_frames.iter().map(|(_, _, key)| KeyFrame {
+        t: *key as f64 / fps,
+        w: kw,
+        h: kh,
+        rgb: key_rgb.get(key).expect("shot key frame fetched").clone(),
+    }).collect();
     Ok(Analysis {
         source: path.to_string_lossy().to_string(),
         global,
@@ -475,21 +625,56 @@ fn round3(x: f64) -> f64 {
     (x * 1000.0).round() / 1000.0
 }
 
-fn nearest_key(keys: &[KeyFrame], t: f64) -> &KeyFrame {
-    keys.iter().min_by(|a, b| (a.t - t).abs().total_cmp(&(b.t - t).abs())).expect("at least one key frame")
+fn shot_range(start: f64, end: f64, pad_a: f64, pad_b: f64, n: usize, fps: f64) -> Range<usize> {
+    let fa = (((start + pad_a) * fps).round() as usize).min(n - 1);
+    let fb = (((end - pad_b) * fps).round() as usize).clamp(fa + 1, n);
+    fa..fb
 }
 
-fn reduce_batch(batch: Vec<(usize, Vec<u8>)>, kw: usize, kh: usize) -> Vec<FrameStat> {
+fn read_spilled(file: &mut File, offset: usize, size: usize) -> Result<Vec<u8>, String> {
+    file.seek(SeekFrom::Start(offset as u64)).map_err(temp_error)?;
+    let mut bytes = vec![0u8; size];
+    file.read_exact(&mut bytes).map_err(temp_error)?;
+    Ok(bytes)
+}
+
+fn reduce_batch(batch: Vec<Vec<u8>>, kw: usize, kh: usize) -> Vec<(FrameStat, Vec<f32>, Vec<u8>)> {
     use rayon::prelude::*;
-    batch.into_par_iter().map(|(_, px)| reduce(&px, kw, kh)).collect()
+    batch.into_par_iter().map(|px| reduce(&px, kw, kh)).collect()
 }
 
-fn reduce(px: &[u8], kw: usize, kh: usize) -> FrameStat {
+#[allow(clippy::too_many_arguments)]
+fn append_batch(batch: Vec<Vec<u8>>, kw: usize, kh: usize, sw: usize, sh: usize, previous_l: &mut Option<Vec<f32>>, stats: &mut Vec<FrameStat>, px: &mut Vec<f32>, motion: &mut Vec<Motion>, spill: &mut Spill) -> Result<(), String> {
+    use rayon::prelude::*;
+    if batch.is_empty() {
+        return Ok(());
+    }
+    let reduced = reduce_batch(batch, kw, kh);
+    let prev = previous_l.as_deref();
+    let measures: Vec<(f32, Motion)> = (0..reduced.len()).into_par_iter().map(|i| {
+        let prior = if i == 0 { prev } else { Some(reduced[i - 1].1.as_slice()) };
+        match prior {
+            Some(prior) => {
+                let current = &reduced[i].1;
+                ((mad(current, prior) * 4.0).min(1.0), global_motion(prior, current, sw, sh))
+            }
+            None => (0.0, Motion::default()),
+        }
+    }).collect();
+    px.extend(measures.iter().map(|(value, _)| *value));
+    motion.extend(measures.into_iter().map(|(_, value)| value));
+    let last_l = reduced.last().map(|(_, l, _)| l.clone());
+    for (stat, _, rgb160) in reduced {
+        spill.write_small(&rgb160)?;
+        stats.push(stat);
+    }
+    *previous_l = last_l;
+    Ok(())
+}
+
+fn downsample(px: &[u8], kw: usize, kh: usize) -> Vec<u8> {
     let (sw, sh) = (kw / 4, kh / 4);
     let mut rgb = vec![0u8; sw * sh * 3];
-    let mut l = vec![0f32; sw * sh];
-    let mut hist = [0f32; 64];
-    let mut sum = 0.0;
     for y in 0..sh {
         for x in 0..sw {
             let mut acc = [0u32; 3];
@@ -504,22 +689,35 @@ fn reduce(px: &[u8], kw: usize, kh: usize) -> FrameStat {
             let o = y * sw + x;
             let c = [(acc[0] / 16) as u8, (acc[1] / 16) as u8, (acc[2] / 16) as u8];
             rgb[o * 3..o * 3 + 3].copy_from_slice(&c);
-            let lv = (0.2126 * c[0] as f32 + 0.7152 * c[1] as f32 + 0.0722 * c[2] as f32) / 255.0;
-            l[o] = lv;
-            sum += lv;
-            // Soft (trilinear) binning: a slow colour change moves the histogram smoothly.
-            let bin = |v: u8| {
-                let p = (v as f32 / 64.0 - 0.5).clamp(0.0, 3.0);
-                let lo = (p as usize).min(2);
-                let t = p - lo as f32;
-                (lo, t)
-            };
-            let (r, g, bb) = (bin(c[0]), bin(c[1]), bin(c[2]));
-            for (dr, wr) in [(0, 1.0 - r.1), (1, r.1)] {
-                for (dg, wg) in [(0, 1.0 - g.1), (1, g.1)] {
-                    for (db, wb) in [(0, 1.0 - bb.1), (1, bb.1)] {
-                        hist[(r.0 + dr) * 16 + (g.0 + dg) * 4 + bb.0 + db] += wr * wg * wb;
-                    }
+        }
+    }
+    rgb
+}
+
+fn luma_of(rgb: &[u8]) -> Vec<f32> {
+    rgb.chunks_exact(3).map(|c| (0.2126 * c[0] as f32 + 0.7152 * c[1] as f32 + 0.0722 * c[2] as f32) / 255.0).collect()
+}
+
+fn reduce(px: &[u8], kw: usize, kh: usize) -> (FrameStat, Vec<f32>, Vec<u8>) {
+    let (sw, sh) = (kw / 4, kh / 4);
+    let rgb = downsample(px, kw, kh);
+    let l = luma_of(&rgb);
+    let mut hist = [0f32; 64];
+    let mut sum = 0.0;
+    for (o, c) in rgb.chunks_exact(3).enumerate() {
+        sum += l[o];
+        // Soft (trilinear) binning: a slow colour change moves the histogram smoothly.
+        let bin = |v: u8| {
+            let p = (v as f32 / 64.0 - 0.5).clamp(0.0, 3.0);
+            let lo = (p as usize).min(2);
+            let t = p - lo as f32;
+            (lo, t)
+        };
+        let (r, g, bb) = (bin(c[0]), bin(c[1]), bin(c[2]));
+        for (dr, wr) in [(0, 1.0 - r.1), (1, r.1)] {
+            for (dg, wg) in [(0, 1.0 - g.1), (1, g.1)] {
+                for (db, wb) in [(0, 1.0 - bb.1), (1, bb.1)] {
+                    hist[(r.0 + dr) * 16 + (g.0 + dg) * 4 + bb.0 + db] += wr * wg * wb;
                 }
             }
         }
@@ -529,7 +727,8 @@ fn reduce(px: &[u8], kw: usize, kh: usize) -> FrameStat {
         *h /= n;
     }
     let sharp = mean_abs_laplacian(&l, sw, sh);
-    FrameStat { hist, luma: sum / n, l, rgb, sharp }
+    let vig = vignette(&l, sw, sh);
+    (FrameStat { hist, luma: sum / n, sharp, vig }, l, rgb)
 }
 
 fn hist_dist(a: &[f32; 64], b: &[f32; 64]) -> f32 {
@@ -699,13 +898,11 @@ fn median(v: &[f32]) -> f32 {
 }
 
 /// Hard cuts, gradual transitions and isolated flashes.
-fn detect_transitions(f: &[FrameStat], m: &[Motion], fps: f64, sw: usize) -> (Vec<Transition>, Vec<f64>) {
+fn detect_transitions(f: &[FrameStat], px: &[f32], m: &[Motion], fps: f64, sw: usize) -> (Vec<Transition>, Vec<f64>, Vec<(usize, Pending)>) {
     let n = f.len();
     let mut d = vec![0f32; n];
-    let mut px = vec![0f32; n];
     for i in 1..n {
         // Colour histogram jump plus pixel difference: both must move for a cut.
-        px[i] = (mad(&f[i].l, &f[i - 1].l) * 4.0).min(1.0);
         d[i] = 0.6 * hist_dist(&f[i].hist, &f[i - 1].hist) + 0.4 * px[i];
     }
     if let Ok(r) = std::env::var("ANIKIT_ANALYZE_DEBUG") {
@@ -718,7 +915,7 @@ fn detect_transitions(f: &[FrameStat], m: &[Motion], fps: f64, sw: usize) -> (Ve
     // A cut changes the pixels in one frame; a dissolve spreads it out.
     let spike = |i: usize| px[i] > 1.4 * px[i - 1].max(if i + 1 < n { px[i + 1] } else { 0.0 }) + 0.02;
     let win = (fps * 0.5).round().max(3.0) as usize;
-    let mut out: Vec<Transition> = Vec::new();
+    let mut out: Vec<(Transition, Option<Pending>)> = Vec::new();
     let mut flashes = Vec::new();
     let mut i = 1;
     while i < n {
@@ -736,14 +933,14 @@ fn detect_transitions(f: &[FrameStat], m: &[Motion], fps: f64, sw: usize) -> (Ve
                     if hist_dist(&f[j].hist, &f[i - 1].hist) < 0.3 {
                         flashes.push(round3(t));
                     } else {
-                        out.push(Transition { at: round3(t), duration: round3((j - i) as f64 / fps), kind: "flash".into(), direction: None, strength: d[i] });
+                        out.push((Transition { at: round3(t), duration: round3((j - i) as f64 / fps), kind: "flash".into(), direction: None, strength: d[i] }, None));
                     }
                     i = j + 1;
                     continue;
                 }
             }
             let (kind, dir) = classify_cut(f, m, i, fps, sw);
-            out.push(Transition { at: round3(i as f64 / fps), duration: 0.0, kind, direction: dir, strength: d[i] });
+            out.push((Transition { at: round3(i as f64 / fps), duration: 0.0, kind, direction: dir, strength: d[i] }, None));
             i += 2;
             continue;
         }
@@ -754,7 +951,7 @@ fn detect_transitions(f: &[FrameStat], m: &[Motion], fps: f64, sw: usize) -> (Ve
     let mut j = k;
     let gmed = median(&px[1..]);
     while j + k < n {
-        let near_cut = out.iter().any(|t| ((t.at * fps) as isize - j as isize).unsigned_abs() <= 2 * k);
+        let near_cut = out.iter().any(|(t, _)| ((t.at * fps) as isize - j as isize).unsigned_abs() <= 2 * k);
         let dl = hist_dist(&f[j - k].hist, &f[j + k].hist);
         let steps_max = (j - k + 1..=j + k).map(|q| px[q]).fold(0.0, f32::max);
         let steps_mean = (j - k + 1..=j + k).map(|q| px[q]).sum::<f32>() / (2 * k) as f32;
@@ -773,47 +970,45 @@ fn detect_transitions(f: &[FrameStat], m: &[Motion], fps: f64, sw: usize) -> (Ve
                 }
             }
             let c = best.1;
-            let (a, b, mid) = (&f[c - k], &f[c + k], &f[c]);
-            let (kind, dir) = if mid.luma < 0.06 && a.luma > mid.luma + 0.08 && b.luma > mid.luma + 0.08 {
-                ("fadeBlack", None)
-            } else if mid.luma > 0.92 && a.luma < mid.luma - 0.08 && b.luma < mid.luma - 0.08 {
-                ("fadeWhite", None)
-            } else if blend_residual(a, b, mid) < 0.4 {
-                ("crossfade", None)
-            } else if let Some(dir) = wipe_dir(a, b, mid, sw) {
-                ("wipe", Some(dir))
-            } else if zoom > 0.02 {
-                ("zoom", None)
-            } else if pan > 2.5 {
-                ("whip", Some(dir_of(m, c - k, c + k)))
+            let (kind, dir, pending) = if f[c].luma < 0.06 && f[c - k].luma > f[c].luma + 0.08 && f[c + k].luma > f[c].luma + 0.08 {
+                ("fadeBlack", None, None)
+            } else if f[c].luma > 0.92 && f[c - k].luma < f[c].luma - 0.08 && f[c + k].luma < f[c].luma - 0.08 {
+                ("fadeWhite", None, None)
             } else {
-                ("crossfade", None)
+                ("", None, Some(Pending { c, k, zoom, pan }))
             };
-            out.push(Transition { at: round3(c as f64 / fps), duration: round3(2.0 * k as f64 / fps), kind: kind.into(), direction: dir, strength: best.0 });
+            out.push((Transition { at: round3(c as f64 / fps), duration: round3(2.0 * k as f64 / fps), kind: kind.into(), direction: dir, strength: best.0 }, pending));
             j = c + 3 * k;
             continue;
         }
         j += 1;
     }
-    out.sort_by(|a, b| a.at.total_cmp(&b.at));
+    out.sort_by(|a, b| a.0.at.total_cmp(&b.0.at));
     // Drop near-duplicates (within 3 frames).
-    let mut dedup: Vec<Transition> = Vec::new();
+    let mut dedup: Vec<(Transition, Option<Pending>)> = Vec::new();
     for t in out {
-        if dedup.last().is_some_and(|l| t.at - l.at < (3.0 / fps).max(0.25)) {
+        if dedup.last().is_some_and(|l| t.0.at - l.0.at < (3.0 / fps).max(0.25)) {
             continue;
         }
         dedup.push(t);
     }
-    (dedup, flashes)
+    let mut pending = Vec::new();
+    let transitions = dedup.into_iter().enumerate().map(|(i, (t, p))| {
+        if let Some(p) = p {
+            pending.push((i, p));
+        }
+        t
+    }).collect();
+    (transitions, flashes, pending)
 }
 
 /// How well the middle frame is a mix of the two ends: residual of the best
 /// `(1 − k)·a + k·b` fit, relative to |a − b| (0 = a perfect dissolve).
-fn blend_residual(a: &FrameStat, b: &FrameStat, mid: &FrameStat) -> f32 {
+fn blend_residual(a: &[f32], b: &[f32], mid: &[f32]) -> f32 {
     let (mut num, mut den) = (0.0f64, 0.0f64);
-    for i in 0..a.l.len() {
-        let d = (b.l[i] - a.l[i]) as f64;
-        num += (mid.l[i] - a.l[i]) as f64 * d;
+    for i in 0..a.len() {
+        let d = (b[i] - a[i]) as f64;
+        num += (mid[i] - a[i]) as f64 * d;
         den += d * d;
     }
     if den < 1e-6 {
@@ -821,10 +1016,10 @@ fn blend_residual(a: &FrameStat, b: &FrameStat, mid: &FrameStat) -> f32 {
     }
     let k = (num / den).clamp(0.0, 1.0) as f32;
     let (mut res, mut diff) = (0.0f32, 0.0f32);
-    for i in 0..a.l.len() {
-        let pred = a.l[i] + k * (b.l[i] - a.l[i]);
-        res += (mid.l[i] - pred).abs();
-        diff += (b.l[i] - a.l[i]).abs();
+    for i in 0..a.len() {
+        let pred = a[i] + k * (b[i] - a[i]);
+        res += (mid[i] - pred).abs();
+        diff += (b[i] - a[i]).abs();
     }
     res / diff.max(1e-6)
 }
@@ -843,15 +1038,15 @@ fn dir_of(m: &[Motion], a: usize, b: usize) -> String {
 
 /// Mid-transition pixels closer to the end frame than the start: a straight
 /// split across columns or rows is a wipe.
-fn wipe_dir(a: &FrameStat, b: &FrameStat, mid: &FrameStat, sw: usize) -> Option<String> {
-    let sh = a.l.len() / sw;
+fn wipe_dir(a: &[f32], b: &[f32], mid: &[f32], sw: usize) -> Option<String> {
+    let sh = a.len() / sw;
     let mut cols = vec![(0f32, 0f32); sw];
     let mut rows = vec![(0f32, 0f32); sh];
     for (y, row) in rows.iter_mut().enumerate() {
         for (x, col) in cols.iter_mut().enumerate() {
             let i = y * sw + x;
-            let (da, db) = ((mid.l[i] - a.l[i]).abs(), (mid.l[i] - b.l[i]).abs());
-            if (a.l[i] - b.l[i]).abs() < 0.08 {
+            let (da, db) = ((mid[i] - a[i]).abs(), (mid[i] - b[i]).abs());
+            if (a[i] - b[i]).abs() < 0.08 {
                 continue;
             }
             let v = if db < da { 1.0 } else { 0.0 };
@@ -902,17 +1097,12 @@ fn classify_cut(f: &[FrameStat], m: &[Motion], i: usize, fps: f64, sw: usize) ->
 }
 
 #[allow(clippy::too_many_arguments)]
-fn analyse_shot(index: usize, start: f64, end: f64, pad_a: f64, pad_b: f64, transition_in: String, f: &[FrameStat], m: &[Motion], keys: &[KeyFrame], fps: f64, sw: usize, sh: usize) -> Shot {
-    let n = f.len();
-    let fa = (((start + pad_a) * fps).round() as usize).min(n - 1);
-    let fb = (((end - pad_b) * fps).round() as usize).clamp(fa + 1, n);
-    let range = fa..fb;
+fn analyse_shot(index: usize, start: f64, end: f64, transition_in: String, range: Range<usize>, palette_frames: &[usize], f: &[FrameStat], m: &[Motion], rgb160: &BTreeMap<usize, Vec<u8>>, k: &KeyFrame, fps: f64, sw: usize, sh: usize) -> Shot {
     let len = range.len();
     // Palette: k-means in OKLab over up to 6 frames.
     let mut samples = Vec::new();
-    let step = (len / 6).max(1);
-    for q in range.clone().step_by(step).take(6) {
-        let px = &f[q].rgb;
+    for &q in palette_frames {
+        let px = rgb160.get(&q).expect("palette frame fetched");
         for p in (0..px.len() / 3).step_by(3) {
             samples.push(srgb_to_oklab([px[p * 3], px[p * 3 + 1], px[p * 3 + 2]]));
         }
@@ -960,14 +1150,12 @@ fn analyse_shot(index: usize, start: f64, end: f64, pad_a: f64, pad_b: f64, tran
 
     // Vignette: corners vs centre over the shot's frames.
     let mut vig = Vec::new();
+    let step = (len / 6).max(1);
     for q in range.clone().step_by(step) {
-        vig.push(vignette(&f[q].l, sw, sh));
+        vig.push(f[q].vig);
     }
     let vignette = r2(median(&vig));
 
-    // Key frame: the middle of the shot.
-    let key_time = (start + end) / 2.0;
-    let k = nearest_key(keys, key_time);
     let kl = luma_plane(&k.rgb, k.w, k.h);
     let depth = depth_cues(&kl, k.w, k.h);
     let grain = r3(grain(&kl, k.w, k.h));
