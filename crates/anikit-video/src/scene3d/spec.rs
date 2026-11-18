@@ -1324,10 +1324,6 @@ pub fn lights(v: &Value, env: &Env, path: &str) -> Res<(Env, Vec<super::trace::L
         check_keys(m, &["dir", "size", "roll", "color", "intensity", "soft", "key", "pos", "target", "angle", "penumbra", "shadow", "type"], &p)?;
         if let Some(pos) = m.get("pos") {
             // A local point light, or a spot light when it has a `target`.
-            let v3c = |x: &Value, q: &str| -> Res<V3> {
-                let a = x.as_array().filter(|a| a.len() == 3).ok_or_else(|| format!("{q}: expected [x, y, z]"))?;
-                Ok(v3(f(&a[0], q)?, f(&a[1], q)?, f(&a[2], q)?))
-            };
             // `pos`, `target` and `intensity` may be "=expressions" of `t`
             // (a practical that moves, a spot that tracks, a light that pulses).
             let pos_n = vec3(pos, &format!("{p}.pos"))?;
