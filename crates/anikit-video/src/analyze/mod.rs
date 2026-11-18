@@ -318,7 +318,16 @@ impl Spill {
         let dir = std::env::temp_dir();
         let keys_path = dir.join(format!("{prefix}-keys.raw"));
         let small_path = dir.join(format!("{prefix}-small.raw"));
-        let open = |path: &PathBuf| OpenOptions::new().write(true).create_new(true).open(path);
+        let open = |path: &PathBuf| {
+            let mut opts = OpenOptions::new();
+            opts.write(true).create_new(true);
+            #[cfg(unix)]
+            {
+                use std::os::unix::fs::OpenOptionsExt;
+                opts.mode(0o600);
+            }
+            opts.open(path)
+        };
         let keys = open(&keys_path).map_err(temp_error)?;
         let small = match open(&small_path) {
             Ok(file) => file,
@@ -468,17 +477,29 @@ pub fn analyze(path: &Path, o: &Options) -> Result<Analysis, String> {
     let mut n = 0usize;
     // Decode and reduce in batches so the per-frame maths runs in parallel.
     let mut batch: Vec<Vec<u8>> = Vec::new();
-    while stdout.read_exact(&mut buf).is_ok() {
-        if n.is_multiple_of(key_every) {
-            spill.write_key(&buf)?;
+    let streamed = (|| -> Result<(), String> {
+        while stdout.read_exact(&mut buf).is_ok() {
+            if n.is_multiple_of(key_every) {
+                spill.write_key(&buf)?;
+            }
+            batch.push(buf.clone());
+            n += 1;
+            if batch.len() == 64 {
+                append_batch(std::mem::take(&mut batch), kw, kh, sw, sh, &mut previous_l, &mut stats, &mut px, &mut motion, &mut spill)?;
+            }
         }
-        batch.push(buf.clone());
-        n += 1;
-        if batch.len() == 64 {
-            append_batch(std::mem::take(&mut batch), kw, kh, sw, sh, &mut previous_l, &mut stats, &mut px, &mut motion, &mut spill)?;
+        append_batch(batch, kw, kh, sw, sh, &mut previous_l, &mut stats, &mut px, &mut motion, &mut spill)?;
+        Ok(())
+    })();
+    if let Err(e) = streamed {
+        drop(stdout);
+        let _ = child.kill();
+        let _ = child.wait();
+        if let Some(job) = audio_job {
+            let _ = job.join();
         }
+        return Err(e);
     }
-    append_batch(batch, kw, kh, sw, sh, &mut previous_l, &mut stats, &mut px, &mut motion, &mut spill)?;
     let st = child.wait_with_output().map_err(|e| e.to_string())?;
     spill.flush()?;
     spill.close();
