@@ -15,7 +15,7 @@ description: Make extraordinary motion videos fast with anikit-video, a native r
 
 If you build from source instead of installing, run `cargo build --release -p anikit-video` once in the foreground with a 10-minute timeout; polling a background build costs many turns.
 
-Everything here is a starting point, never a ceiling: anything the spec keys don't cover, a GLSL `shader`, a `draw` layer of raw paths and points, or a `script` layer can build. Write the spec directly. For repetitive layers use `"repeat": 40` with `$i`, `defs`/`use` (`anikit-video docs reuse`), or a `{ "script": … }` layer, not a Python generator. Patch one value with `anikit-video set s.json <path> <value>` or an edit tool, rather than a script that rewrites the whole file.
+Everything here is a starting point, never a ceiling: anything the spec keys don't cover, a GLSL `shader`, a `draw` layer of raw paths and points, or a `script` layer can build. Write the spec directly. For repetitive layers use `"repeat": 40` with `$i`, `defs`/`use` (`anikit-video docs reuse`), or a `{ "script": … }` layer, not a Python generator. Patch values with `anikit-video set s.json scenes.2.duration=3 scenes.2.layers.title.text="Salt"` (list indexes or layer ids as path steps) or an edit tool, rather than a script that rewrites the whole file.
 
 ## The spec in one screen
 

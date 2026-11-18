@@ -23,7 +23,8 @@ const USAGE: &str = "usage: anikit-video <render|still|sheet|check|info|schema|b
   still  spec.json -o f.png     [--at S | --at @scene] [--scale K | --width W] [--watch]
   sheet  spec.json -o sheet.png [--frames N | --cols 4 --rows 3] [--width 480]
   check  spec.json              validate; print errors, warnings and timing
-  set    spec.json <path> <value> [--delete]   patch one value in place (e.g. scenes.0.layers.1.text Hi)
+  set    spec.json <path> <value> [--delete]   patch one value in place (e.g. scenes.0.layers.1.text Hi);
+         spec.json a.b=1 c.d=x …     several at once (a list index or a layer id works as a path step)
   info   [--components] [--shaders]  version, encoders, component and shader catalogue
   schema [-o file]              print the JSON Schema of the spec
   beats  music.wav|spec.json    tempo, beats and bars (use them as \"@beat17\", \"@bar5\"); a spec gives its exact grid
@@ -175,6 +176,15 @@ fn resolve_time(ev: &Evaluator, s: &str) -> Result<f32, String> {
 /// `id` of an item (`scenes.intro.layers.title.text`). The value is JSON, or else a
 /// string. A missing final key is added; `--delete` removes it instead.
 fn set_cmd(args: &[String]) -> Result<(), String> {
+    // Several changes in one call: `set s.json a.b=1 scenes.2.duration=3`.
+    let is_pair = |a: &String| a.split_once('=').is_some_and(|(k, _)| !k.is_empty() && !k.contains(' ') && !k.starts_with('-'));
+    if args.len() >= 2 && args[1..].iter().all(is_pair) && !args.iter().any(|a| a == "--delete") {
+        for a in &args[1..] {
+            let (k, v) = a.split_once('=').unwrap();
+            set_cmd(&[args[0].clone(), k.to_string(), v.to_string()])?;
+        }
+        return Ok(());
+    }
     let delete = args.iter().any(|a| a == "--delete");
     let pos: Vec<&String> = args.iter().filter(|a| *a != "--delete").collect();
     let (file, path) = match pos.as_slice() {
