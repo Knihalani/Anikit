@@ -1,0 +1,44 @@
+{
+  "answer": {
+    "scores": {
+      "motion": 6,
+      "sound": 5,
+      "craft": 6
+    },
+    "checks": {
+      "idea": true,
+      "invariant": true,
+      "arc": false,
+      "type_meaning": true,
+      "freeze_frame": false,
+      "ending": false,
+      "restraint": true,
+      "material": true,
+      "sync": false
+    },
+    "defects": [
+      "Grey translucent wedges sweep across the dial during the power-reserve count. They read as a render or compositing glitch, not a designed reserve indicator.",
+      "The swirl dial in the wide shots is a soft, smeared radial pattern that doesn't match the crisp relief guilloch\u00e9 of the macro opening. The same surface looks like two different materials.",
+      "The '0 h' frame has a lone orange tick and no 'POWER RESERVE' label yet, so the left half reads as an unfinished layout.",
+      "The counter ticks up at a steady rate (8, 12, 15, 20, 24, 28, 33, 38, 43, 47) with no ease-in or overshoot at 72. The tick ring fills mechanically.",
+      "The 'One of 150.' reveal clips the type mid-wipe (in strip 3 the bottom half of the glyphs is cut off). The mask edge is hard, with no blur.",
+      "From about 8 s to 12 s the hero watch sits centred, almost static, across 'One of 150' and the end card. Only the ring and type change, so roughly 3 s of the film is dead.",
+      "The macro-to-wide pull-back is a linear dolly with no settle. The watch lands centred without any weight.",
+      "The end card is the same composition as the 'One of 150' frame, so it adds nothing new to look at. The opening's copper thread doesn't come back at the end."
+    ],
+    "gaps": [
+      "Motion: the film is one continuous camera move whose energy peaks early (pull-back plus count at about 2\u20136 s) and then flattens into near-static holds. There's no build to a peak at 60\u201380%, no varied scale or angle changes after the reveal, and the eases are linear where a top studio would give the watch weight, overshoot and a satisfying settle.",
+      "Sound: there are sparse plucks for 2.3 s, then a static pad bed, three isolated transients (about 4.9, 5.4 and 6.7 s) and a bell chord at about 9.7 s. The hits don't line up with the visible beats (pull-back landing, the 72 h lock, the type reveals). There's no mechanical sound design (ticks, winding, crown clicks) on a film whose whole subject is a movement, and the arrangement is thin and static.",
+      "Finish: the material isn't held consistently. The macro guilloch\u00e9 has real relief and light falloff, but the wide dial collapses into a blurred swirl with the wedge artifacts. The case is flat vector-grey metal with no environment reflections, and the reveal wipes cut into the type."
+    ]
+  },
+  "meta": {
+    "seconds": 27.2,
+    "cost_usd": 0.1830232,
+    "tokens": 74548,
+    "models": [
+      "claude-opus-5-5"
+    ]
+  },
+  "pace": "calibre9.mp4: 12.0s, 1 shots, median 12.00s, longest 12.00s\nper-second change: [11.3, 17.4, 40.3, 18.1, 9.9, 11.6, 14.3, 15.2, 9.3, 11.8, 10.8]\nPACE: FAIL \u2014 longest shot 12.0s > 2.5s; median shot 12.0s > 1.5s"
+}
