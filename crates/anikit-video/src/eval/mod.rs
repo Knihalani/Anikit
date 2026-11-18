@@ -25,9 +25,28 @@ pub use shader::{set_preview_scale, ShaderStat};
 use crate::spec::Diagnostic;
 use anikit_core::easing::Easing;
 use expr::{Expr, Vars};
+use std::collections::HashMap;
+use std::sync::atomic::{AtomicU32, Ordering};
 use std::sync::Arc;
 
 pub use compile::Options;
+
+pub(crate) const KEYING_BASE: u32 = 0x8000_0000;
+const KEYING_SPAN: u32 = 0x7fff_0000;
+static NEXT_KEYING_ID: AtomicU32 = AtomicU32::new(0);
+
+pub(crate) fn keying_placeholder(key: u64) -> Option<ImageId> {
+    KEYING.with(|keying| {
+        let mut keying = keying.borrow_mut();
+        let keying = keying.as_mut()?;
+        if let Some((&id, _)) = keying.iter().find(|(_, mapped_key)| **mapped_key == key) {
+            return Some(ImageId(id));
+        }
+        let id = KEYING_BASE + NEXT_KEYING_ID.fetch_add(1, Ordering::Relaxed) % KEYING_SPAN;
+        keying.insert(id, key);
+        Some(ImageId(id))
+    })
+}
 
 /// Animatable property slots.
 pub(crate) mod prop {
@@ -512,6 +531,10 @@ thread_local! {
     static TAGS: std::cell::RefCell<Option<Vec<OpTag>>> = const { std::cell::RefCell::new(None) };
 }
 
+thread_local! {
+    static KEYING: std::cell::RefCell<Option<HashMap<u32, u64>>> = const { std::cell::RefCell::new(None) };
+}
+
 /// Run `f` with layer tagging off: for ops emitted into a side list (shader
 /// channels, transition scenes), whose ranges don't index the frame's list.
 pub(crate) fn untagged<R>(f: impl FnOnce() -> R) -> R {
@@ -697,7 +720,8 @@ impl Evaluator {
     /// critique can tell user text from component text. `layer == u32::MAX` is captions.
     pub fn eval_tagged(&self, t: f32) -> (DisplayList, Vec<OpTag>) {
         let mut dl = DisplayList::default();
-        let tags = self.eval_scoped(t, &mut dl, Some(Vec::new())).unwrap_or_default();
+        let (tags, _) = self.eval_scoped(t, &mut dl, Some(Vec::new()), None);
+        let tags = tags.unwrap_or_default();
         (dl, tags)
     }
 
@@ -754,20 +778,33 @@ impl Evaluator {
 
     /// The display list at time `t`, reusing `out`'s allocations.
     pub fn eval_into(&self, t: f32, out: &mut DisplayList) {
-        self.eval_scoped(t, out, None);
+        self.eval_scoped(t, out, None, None);
+    }
+
+    /// Evaluate a frame without rasterizing per-frame images, returning their ids and keys.
+    pub fn eval_keying_into(&self, t: f32, out: &mut DisplayList) -> HashMap<u32, u64> {
+        let (_, keying) = self.eval_scoped(t, out, None, Some(HashMap::new()));
+        keying.unwrap_or_default()
     }
 
     /// [`Self::eval_into`] inside a frame scope: this thread's frame state
-    /// (composition scales, tags, shader frame state) is saved, started
-    /// fresh and restored after. With rayon, a worker waiting inside one
-    /// frame may evaluate another on top of it; the scope keeps them apart.
-    /// Returns the op tags when `tags` is given.
-    fn eval_scoped(&self, t: f32, out: &mut DisplayList, tags: Option<Vec<OpTag>>) -> Option<Vec<OpTag>> {
+    /// (composition scales, tags, keying and shader frame state) is saved,
+    /// started fresh and restored after. Nested composition renders run with
+    /// keying off so they always build real pixels. Returns scoped tags and keys.
+    fn eval_scoped(
+        &self,
+        t: f32,
+        out: &mut DisplayList,
+        tags: Option<Vec<OpTag>>,
+        keying: Option<HashMap<u32, u64>>,
+    ) -> (Option<Vec<OpTag>>, Option<HashMap<u32, u64>>) {
         let saved_comp = COMP_SCALE.with(|c| c.borrow_mut().take());
         let saved_tags = TAGS.with(|tg| std::mem::replace(&mut *tg.borrow_mut(), tags));
+        let saved_keying = KEYING.with(|k| std::mem::replace(&mut *k.borrow_mut(), keying));
         let saved_shader = shader::begin_frame();
         self.eval_frame(t, out);
         let mut tags = TAGS.with(|tg| std::mem::replace(&mut *tg.borrow_mut(), saved_tags));
+        let keying = KEYING.with(|k| std::mem::replace(&mut *k.borrow_mut(), saved_keying));
         // A parent can drop ops after its children were tagged (an empty matte):
         // only ranges that still fit the list are kept.
         if let Some(v) = &mut tags {
@@ -775,7 +812,7 @@ impl Evaluator {
         }
         COMP_SCALE.with(|c| *c.borrow_mut() = saved_comp);
         shader::end_frame(saved_shader);
-        tags
+        (tags, keying)
     }
 
     fn eval_frame(&self, t: f32, out: &mut DisplayList) {

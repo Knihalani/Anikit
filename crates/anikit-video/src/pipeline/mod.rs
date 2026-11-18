@@ -15,7 +15,7 @@ use crate::render::{Renderer, YuvFrame};
 use rayon::prelude::*;
 use std::cell::RefCell;
 use std::hash::{Hash, Hasher};
-use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::time::Instant;
 
@@ -450,14 +450,23 @@ pub fn render_fused_tap(ev: &Evaluator, opts: &RenderOptions, cfg: &ak264::Encod
     let pool: std::sync::Mutex<Vec<Worker>> = Default::default();
     // Incremental re-render: chunks whose frames are identical to a previous render
     // (same evaluated display lists, image contents, look, encoder settings and
-    // binary) are spliced in from the on-disk cache, byte for byte.
-    let cache_keys: Vec<Option<String>> = if tap.is_none() && std::env::var_os("ANIKIT_RENDER_CACHE").is_none_or(|v| v != "0") {
-        chunk_keys(ev, opts, cfg, f0, &ranges)
+    // binary) are spliced in from the on-disk cache, byte for byte. The key pass
+    // hands evaluated display lists to the render loop for cache-miss chunks.
+    let (cache_keys, slots): (Vec<Option<String>>, Vec<std::sync::Mutex<Option<DisplayList>>>) =
+        if tap.is_none() && std::env::var_os("ANIKIT_RENDER_CACHE").is_none_or(|v| v != "0") {
+            chunk_keys(ev, opts, cfg, f0, &ranges)
     } else {
-        vec![None; ranges.len()]
+        (vec![None; ranges.len()], Vec::new())
     };
     let cached: Vec<Option<Vec<u8>>> = cache_keys.iter().map(|k| k.as_deref().and_then(crate::diskcache::get)).collect();
     let skip: Vec<bool> = cached.iter().map(|c| c.is_some()).collect();
+    for (&(a, b), &hit) in ranges.iter().zip(&skip) {
+        if hit {
+            for slot in &slots[a..b] {
+                slot.lock().unwrap().take();
+            }
+        }
+    }
     let reused = skip.iter().filter(|&&s| s).count();
     for (k, c) in ranges.iter().zip(&skip) {
         if *c {
@@ -502,9 +511,16 @@ pub fn render_fused_tap(ev: &Evaluator, opts: &RenderOptions, cfg: &ak264::Encod
                 hints.changed = Some(vec![false; emw * emh]);
                 *last = Some(k);
                 *returned = Some(Instant::now());
+                if let Some(slot) = slots.get(k) {
+                    slot.lock().unwrap().take();
+                }
                 return;
             }
-            eval_frame(ev, (f0 + k) as u32, opts.scale, dl);
+            if let Some(list) = slots.get(k).and_then(|slot| slot.lock().unwrap().take()) {
+                *dl = list;
+            } else {
+                eval_frame(ev, (f0 + k) as u32, opts.scale, dl);
+            }
             prof.eval_ns.fetch_add(ns(t), Ordering::Relaxed);
             // Evaluating can intern new font faces (layouts, counters): sync the renderer after it.
             ensure_renderer(ev, w);
@@ -625,21 +641,90 @@ fn font_key(ev: &Evaluator, id: dl::FontId, memo: &std::sync::Mutex<std::collect
     k
 }
 
-/// Cache keys for each chunk (`None`: not cacheable, e.g. an image whose content
-/// can't be identified without rendering it). A key covers the encoder settings,
-/// the chunk's index and length, this binary, and for every frame its evaluated
-/// display list (image ids replaced by content identities) and finishing look.
-fn chunk_keys(ev: &Evaluator, opts: &RenderOptions, cfg: &ak264::EncoderConfig, f0: usize, ranges: &[(usize, usize)]) -> Vec<Option<String>> {
+const RETAIN_BUDGET: usize = 512 << 20;
+
+fn stored_image(id: dl::ImageId) -> bool {
+    !crate::eval::shader::ShaderJobs::owns(id) && id.0 < crate::eval::assets::VOLATILE_BASE
+}
+
+fn retainable_display_list(display_list: &DisplayList) -> bool {
+    display_list.ops.iter().all(|op| match op {
+        Op::Image { image, .. } => stored_image(*image),
+        Op::Fill { paint, .. } | Op::Stroke { paint, .. } | Op::RoundRect { paint, .. } | Op::Glyphs { paint, .. } => {
+            !matches!(paint, dl::Paint::Image { image, .. } if !stored_image(*image))
+        }
+        _ => true,
+    })
+}
+
+fn approx_bytes(display_list: &DisplayList) -> usize {
+    fn path_bytes(path: &dl::Path) -> usize {
+        path.elements().len().saturating_mul(std::mem::size_of::<kurbo::PathEl>())
+    }
+
+    fn paint_bytes(paint: &dl::Paint) -> usize {
+        match paint {
+            dl::Paint::Linear { stops, .. } | dl::Paint::Radial { stops, .. } => {
+                stops.capacity().saturating_mul(std::mem::size_of::<(f32, dl::Rgba)>())
+            }
+            _ => 0,
+        }
+    }
+
+    let mut bytes = display_list.ops.capacity().saturating_mul(std::mem::size_of::<Op>());
+    for op in &display_list.ops {
+        let op_bytes = match op {
+            Op::Fill { path, paint, .. } => path_bytes(path).saturating_add(paint_bytes(paint)),
+            Op::Stroke { path, paint, stroke, .. } => path_bytes(path)
+                .saturating_add(paint_bytes(paint))
+                .saturating_add(stroke.dash.capacity().saturating_mul(std::mem::size_of::<f32>())),
+            Op::RoundRect { paint, .. } => paint_bytes(paint),
+            Op::Glyphs { glyphs, paint, .. } => glyphs
+                .capacity()
+                .saturating_mul(std::mem::size_of::<dl::Glyph>())
+                .saturating_add(paint_bytes(paint)),
+            Op::PushLayer { filters, clip, .. } => filters
+                .capacity()
+                .saturating_mul(std::mem::size_of::<dl::Filter>())
+                .saturating_add(clip.as_ref().map_or(0, |(path, _)| path_bytes(path))),
+            Op::Image { .. } | Op::PopLayer => 0,
+        };
+        bytes = bytes.saturating_add(op_bytes);
+    }
+    bytes
+}
+
+/// Cache keys for each chunk; keying placeholders provide per-frame image keys
+/// without rasterizing those images.
+/// Safe evaluated display lists are handed to the render loop.
+fn chunk_keys(
+    ev: &Evaluator,
+    opts: &RenderOptions,
+    cfg: &ak264::EncoderConfig,
+    f0: usize,
+    ranges: &[(usize, usize)],
+) -> (Vec<Option<String>>, Vec<std::sync::Mutex<Option<DisplayList>>>) {
     use std::collections::hash_map::DefaultHasher;
     let memo: std::sync::Mutex<std::collections::HashMap<u32, u64>> = Default::default();
     let font_memo: std::sync::Mutex<std::collections::HashMap<u32, u64>> = Default::default();
     let n = ranges.last().map_or(0, |r| r.1);
+    let slots: Vec<std::sync::Mutex<Option<DisplayList>>> = (0..n).map(|_| std::sync::Mutex::new(None)).collect();
+    let retained_bytes = AtomicUsize::new(0);
     let frames: Vec<Option<u64>> = (0..n)
         .into_par_iter()
         .map(|k| {
             let i = (f0 + k) as u32;
             let mut dl = DisplayList::default();
-            eval_frame(ev, i, opts.scale, &mut dl);
+            let placeholders = eval_frame_keying(ev, i, opts.scale, &mut dl);
+            if retainable_display_list(&dl) {
+                let bytes = approx_bytes(&dl);
+                let retained = retained_bytes.fetch_add(bytes, Ordering::Relaxed);
+                if retained.checked_add(bytes).is_some_and(|total| total <= RETAIN_BUDGET) {
+                    *slots[k].lock().unwrap() = Some(dl.clone());
+                } else {
+                    retained_bytes.fetch_sub(bytes, Ordering::Relaxed);
+                }
+            }
             let mut keys = Vec::new();
             for op in &mut dl.ops {
                 if let Op::Glyphs { font, .. } = op {
@@ -649,7 +734,7 @@ fn chunk_keys(ev: &Evaluator, opts: &RenderOptions, cfg: &ak264::EncoderConfig, 
             }
             let mut ok = true;
             let mut id_key = |id: &mut dl::ImageId| {
-                let stored = !crate::eval::shader::ShaderJobs::owns(*id) && id.0 < crate::eval::assets::VOLATILE_BASE;
+                let stored = stored_image(*id);
                 let k = if stored {
                     let hit = memo.lock().unwrap().get(&id.0).copied();
                     hit.or_else(|| {
@@ -658,7 +743,10 @@ fn chunk_keys(ev: &Evaluator, opts: &RenderOptions, cfg: &ak264::EncoderConfig, 
                         Some(k)
                     })
                 } else {
-                    ev.assets.content_key(*id)
+                    placeholders
+                        .get(&id.0)
+                        .map(|key| key ^ 0x564f_4c41)
+                        .or_else(|| ev.assets.content_key(*id))
                 };
                 match k {
                     Some(k) => keys.push(k),
@@ -692,7 +780,7 @@ fn chunk_keys(ev: &Evaluator, opts: &RenderOptions, cfg: &ak264::EncoderConfig, 
         })
         .collect();
     let exe = std::env::current_exe().ok().and_then(|p| std::fs::metadata(p).ok()).map(|m| (m.len(), m.modified().ok()));
-    ranges
+    let keys = ranges
         .iter()
         .enumerate()
         .map(|(ci, &(a, b))| {
@@ -703,7 +791,8 @@ fn chunk_keys(ev: &Evaluator, opts: &RenderOptions, cfg: &ak264::EncoderConfig, 
             }
             Some(format!("chunk2-{:016x}", h.finish()))
         })
-        .collect()
+        .collect();
+    (keys, slots)
 }
 
 /// A cache key for a still at `t` (same inputs as the chunk cache: the evaluated frame,
@@ -825,6 +914,12 @@ fn eval_scaled(ev: &Evaluator, t: f32, scale: f32) -> DisplayList {
 pub fn eval_frame(ev: &Evaluator, i: u32, scale: f32, out: &mut DisplayList) {
     at_scale(scale, || ev.eval_into(frame_time(ev, i), out));
     scale_list(out, scale);
+}
+
+fn eval_frame_keying(ev: &Evaluator, i: u32, scale: f32, out: &mut DisplayList) -> std::collections::HashMap<u32, u64> {
+    let placeholders = at_scale(scale, || ev.eval_keying_into(frame_time(ev, i), out));
+    scale_list(out, scale);
+    placeholders
 }
 
 /// Render one frame to straight-alpha RGBA8 (for stills).
@@ -1588,7 +1683,6 @@ fn progress_line(s: &str) {
         eprintln!("{s}");
     }
 }
-
 #[cfg(test)]
 mod tests {
     use super::*;

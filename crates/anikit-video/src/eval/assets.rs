@@ -28,7 +28,8 @@ pub struct SharedAssets {
     comps: RwLock<Vec<(String, std::sync::Weak<super::Evaluator>, bool)>>,
     textures: std::sync::OnceLock<crate::pipeline::textures::CompTextures>,
     /// Per-frame images, LRU-evicted so full-frame renders don't pile up. Batch
-    /// paths that evaluate before drawing hold their images separately.
+    /// paths that evaluate before drawing hold their images separately. Keying
+    /// passes use placeholders.
     volatile: RwLock<Volatile>,
     held: Mutex<Option<Held>>,
 }
@@ -236,6 +237,9 @@ impl SharedAssets {
         if super::shader::ShaderJobs::owns(id) {
             return self.shaders.get(id);
         }
+        if (super::KEYING_BASE..u32::MAX).contains(&id.0) {
+            return None;
+        }
         if (VOLATILE_BASE..super::shader::SHADER_BASE).contains(&id.0) {
             let seq = id.0 - VOLATILE_BASE;
             let ring = {
@@ -334,6 +338,10 @@ impl components::Assets for SharedAssets {
         if let Some(id) = self.volatile_hit(key) {
             return id;
         }
+        // Keying records this image's key instead of rasterizing its pixels.
+        if let Some(id) = crate::eval::keying_placeholder(key) {
+            return id;
+        }
         let px = make();
         let mut scratch = render::ImageStore::new();
         if scratch.insert_rgba8(ImageId(0), w, h, px).is_err() {
@@ -349,8 +357,14 @@ impl components::Assets for SharedAssets {
         if let Some(id) = self.volatile_hit(key) {
             return id;
         }
+        if w == 0 || h == 0 || w > u16::MAX as u32 || h > u16::MAX as u32 {
+            return ImageId(u32::MAX);
+        }
+        if let Some(id) = crate::eval::keying_placeholder(key) {
+            return id;
+        }
         let px = make();
-        if w == 0 || h == 0 || w > u16::MAX as u32 || h > u16::MAX as u32 || px.len() != (w * h * 4) as usize {
+        if px.len() != (w * h * 4) as usize {
             return ImageId(u32::MAX);
         }
         let mut pm = Pixmap::new(w as u16, h as u16);
@@ -407,7 +421,32 @@ mod tests {
         assert!(a.pixmap(first).is_none());
         assert_eq!(a.frame_image(8, 2, 2, &mut || vec![3; 16]), first);
     }
+    #[test]
+    fn keying_frame_images_use_placeholders_without_rasterizing() {
+        let a = SharedAssets::new(Arc::new(FontStore::new()));
+        let outer = crate::eval::KEYING.with(|keying| {
+            std::mem::replace(&mut *keying.borrow_mut(), Some(HashMap::new()))
+        });
 
+        let id = a.frame_image(41, 1, 1, &mut || panic!("keying must not rasterize"));
+        assert_eq!(a.frame_image(41, 1, 1, &mut || panic!("same key must reuse id")), id);
+        assert!((crate::eval::KEYING_BASE..u32::MAX).contains(&id.0));
+        assert!(a.pixmap(id).is_none());
+
+        let nested = crate::eval::KEYING.with(|keying| std::mem::replace(&mut *keying.borrow_mut(), None));
+        assert!(crate::eval::keying_placeholder(41).is_none());
+        crate::eval::KEYING.with(|keying| *keying.borrow_mut() = nested);
+        assert_eq!(crate::eval::keying_placeholder(41), Some(id));
+        crate::eval::KEYING.with(|keying| *keying.borrow_mut() = outer);
+
+        let made = std::cell::Cell::new(false);
+        let volatile = a.frame_image(42, 1, 1, &mut || {
+            made.set(true);
+            vec![255; 4]
+        });
+        assert!(made.get());
+        assert!((VOLATILE_BASE..crate::eval::shader::SHADER_BASE).contains(&volatile.0));
+    }
     #[test]
     fn held_frame_images_survive_ring_eviction() {
         let a = SharedAssets::new(Arc::new(FontStore::new()));
