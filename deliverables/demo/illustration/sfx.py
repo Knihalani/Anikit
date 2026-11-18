@@ -42,11 +42,11 @@ def env(n, attack, release):
     return np.minimum(1, t / max(attack, 1e-4)) * np.exp(-t / release)
 
 
-# night ambience: a soft room tone with a slow breath of wind, 20.5 s
+# night ambience: three crickets and a soft room tone, 20.5 s
 n = int(20.5 * SR)
 t = np.arange(n) / SR
-amb = onepole(rng.standard_normal(n), 0.985) * (0.6 + 0.4 * np.sin(2 * np.pi * t / 9.0) ** 2)
-for f0, period, gain, ph in ():  # no crickets: they read as a loop; a soft room tone only
+amb = 0.05 * onepole(rng.standard_normal(n), 0.985)
+for f0, period, gain, ph in ((4300, 0.62, 0.22, 0.0), (3900, 0.81, 0.15, 0.27), (4700, 1.07, 0.09, 0.5)):
     chirp = np.zeros(n)
     k = ph
     while k < 20.5:

@@ -379,6 +379,7 @@ g2, s2 = bunny("b", 760, 990, 1.5, walk=walk)
 moon_outline = illo([
     sh("circle", cx=1420, cy=250, r=120, fill="none", stroke=CRAYON, weight=[4, 7], gaps=0.45, boil=8,
        sway={"rotate": 4, "period": 6}),
+    sh("path", d="M1300 400 l 30 -30 m 40 60 l 20 -40 m 60 50 l 6 -40", stroke=CRAYON, weight=[3, 5], boil=8),
 ], grain=0.0)
 scenes.append({
     "id": "quilt", "duration": 3.6, "background": "#0f1640", "transition": {"type": "crossfade", "duration": 0.3},
@@ -433,7 +434,7 @@ scenes.append({
                                           "colors": {"top": "#22306a", "deep": "#121a46", "wave": "#3c4a8a", "glint": "#ffe3a0"}},
          "x": 960, "y": 860, "width": 1920, "height": 440},
         refl,
-        text("moon.", dict(PARENT, color="#fff3cf"), "10vh", 1185, 872, 0.0, anchor="center", rotation=7, loop="float", scaleY=0.8, opacity=0.88,
+        text("moon.", dict(PARENT, color="#fff3cf"), "10vh", 1185, 872, 0.0, anchor="center", rotation=7, loop="float",
              shadow={"x": 4, "y": 6, "blur": 8, "color": "#0a0f30cc"}),
         {"component": "plants", "props": {"style": "papercut", "time": "night", "species": ["grass", "bush"], "count": 7, "spread": [0, 0.45],
                                            "ground": 0.97, "size": 300, "fill": True, "wind": 0.45, "onTwos": True,
@@ -480,12 +481,12 @@ scenes.append({
                                            "ground": 1.0, "size": 420, "wind": 0.5, "onTwos": True,
                                            "colors": {"foliage": ["#2a1830", "#3a2142", "#6b3a6e"], "trunk": "#2a1830", "bark": "#2a1830", "accent": GOLD}}},
         illo(s4, g4),
-        text("moon.", dict(PARENT, color="#fff3cf"), "15vh", 1250, 560, 0.0, anchor="center", end=1.8, exit={"preset": "fadeOut", "duration": 0.3},
-             animate=[{"from": {"y": "+330", "rotation": 14, "opacity": 0.5}, "to": {"y": 560, "rotation": -4, "opacity": 1}, "at": 0.45, "duration": 0.95, "ease": "outBack"},
+        text("moon.", dict(PARENT, color="#fff3cf"), "15vh", 1250, 560, 0.0, anchor="center", end=1.95, exit={"preset": "fadeOut", "duration": 0.35},
+             animate=[{"from": {"y": "+330", "rotation": 14, "opacity": 0.5}, "to": {"y": "+0", "rotation": -4, "opacity": 1}, "at": 0.45, "duration": 0.95, "ease": "outBack"},
                       {"to": {"scale": 1.15}, "at": 1.55, "duration": 0.4, "ease": "outCubic"}],
              shadow={"x": 0, "y": 0, "blur": 30, "color": "#ffcf6aaa"}),
         text("Dreamed up", PARENT, "9vh", "56%", "9%", 0.05, enter={"preset": "mask by line up", "duration": 0.7}),
-        text("together,", CHILD, "9vh", "62%", "21%", 0.25, enter={"preset": "wipeIn", "duration": 0.4}, rotation=-5),
+        text("together,", CHILD, "9vh", "62%", "19%", 0.25, enter={"preset": "wipeIn", "duration": 0.4}, rotation=-5),
     ],
     "audio": [{"src": "sfx/splash.wav", "at": 0.85, "volume": 0.6}, {"sfx": "chime", "at": 1.7, "volume": 0.3},
               {"src": "sfx/thump.wav", "at": 2.65, "volume": 0.5}],
