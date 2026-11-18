@@ -1,0 +1,8 @@
+judging loam vs ['kurzgesagt-short', 'osko-launch', 'morph-studio-xreal-1s-2025']
+  trial 0: {'A': 'morph-studio-xreal-1s-2025', 'B': 'kurzgesagt-short', 'C': 'candidate', 'D': 'osko-launch'}  ranking=['A', 'B', 'D', 'C']  32.9s $0.1580232
+  trial 1: {'A': 'morph-studio-xreal-1s-2025', 'B': 'kurzgesagt-short', 'C': 'osko-launch', 'D': 'candidate'}  ranking=['B', 'A', 'D', 'C']  28.7s $0.1530316
+  trial 2: {'A': 'osko-launch', 'B': 'kurzgesagt-short', 'C': 'morph-studio-xreal-1s-2025', 'D': 'candidate'}  ranking=['B', 'A', 'C', 'D']  30.3s $0.1543666
+  trial 3: {'A': 'morph-studio-xreal-1s-2025', 'B': 'kurzgesagt-short', 'C': 'osko-launch', 'D': 'candidate'}  ranking=['B', 'C', 'A', 'D']  30.2s $0.15538780000000002
+  trial 4: {'A': 'morph-studio-xreal-1s-2025', 'B': 'candidate', 'C': 'osko-launch', 'D': 'kurzgesagt-short'}  ranking=['A', 'D', 'C', 'B']  33.2s $0.1606672
+  trial 5: {'A': 'candidate', 'B': 'kurzgesagt-short', 'C': 'osko-launch', 'D': 'morph-studio-xreal-1s-2025'}  ranking=['D', 'B', 'C', 'A']  33.2s $0.1589432
+{"name": "loam", "verdict": "FAIL", "ref_mean": 6.83, "delta": -2.27, "cost_usd": 1.133, "cand_overall": 4.56, "judged_pro": "0/6"}

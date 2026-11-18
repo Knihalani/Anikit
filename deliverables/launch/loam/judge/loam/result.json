@@ -1,0 +1,919 @@
+{
+  "name": "loam",
+  "tags": [
+    "product-launch",
+    "illustration",
+    "social-vertical"
+  ],
+  "refs": [
+    "kurzgesagt-short",
+    "osko-launch",
+    "morph-studio-xreal-1s-2025"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 4.0,
+      "composition": 5.0,
+      "typography": 4.5,
+      "colour": 6.0,
+      "light_texture": 5.0,
+      "motion": 4.0,
+      "craft": 5.0,
+      "originality": 3.0
+    },
+    "overall": 4.56,
+    "judged_professional": "0/6",
+    "pro_rate": 0.0,
+    "mean_rank": 3.83,
+    "gaps": [
+      "Find an idea beyond explaining the feature, such as a character, a time-lapse metaphor or a point of view from the root, so the viewer remembers something",
+      "Give typography a real system: scale contrast, integration with the soil and water, and a face chosen for the brand rather than a stock bold serif",
+      "Vary staging and camera across beats; currently three of four frames are the same locked-off pot",
+      "Find an idea beyond the problem/solution diagram, e.g. tell it from the roots' point of view, or a visual surprise",
+      "Vary scale and camera across shots instead of reusing the cross-section pot layout",
+      "Give the type a real idea (letterforms growing from roots or soil, or moisture-reactive type) rather than captions on top",
+      "It needs an idea beyond demonstrating the feature: a character, a metaphor or a surprise the viewer would remember",
+      "It should break the repeated cross-section layout with real camera and staging variety and choreographed transitions between states",
+      "It needs typography with a point of view (scale play, type physically integrated with soil, water or roots) instead of captions set on top",
+      "Find an idea beyond explaining the feature: a character, a metaphor or a visual surprise a viewer would remember and share",
+      "Make the type part of the image (scale contrast, letters in the soil or the roots) instead of captions placed like slides",
+      "Vary composition and camera across shots and add motivated light and material; currently one cross-section layout recurs with flat, even light",
+      "Find a lateral, memorable idea (the plant's point of view, the roots as characters, time-lapse wit) instead of the problem \u2192 app \u2192 logo explainer.",
+      "Break the repeated locked-off pot composition: vary scale, camera and staging so each frame is a distinct poster and the cuts carry rhythm.",
+      "Give the type a real role and integrate it with the image (water level as baseline, roots forming letters). It should not be a shadowed serif caption dropped on top.",
+      "Find a real idea, such as a point of view from the roots or a visual metaphor for over- and under-watering, instead of the product name plus a feature diagram.",
+      "Give the type a point of view: a custom or carefully chosen face, scale contrast, and letters that interact with soil, water or roots rather than captions dropped on top.",
+      "Vary the staging and choreography between frames with camera moves, transitions that turn one thing into another, and motivated light from the window, so it isn't one pot with the caption swapped."
+    ],
+    "tells": [
+      "Literal, obvious idea: product name 'loam' plus a diagram of the feature (overwatered pot, phone app 'Water now.', sensor in soil, 'Exactly when. Exactly how much.')",
+      "Generic editorial bold serif used for every line as default-set captions; text placed like slides, with no typographic idea beyond setting the words large",
+      "The same pot cross-section composition repeats across frames with only the water level and sensor swapped, a slide-deck structure",
+      "Grain texture and warm window light are applied uniformly as a filter; the hand holding the phone is stiff and clip-art-like; the end card is the centred wordmark on a brown ground",
+      "Literal feature explainer: 'Too much.' \u2192 app says 'Water now.' \u2192 sensor \u2192 'Exactly when. Exactly how much.' \u2192 product name 'loam'; the product name plus a diagram of the feature",
+      "Same pot-on-windowsill composition repeated across frames with words swapped, so it reads as slides",
+      "Generic warm-retro editorial serif (Cooper-like) set as headlines over the image; the tagline stacked as a small blue label above the logotype is the template formula",
+      "Applied grain and a muted earthy palette give a tasteful surface, but the flat vector leaves and hand read as default illustration",
+      "The idea is literal: product name plus a diagram of the feature (overwatered pot, sensor, phone says 'Water now.', end card 'Exactly when. Exactly how much.' then 'loam')",
+      "The same pot cross-section and window composition repeats across frames, essentially one layout with words swapped, like a slide deck",
+      "It uses a generic soft-serif 'warm editorial' face with short declarative copy, the stock tasteful-startup voice",
+      "The grain texture is applied evenly as a filter rather than coming from material, and the hand holding the phone is a generic vector blob",
+      "A fictional DTC product with pitch-deck copy beats feels generated rather than briefed",
+      "The idea is literal: a product named 'loam' shown as a diagram of its feature (a cutaway pot with too much water, a sensor, a phone notification), the 'product name + feature diagram' pattern",
+      "Copy is short slide-deck lines ('Too much.' 'Water now.' 'Exactly when. Exactly how much.') in a generic soft display serif, placed as captions with no relationship to the image",
+      "The same cutaway-pot composition repeats with only the water level and text swapped",
+      "Grain overlay and a warm brown/ochre palette with one blue accent: the 'tasteful' default look with texture applied evenly, not motivated by the subject",
+      "Illustration is vector-default and symmetrical; the hand and leaves are generic flat shapes",
+      "The idea is literal: problem ('Too much.'), app notification ('Water now.'), sensor in pot, then product name ('loam') with the tagline 'Exactly when. Exactly how much.' This is the product name plus a diagram of the feature.",
+      "The same cutaway pot, same window and same plant are centred in nearly every frame, so the structure reads like a slide deck with the words swapped.",
+      "The type is a default chunky editorial serif (Cooper/Recoleta-like) with a soft drop shadow, set like captions. The final frame is centred wordmark plus small accent-coloured tagline on a plain ground, which is the generic 'tasteful AI' end card.",
+      "The grain overlay and warm window light are applied uniformly as a filter. The light doesn't come from the scene. The hand and phone are stiff and generic; the leaves are flat, repeated vector shapes.",
+      "The idea is literal: product name plus a diagram of the feature ('Too much.' / 'Water now.' / 'Exactly when. Exactly how much.' / 'loam'). It's a feature explainer with no concept a viewer would remember.",
+      "Type is set like slides: a generic heavy editorial serif with a drop shadow, a small accent-colour line above a bold wordmark, and no integration with the image beyond being placed on top of it.",
+      "Three of the four frames reuse one centred cut-away pot on a windowsill and only change the water level and caption, so it's essentially one layout repeated.",
+      "The phone UI is placeholder-like: a white card, a headline and a mini copy of the same pot illustration. The hand is simplified vector without any character.",
+      "Grain overlay and the warm amber/teal palette look like the 'tasteful' preset. The light doesn't come from the window and nothing has real material weight.",
+      "The final 'loam' frame leans on a stock radial root-burst plus grain, which is an effect with no real subject."
+    ]
+  },
+  "refs_summary": {
+    "kurzgesagt-short": {
+      "overall": 7.25,
+      "judged_professional": "6/6",
+      "mean_rank": 1.5
+    },
+    "osko-launch": {
+      "overall": 6.0,
+      "judged_professional": "5/6",
+      "mean_rank": 2.83
+    },
+    "morph-studio-xreal-1s-2025": {
+      "overall": 7.25,
+      "judged_professional": "6/6",
+      "mean_rank": 1.83
+    }
+  },
+  "ref_mean": 6.83,
+  "delta": -2.27,
+  "trials": [
+    {
+      "key": {
+        "A": "morph-studio-xreal-1s-2025",
+        "B": "kurzgesagt-short",
+        "C": "candidate",
+        "D": "osko-launch"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 6,
+              "composition": 8,
+              "typography": 6,
+              "colour": 7,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "High-end fluid/caustic simulation with real refraction, subsurface glow, chromatic fringing and bubble detail; this is costly to produce, not a stock effect",
+              "Product (XREAL 1S glasses) is integrated into the liquid world, with consistent lighting and rim highlights on the hardware",
+              "Clear choreography: the macro abstract opening resolves into the product reveal, then a translucent organic form, then a cellular 'EVOLUTION' world, so scale changes from shot to shot",
+              "Weaker side: a monochrome blue palette and widely tracked thin caps 'E V O L U T I O N' are a familiar tech-launch formula, and the logotype is placed in a plain, slide-like way"
+            ],
+            "gaps": [
+              "The idea of liquid evolution standing for product evolution is a category convention; it needs a concept specific to AR glasses (vision, overlay, seeing) rather than generic organic sim",
+              "The typography is functional brand lockup plus tracked caps; give the type a role in the image (refracted through the liquid, or seen through the lenses)",
+              "All-blue palette flattens the sequence; add a second temperature or a shift in value between beats to build an arc"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 6,
+              "colour": 9,
+              "light_texture": 7,
+              "motion": 7,
+              "craft": 9,
+              "originality": 7
+            },
+            "tells": [
+              "Highly resolved house illustration system: saturated flat-plus-gradient palette, soft rim shading, consistent character construction (birds, mammoth) at a level of polish only a mature studio maintains",
+              "Different staging in every frame (villain at console, card game, topographic map title, mammoth in the snow), so the visual metaphors are written to fit the script beats",
+              "Characters carry wit and narrative (the villain at a STOP button, birds saying 'They're the same!'), which is real storytelling rather than a diagram of the subject",
+              "Title card uses bold rounded type with outline and shadow integrated over a stylised heat-map; subtitles are small burned-in captions, functional for a social format"
+            ],
+            "gaps": [
+              "The captions are default small white text laid over the image; design them as part of the frame the way the title card is",
+              "Vertical crops place subjects centrally and leave the lower thirds empty; use the 9:16 height more deliberately",
+              "Style is instantly recognisable house style; little surprise compared with A's material ambition"
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.75,
+            "scores": {
+              "idea": 3,
+              "composition": 5,
+              "typography": 4,
+              "colour": 5,
+              "light_texture": 5,
+              "motion": 4,
+              "craft": 5,
+              "originality": 3
+            },
+            "tells": [
+              "Literal, obvious idea: product name 'loam' plus a diagram of the feature (overwatered pot, phone app 'Water now.', sensor in soil, 'Exactly when. Exactly how much.')",
+              "Generic editorial bold serif used for every line as default-set captions; text placed like slides, with no typographic idea beyond setting the words large",
+              "The same pot cross-section composition repeats across frames with only the water level and sensor swapped, a slide-deck structure",
+              "Grain texture and warm window light are applied uniformly as a filter; the hand holding the phone is stiff and clip-art-like; the end card is the centred wordmark on a brown ground"
+            ],
+            "gaps": [
+              "Find an idea beyond explaining the feature, such as a character, a time-lapse metaphor or a point of view from the root, so the viewer remembers something",
+              "Give typography a real system: scale contrast, integration with the soil and water, and a face chosen for the brand rather than a stock bold serif",
+              "Vary staging and camera across beats; currently three of four frames are the same locked-off pot"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.55,
+            "scores": {
+              "idea": 6,
+              "composition": 6,
+              "typography": 5,
+              "colour": 6,
+              "light_texture": 6,
+              "motion": 6,
+              "craft": 6,
+              "originality": 5
+            },
+            "tells": [
+              "The fridge gag with a lit 'I.O.U.' note and a floor reflection shows a real visual punchline and motivated light",
+              "The golfer swing sequence shows understanding of key poses and follow-through (posture, drooping head), which is animation thinking",
+              "The night drive of the van has controlled moody lighting, but the frames mix aspect ratios and rendering styles (flat vector golfer, toy-like 3D vehicles), reading as a compilation rather than one designed film",
+              "The cream-ground isolated car and the golfer are close to default vector illustration; there is almost no type and that absence does not add anything"
+            ],
+            "gaps": [
+              "Unify into one film: a single format, art direction and connecting idea, rather than disparate vignettes",
+              "Lift the flat vector pieces (golfer, pink car) out of stock-illustration territory with texture, distinctive line or palette",
+              "Build choreography between shots; currently each frame is an isolated gag with empty grounds and no transitions implied"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "B",
+          "D",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 32.9,
+        "cost_usd": 0.1580232,
+        "tokens": 73118,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "morph-studio-xreal-1s-2025",
+        "B": "kurzgesagt-short",
+        "C": "osko-launch",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 6,
+              "composition": 8,
+              "typography": 6,
+              "colour": 7,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 9,
+              "originality": 6
+            },
+            "tells": [
+              "High-end liquid and glass simulation with caustics, refraction, bubbles and chromatic aberration; sim and lookdev of this quality is expensive studio work",
+              "Frames vary from macro abstraction to a product hero shot and an organic 'neural' cell, which suggests choreographed transitions with real momentum",
+              "Product integrated into the fluid environment, with layered depth of field and foreground and background elements",
+              "Weak points: a familiar monochrome tech-blue palette, a tracked-caps 'E V O L U T I O N' super and a generic grotesk logotype, all genre conventions"
+            ],
+            "gaps": [
+              "The liquid/evolution metaphor is the standard tech-launch trope; it needs a concept specific to AR glasses",
+              "Typography is a conventional overlay (spaced caps, centred) and isn't integrated with the simulation",
+              "Single-hue blue palette; adding a counter-colour or temperature shift would give the sequence a dramatic arc"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 6,
+              "colour": 9,
+              "light_texture": 7,
+              "motion": 8,
+              "craft": 9,
+              "originality": 7
+            },
+            "tells": [
+              "A coherent, house-consistent illustration system: rounded geometric characters, a saturated but controlled palette and rim-lit shading",
+              "Each frame is a new staged scene (villain control room, heat-map title card, bird memory game, mammoth), so there is narrative choreography and no repeated layout",
+              "Visual metaphors carry an editorial argument (the 'they're the same' matching game for a misconception; the doomsday button for 'completely due')",
+              "The title card turns the map heat palette into a typographic poster; the gradients and glows are deliberate, not defaults"
+            ],
+            "gaps": [
+              "Burned-in captions are small default-style subtitles that sit over the art without design consideration",
+              "The house style is so established that it reads as signature formula rather than surprise",
+              "The vertical format leaves compositions centre-heavy; edge-to-edge staging could be bolder"
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.6,
+            "scores": {
+              "idea": 5,
+              "composition": 4,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 4,
+              "motion": 3,
+              "craft": 3,
+              "originality": 4
+            },
+            "tells": [
+              "Four incompatible rendering styles (moody 3D-ish van at night, flat vector golfer, outlined pink car, photoreal-ish retro fridges) with no unifying visual language",
+              "Inconsistent aspect ratios and grounds (black, cream, a vertical crop) read as assembled outputs, not one designed film",
+              "Golfer is a stock-vector-style triple pose on a plain cream ground; the car is an isolated clip-art object, centred on empty space",
+              "The 'I.O.U.' sticky note in the fridge is the only real gag, and it is undercut by generic reflections and lighting"
+            ],
+            "gaps": [
+              "Commit to one art direction and material treatment across all shots",
+              "Build a through-line idea (money or debt across van, golf, car, fridge?) and stage transitions between the vignettes",
+              "Replace the empty cream backgrounds and centred objects with designed environments, light and typography"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.6,
+            "scores": {
+              "idea": 4,
+              "composition": 6,
+              "typography": 5,
+              "colour": 6,
+              "light_texture": 6,
+              "motion": 4,
+              "craft": 5,
+              "originality": 3
+            },
+            "tells": [
+              "Literal feature explainer: 'Too much.' \u2192 app says 'Water now.' \u2192 sensor \u2192 'Exactly when. Exactly how much.' \u2192 product name 'loam'; the product name plus a diagram of the feature",
+              "Same pot-on-windowsill composition repeated across frames with words swapped, so it reads as slides",
+              "Generic warm-retro editorial serif (Cooper-like) set as headlines over the image; the tagline stacked as a small blue label above the logotype is the template formula",
+              "Applied grain and a muted earthy palette give a tasteful surface, but the flat vector leaves and hand read as default illustration"
+            ],
+            "gaps": [
+              "Find an idea beyond the problem/solution diagram, e.g. tell it from the roots' point of view, or a visual surprise",
+              "Vary scale and camera across shots instead of reusing the cross-section pot layout",
+              "Give the type a real idea (letterforms growing from roots or soil, or moisture-reactive type) rather than captions on top"
+            ]
+          }
+        },
+        "ranking": [
+          "B",
+          "A",
+          "D",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 28.7,
+        "cost_usd": 0.1530316,
+        "tokens": 72874,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "osko-launch",
+        "B": "kurzgesagt-short",
+        "C": "morph-studio-xreal-1s-2025",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.7,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 5,
+              "colour": 7,
+              "light_texture": 7,
+              "motion": 7,
+              "craft": 7,
+              "originality": 7
+            },
+            "tells": [
+              "The fridge gag (an open fridge glowing with a hand-lettered 'I.O.U.' Post-it, plus a floor reflection) is a real comic idea told only through the image, and it reads as a punchline",
+              "The three-pose golf swing ending in a slumped head-in-hand is character animation with timing and acting, not a template rig",
+              "The styles are very different (moonlit 3D camper van, flat cream-ground illustration, glossy retro fridge), which reads as a studio reel or campaign of vignettes made by hand, not one generated look",
+              "The camper van scene uses real motivated rim light from the moon over soft rolling hills"
+            ],
+            "gaps": [
+              "The frames don't connect: there is no visible choreography or transition linking the vignettes, so it plays as a reel rather than one film",
+              "The convertible on cream is flat and sticker-like, so the illustration polish is uneven across frames",
+              "Type is almost absent apart from the Post-it, so there is no typographic system to carry an identity"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 7,
+              "motion": 8,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "The frames are dense and layered, with a distinct character, set and prop in every one (control room with a STOP button, card-matching birds, mammoth in a snowfield)",
+              "The saturated, deliberate palette with glows and gradient rim light is executed consistently across scenes",
+              "The title card integrates a chunky outlined headline with a stylised heat-map Europe, so type and image work together",
+              "Every frame is a new composition, which implies real scene-to-scene choreography and a narrative arc",
+              "Character design has a recognisable studio language (rounded beaked birds, glossy highlights)"
+            ],
+            "gaps": [
+              "The house style is very familiar from explainer channels, so originality is limited and the look predicts the content",
+              "Burned-in captions are default social-media subtitles and fight the illustrated frames",
+              "The villain character sits too close to an existing franchise mascot, which weakens the claim to a specific idea"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.75,
+            "scores": {
+              "idea": 5,
+              "composition": 7,
+              "typography": 5,
+              "colour": 6,
+              "light_texture": 8,
+              "motion": 7,
+              "craft": 8,
+              "originality": 4
+            },
+            "tells": [
+              "The liquid and glass simulation is high-end, with caustics, refraction, bubbles, chromatic edges and tendril fibres: real CG craft",
+              "The product hero shot of the glasses rising from liquid is lit like a commercial launch",
+              "Composition varies across frames (macro, hero shot, abstract tunnel), which implies camera choreography",
+              "However, the generic tech-launch tropes are heavy: monochrome electric blue, a widely tracked thin 'E V O L U T I O N', and a generic bold-sans wordmark"
+            ],
+            "gaps": [
+              "There is no idea specific to AR glasses: liquid-blue abstraction could launch any gadget, so the film needs a concept tied to what the product does",
+              "The type is default launch-film grotesk with spaced caps placed like a slide; it needs typography that interacts with the simulation",
+              "A single-hue blue palette with no counterpoint makes frames blur together, so they are not memorable posters"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.65,
+            "scores": {
+              "idea": 4,
+              "composition": 6,
+              "typography": 5,
+              "colour": 6,
+              "light_texture": 6,
+              "motion": 4,
+              "craft": 6,
+              "originality": 3
+            },
+            "tells": [
+              "The idea is literal: product name plus a diagram of the feature (overwatered pot, sensor, phone says 'Water now.', end card 'Exactly when. Exactly how much.' then 'loam')",
+              "The same pot cross-section and window composition repeats across frames, essentially one layout with words swapped, like a slide deck",
+              "It uses a generic soft-serif 'warm editorial' face with short declarative copy, the stock tasteful-startup voice",
+              "The grain texture is applied evenly as a filter rather than coming from material, and the hand holding the phone is a generic vector blob",
+              "A fictional DTC product with pitch-deck copy beats feels generated rather than briefed"
+            ],
+            "gaps": [
+              "It needs an idea beyond demonstrating the feature: a character, a metaphor or a surprise the viewer would remember",
+              "It should break the repeated cross-section layout with real camera and staging variety and choreographed transitions between states",
+              "It needs typography with a point of view (scale play, type physically integrated with soil, water or roots) instead of captions set on top"
+            ]
+          }
+        },
+        "ranking": [
+          "B",
+          "A",
+          "C",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 30.3,
+        "cost_usd": 0.1543666,
+        "tokens": 72928,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "morph-studio-xreal-1s-2025",
+        "B": "kurzgesagt-short",
+        "C": "osko-launch",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 6,
+              "composition": 7,
+              "typography": 5,
+              "colour": 6,
+              "light_texture": 8,
+              "motion": 7,
+              "craft": 8,
+              "originality": 5
+            },
+            "tells": [
+              "Detailed CG simulation: the glasses break apart into a fluid/fibre explosion, there are caustics in glass-like liquid, and the bubble clusters have real refraction and depth of field",
+              "The frames change scale a lot, from macro abstraction to a hero product shot to cellular 'evolution' imagery, so there was a planned edit with a build-up",
+              "Lighting and materials are well executed (subsurface glow, chromatic fringing, wet speculars), which takes an experienced CG team",
+              "Against that: it is the standard tech-launch look (all electric blue on black, liquid-sim spectacle), the type is a stock product lockup with no idea behind it, and the 'E V O L U T I O N' tracked caps are a clich\u00e9"
+            ],
+            "gaps": [
+              "Replace the all-blue liquid-sim spectacle with a visual idea that belongs to AR glasses specifically (seeing, overlaying, framing), not something any premium launch could use",
+              "Give the type a role in the piece: a lockup that interacts with the simulation, or a custom wordmark treatment, instead of a centred grotesk and tracked-caps 'EVOLUTION'",
+              "Break up the single-colour palette with a second colour or a temperature shift so the frames have contrast and a point of view"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 6,
+              "motion": 7,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "A recognisable, consistent house illustration system (rounded flat shapes, saturated complementary palette, bespoke characters) held across every frame",
+              "Each frame is a different staged metaphor (villain at a STOP button, birds playing a memory-matching game, a mammoth), so the explanatory story is choreographed and not repeated",
+              "Heavy outlined title type with a drop shadow sits well on the stylised climate map",
+              "Against that: it follows an established explainer formula, and the burned-in captions are default social-video type that work against the layouts"
+            ],
+            "gaps": [
+              "Captions are set in plain default type and placed like subtitles; design them into the frame as the title is",
+              "Light is flat cel shading; atmospheric light, texture or depth would give the ice-age frames more weight",
+              "The house style is polished but predictable; one formal surprise (a change of medium or perspective) would make the piece memorable on its own"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.6,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 6,
+              "colour": 6,
+              "light_texture": 6,
+              "motion": 7,
+              "craft": 7,
+              "originality": 7
+            },
+            "tells": [
+              "Visual gags with real comic timing: an empty fridge revealing an 'I.O.U.' note with a reflection on a glossy floor, a three-pose golf swing ending in a slump",
+              "The golfer's poses show proper key-pose acting with weight and follow-through, which suggests a trained character animator",
+              "Rendering changes deliberately from vignette to vignette (a moonlit van in 3D-lit illustration, flat print-style figures on cream, a lit fridge interior), which suggests an anthology structure",
+              "Type is almost absent; the one hand-lettered 'I.O.U.' is the punchline and does its job",
+              "Against that: the styles are inconsistent enough that it reads as a set of separate clips with no unifying system; the cream-ground spot illustrations look a little stock"
+            ],
+            "gaps": [
+              "No unifying visual system or palette ties the vignettes together, so it reads as a compilation, not one film",
+              "The cream-background flat spots (car, golfer) lack texture and staging and are close to editorial stock illustration",
+              "There are no transitions or connecting choreography between gags; a through-line would turn good jokes into a piece"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.65,
+            "scores": {
+              "idea": 4,
+              "composition": 5,
+              "typography": 4,
+              "colour": 5,
+              "light_texture": 4,
+              "motion": 4,
+              "craft": 4,
+              "originality": 3
+            },
+            "tells": [
+              "The idea is literal: a product named 'loam' shown as a diagram of its feature (a cutaway pot with too much water, a sensor, a phone notification), the 'product name + feature diagram' pattern",
+              "Copy is short slide-deck lines ('Too much.' 'Water now.' 'Exactly when. Exactly how much.') in a generic soft display serif, placed as captions with no relationship to the image",
+              "The same cutaway-pot composition repeats with only the water level and text swapped",
+              "Grain overlay and a warm brown/ochre palette with one blue accent: the 'tasteful' default look with texture applied evenly, not motivated by the subject",
+              "Illustration is vector-default and symmetrical; the hand and leaves are generic flat shapes"
+            ],
+            "gaps": [
+              "Find an idea beyond explaining the feature: a character, a metaphor or a visual surprise a viewer would remember and share",
+              "Make the type part of the image (scale contrast, letters in the soil or the roots) instead of captions placed like slides",
+              "Vary composition and camera across shots and add motivated light and material; currently one cross-section layout recurs with flat, even light"
+            ]
+          }
+        },
+        "ranking": [
+          "B",
+          "C",
+          "A",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 30.2,
+        "cost_usd": 0.15538780000000002,
+        "tokens": 72991,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "morph-studio-xreal-1s-2025",
+        "B": "candidate",
+        "C": "osko-launch",
+        "D": "kurzgesagt-short"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 6,
+              "composition": 8,
+              "typography": 6,
+              "colour": 7,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 9,
+              "originality": 6
+            },
+            "tells": [
+              "Complex fluid and glass simulations with real caustics, refraction, subsurface glow and chromatic fringing. This is high-end CG lighting, not a stock primitive.",
+              "The frames progress across macro scales: a ribbed form shatters into liquid strands, the product emerges from a wave, then a translucent organic mass, then a cellular/neural 'EVOLUTION' world. That shows choreographed transitions and changing camera scale.",
+              "The product hero shot is integrated into the liquid rather than pasted on, and the reflections on the glasses lenses match the environment.",
+              "Against it: the type is a stock grotesk wordmark plus a widely tracked 'EVOLUTION' in a light sans, the familiar launch-film move. The all-blue liquid-tech palette is a category clich\u00e9."
+            ],
+            "gaps": [
+              "The idea is the generic 'liquid = evolution = tech' launch metaphor. It needs a concept specific to AR glasses (seeing, layers of reality) that no other gadget film could use.",
+              "The typography is functional brand lockup and spaced caps with no point of view. Type could be built into the fluid or optics so it does work in the image.",
+              "The monochrome electric blue is safe and expected. One counterpoint hue or a shift in temperature across the film would give it identity and rhythm."
+            ]
+          },
+          "B": {
+            "verdict": "not professional",
+            "confidence": 0.65,
+            "scores": {
+              "idea": 3,
+              "composition": 5,
+              "typography": 5,
+              "colour": 6,
+              "light_texture": 5,
+              "motion": 3,
+              "craft": 5,
+              "originality": 3
+            },
+            "tells": [
+              "The idea is literal: problem ('Too much.'), app notification ('Water now.'), sensor in pot, then product name ('loam') with the tagline 'Exactly when. Exactly how much.' This is the product name plus a diagram of the feature.",
+              "The same cutaway pot, same window and same plant are centred in nearly every frame, so the structure reads like a slide deck with the words swapped.",
+              "The type is a default chunky editorial serif (Cooper/Recoleta-like) with a soft drop shadow, set like captions. The final frame is centred wordmark plus small accent-coloured tagline on a plain ground, which is the generic 'tasteful AI' end card.",
+              "The grain overlay and warm window light are applied uniformly as a filter. The light doesn't come from the scene. The hand and phone are stiff and generic; the leaves are flat, repeated vector shapes."
+            ],
+            "gaps": [
+              "Find a lateral, memorable idea (the plant's point of view, the roots as characters, time-lapse wit) instead of the problem \u2192 app \u2192 logo explainer.",
+              "Break the repeated locked-off pot composition: vary scale, camera and staging so each frame is a distinct poster and the cuts carry rhythm.",
+              "Give the type a real role and integrate it with the image (water level as baseline, roots forming letters). It should not be a shadowed serif caption dropped on top."
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.6,
+            "scores": {
+              "idea": 6,
+              "composition": 6,
+              "typography": 5,
+              "colour": 6,
+              "light_texture": 6,
+              "motion": 7,
+              "craft": 7,
+              "originality": 6
+            },
+            "tells": [
+              "The golfer swing shows hand-drawn character key poses with personality in the follow-through and slump. That is evidence of real animation timing and acting.",
+              "The fridge gag (an empty fridge with an 'I.O.U.' note, lit from inside and reflected on a glossy floor) is a small comedic idea with motivated light.",
+              "The VW van at night under the moon has a proper rim light on the dunes and convincing material on the vehicle.",
+              "Against it: the styles vary from frame to frame (3D-lit van, flat vector golfer, flat pink car on cream, glossy fridge), so it reads as a reel or compilation rather than one designed film. The flat items sit on empty cream grounds."
+            ],
+            "gaps": [
+              "Unify the visual language. The jumps between lit 3D-ish renders and flat vector on cream undermine the authorship of a single film.",
+              "Fill the frame. The pink car and golfer float on empty off-white with no environment, depth or composition beyond centring.",
+              "Build connective tissue (a narrative or transitional idea) so the vignettes become one piece rather than a sampler of gags."
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 6,
+              "motion": 8,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "The house style is fully resolved: consistent character design (villain at a control desk, birds playing a memory game, a mammoth), a saturated and deliberate palette, and clean shape language across every frame.",
+              "Each frame is a different set and staging (war room, topographic heat-map title, game table, icy landscape). This shows real editorial illustration that visualises an argument rather than repeating one layout.",
+              "The title 'Europe's Next Ice Age' is set over a contour map with a layered outline and depth treatment, so the type is integrated with the map motif.",
+              "Visual metaphors such as the 'STOP' button and the memory-card game for a 'misconception' show writing and design working together."
+            ],
+            "gaps": [
+              "The look follows an established explainer house style closely, so it is excellent execution of a known formula rather than a surprise.",
+              "The light is flat vector gradient with little texture or atmosphere. The ice-age subject could support cold haze, grain or volumetric depth.",
+              "The burned-in captions are generic small sans subtitles that clash with the bespoke title type. Design the captions as part of the system."
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "D",
+          "C",
+          "B"
+        ]
+      },
+      "meta": {
+        "seconds": 33.2,
+        "cost_usd": 0.1606672,
+        "tokens": 73255,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "candidate",
+        "B": "kurzgesagt-short",
+        "C": "osko-launch",
+        "D": "morph-studio-xreal-1s-2025"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "not professional",
+            "confidence": 0.7,
+            "scores": {
+              "idea": 4,
+              "composition": 5,
+              "typography": 4,
+              "colour": 6,
+              "light_texture": 5,
+              "motion": 4,
+              "craft": 5,
+              "originality": 3
+            },
+            "tells": [
+              "The idea is literal: product name plus a diagram of the feature ('Too much.' / 'Water now.' / 'Exactly when. Exactly how much.' / 'loam'). It's a feature explainer with no concept a viewer would remember.",
+              "Type is set like slides: a generic heavy editorial serif with a drop shadow, a small accent-colour line above a bold wordmark, and no integration with the image beyond being placed on top of it.",
+              "Three of the four frames reuse one centred cut-away pot on a windowsill and only change the water level and caption, so it's essentially one layout repeated.",
+              "The phone UI is placeholder-like: a white card, a headline and a mini copy of the same pot illustration. The hand is simplified vector without any character.",
+              "Grain overlay and the warm amber/teal palette look like the 'tasteful' preset. The light doesn't come from the window and nothing has real material weight.",
+              "The final 'loam' frame leans on a stock radial root-burst plus grain, which is an effect with no real subject."
+            ],
+            "gaps": [
+              "Find a real idea, such as a point of view from the roots or a visual metaphor for over- and under-watering, instead of the product name plus a feature diagram.",
+              "Give the type a point of view: a custom or carefully chosen face, scale contrast, and letters that interact with soil, water or roots rather than captions dropped on top.",
+              "Vary the staging and choreography between frames with camera moves, transitions that turn one thing into another, and motivated light from the window, so it isn't one pot with the caption swapped."
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 7,
+              "motion": 8,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "A mature, consistent house illustration system: bird characters, an expressive villain, and a mammoth with layered fur shading and rim light, all from one coherent design language.",
+              "Every frame is a new staging (control room, card game, saturated isobar map, mammoth on ice), which points to real scene-by-scene direction behind a narrated explainer.",
+              "The palette is deliberate and very saturated (violet/magenta against cyan/orange), with gradient light and atmospheric depth in the mammoth shot.",
+              "Character acting and props, like the STOP button, the matching cards and the speech bubble, carry the narration visually instead of illustrating it literally."
+            ],
+            "gaps": [
+              "Typography is the weakest part: burned-in subtitles in a default sans and a standard outlined title lockup, with no typographic idea.",
+              "The house style is recognisable and safe, and nothing here surprises the way D's material transformations do.",
+              "Light and texture are mostly flat gradients. More tactile material or graded atmosphere would raise it from strong explainer to award-level image-making."
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.6,
+            "scores": {
+              "idea": 6,
+              "composition": 6,
+              "typography": 5,
+              "colour": 6,
+              "light_texture": 6,
+              "motion": 6,
+              "craft": 7,
+              "originality": 5
+            },
+            "tells": [
+              "It reads like a studio reel of illustrated character and object animation. The golfer swing-to-slump pose sequence shows real animation key-posing and comic timing.",
+              "The fridge gag ('I.O.U.' note inside, interior light spilling and a floor reflection) is a genuine visual joke with motivated light.",
+              "The van at night has a moonlit rim light on the rolling hills and is staged with some atmosphere.",
+              "Weaknesses: the styles are inconsistent (flat vector golfer and car vs semi-3D fridge and van), the cream grounds are empty with an isolated object centred, and nothing ties it together as one piece."
+            ],
+            "gaps": [
+              "It needs one unifying idea or visual system. Right now it's a set of disconnected vignettes in different rendering styles.",
+              "The empty cream-ground frames (the car, the golfer) are spot illustrations, not posters. They need environment, layering and composition with tension.",
+              "Typography is essentially absent and adds nothing. A considered type layer or title system would give the piece an authorial voice."
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 5,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 9,
+              "originality": 6
+            },
+            "tells": [
+              "High-end CG: refractive liquid and glass simulations, caustics, subsurface-like translucent forms, convincing chromatic aberration and depth of field. This is real light and material.",
+              "The frames show a transformation narrative: a ribbed form shatters into liquid strands, the product emerges from a fluid surface, then a cellular/neural 'evolution' macro world. That's evidence of choreographed sim work and camera design.",
+              "A committed monochrome cobalt palette with controlled highlights, and each frame is dense and layered.",
+              "Product hero integration (the XREAL 1S glasses sitting in a liquid crown) is finished to commercial launch standard."
+            ],
+            "gaps": [
+              "The typography is generic: a default bold grotesk 'XREAL / 1S' and widely tracked thin caps 'EVOLUTION', set like a slide over the image.",
+              "The concept, liquid and glass as tech 'evolution' in blue, is a familiar launch-film trope, so originality trails the craft.",
+              "The palette is all one blue. A counterpoint colour or a tonal shift across acts would add drama and memorability."
+            ]
+          }
+        },
+        "ranking": [
+          "D",
+          "B",
+          "C",
+          "A"
+        ]
+      },
+      "meta": {
+        "seconds": 33.2,
+        "cost_usd": 0.1589432,
+        "tokens": 73164,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "critic": {
+    "answer": {
+      "scores": {
+        "motion": 5,
+        "sound": 6,
+        "craft": 7
+      },
+      "checks": {
+        "idea": true,
+        "invariant": true,
+        "arc": false,
+        "type_meaning": false,
+        "freeze_frame": false,
+        "ending": true,
+        "restraint": true,
+        "material": true,
+        "sync": true
+      },
+      "defects": [
+        "The last ~4 s are almost static: per-second change falls to 6\u201315. The 4.7 s closing shot on 'loam' is dead air, with only the roots drifting.",
+        "The 'loam' wordmark appears through a blurred, low-opacity cross-dissolve. It reads as a ghosted double image (pairs row 3), not a designed reveal.",
+        "In the pairs, held shots show near-identical frames 1/6 s apart: tiny camera pushes and almost no secondary motion on leaves, roots or water.",
+        "The soil-only shot (water drop on a flat brown field) is a near-empty frame with no subject, too weak to hold as a poster.",
+        "Uniform screen-space grain across the frame. At 1:1 it looks like an overlay noise layer and does not sit in the material or follow the light.",
+        "'Too much.' sits over the leaves and the water with a generic drop shadow. It has no relationship to the waterline it is commenting on."
+      ],
+      "gaps": [
+        "Motion has no physical weight or follow-through. Water, leaves and roots should react with overlap and settle (water sloshing, leaves drooping and recovering, roots growing with ease-out), not slow pushes and dissolves.",
+        "The energy arc is front-loaded: the peak is around 5\u20136 s (~40%), then a long tail. The transition into the cross-section and the 'loam' reveal should be choreographed as a built climax with a hard hit, then a short hold of under 1.5 s.",
+        "Sound is dense, heavily compressed and wall-to-wall, with one dropout at ~10.5 s. It needs dynamic range and specific sound design (the water pour, the drip, soil, the phone tap) instead of a constant rhythmic bed. The type should also take on meaning, e.g. the waterline physically setting the type baseline."
+      ]
+    },
+    "meta": {
+      "seconds": 21.7,
+      "cost_usd": 0.1922578,
+      "tokens": 77480,
+      "models": [
+        "claude-opus-5-5"
+      ]
+    },
+    "pace": "final.mp4: 15.0s, 7 shots, median 1.87s, longest 4.67s\nper-second change: [43.8, 48.3, 41.5, 45.3, 17.6, 73.7, 73.5, 34.1, 48.7, 49.3, 6.4, 15.3, 9.1, 7.1]\nPACE: FAIL \u2014 longest shot 4.7s > 2.5s"
+  },
+  "full_scores": {
+    "idea": 4.0,
+    "composition": 5.0,
+    "typography": 4.5,
+    "colour": 6.0,
+    "light_texture": 5.0,
+    "motion": 4.5,
+    "craft": 6.0,
+    "originality": 3.0,
+    "sound": 6
+  },
+  "full_overall": 4.89,
+  "cost_usd": 1.133,
+  "judge_seconds": 210.2,
+  "verdict": "FAIL"
+}

@@ -1,0 +1,938 @@
+{
+  "name": "ferro",
+  "tags": [
+    "product-launch",
+    "cg-3d"
+  ],
+  "refs": [
+    "morph-studio-xreal-1s-2025",
+    "found-devialet-opera-de-paris-2022",
+    "osko-launch"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 5.5,
+      "composition": 4.0,
+      "typography": 4.0,
+      "colour": 5.0,
+      "light_texture": 4.5,
+      "motion": 3.0,
+      "craft": 3.0,
+      "originality": 4.5
+    },
+    "overall": 4.19,
+    "judged_professional": "0/6",
+    "pro_rate": 0.0,
+    "mean_rank": 4,
+    "gaps": [
+      "Show time passing through image (hands, kitchens, patina, light changing across eras) instead of swapping a number under the same spotlight.",
+      "Make each frame a poster: vary the camera, scale and staging, and build real texture into the cast iron, wood and atmosphere the way B does with glass and water.",
+      "Develop a typographic voice (a custom stamp or foundry lettering tied to the embossed mark) and integrate the end-card in the frame instead of setting a cropped default serif line.",
+      "Show time passing in the image itself: patina, changing hands, kitchens and light across decades, instead of swapping a number under the same spotlight",
+      "Render the material properly: seasoned black iron, a cast surface texture, steam and oil, so the product earns its premium",
+      "Design the typography: a deliberate face, scale and placement integrated into the scene, and an end frame composed rather than cropped",
+      "Make time visible on the object itself: seasoning building up, hands and kitchens changing, light moving like a day or a life. Repeating one shot with new numbers isn't enough.",
+      "Raise the CG and material craft to A's level: real cast-iron texture, an accurately modelled handle and pour spouts, and a lived-in surface.",
+      "Design the type and composition with intent: scale contrast, numbers integrated into the scene with craft, and an end frame that isn't a corner caption.",
+      "Render the cast iron properly: seasoning sheen, pitting, wear building up across the decades, so the material itself tells the story of the years",
+      "Vary the staging and camera between frames, for example generations of hands, kitchens and changing light quality, instead of repeating one top-down spotlit layout",
+      "Commission or choose typography with intent, perhaps foundry-stamped numerals cast into the iron or etched by the light, and resolve the cropped, slide-like end card",
+      "Model and shade the pan properly (cast-iron grain, seasoned oil sheen, wear, real thickness and a riveted handle) and light it with a rim so the hero survives in the dark",
+      "Develop the time idea through choreography (the pan worn across generations, hands changing, the light moving across a day or a lifetime) rather than swapping numbers in one shot",
+      "Give the type a point of view: integrate the years as projected light with grain, gobo or caustics, and design the end card instead of placing a caption that crops off-frame",
+      "Make the passing time real and material: rust, seasoning, wear, changing food and hands across generations, in place of the same pan with different numbers.",
+      "Light the hero product properly with rim and specular light that shows the metal. The FERRO stamp and handle disappear into black.",
+      "Design the type and end card as a system with deliberate scale, safe margins and a lockup. Don't let a default slab face drift off the frame."
+    ],
+    "tells": [
+      "The same setup repeats in every frame: one skillet on a dark wood table in a single elliptical spotlight, with only the year swapped (2026 \u2192 2058 \u2192 2084). This is slide-deck structure.",
+      "The type is a default slab/Cooper-style serif laid flat on the table as a projected label, with no scale play or craft. 'Back it on Kickstarter' is cropped awkwardly at the frame edge.",
+      "The pan is a simple, plain model with crushed black shadows and almost no detail in the iron's patina or seasoning. The 'FERRO SHEFFIELD' embossed base is the only material moment.",
+      "The light is a single generic hard spot with no secondary bounce, atmosphere or dust. The palette is brown on black and monotonous.",
+      "The idea (a pan that lasts generations) is literal, and is told by numbers instead of image: nothing visibly ages, gets passed down or changes hands.",
+      "The same composition repeats across frames: one pan, one warm spotlight ellipse on a dark ground and a year number. It is a single layout with the words swapped (2026, 2058, 2084)",
+      "Flat, low-detail render: the pan is a near-primitive with no seasoning, patina, pitting or casting texture, despite cast iron being a subject that begs for material",
+      "Typography is a default slab/Clarendon-style face placed flat on the floor and lit by the same spotlight, with no scale contrast or layout idea. The 'Back it on Kickstarter' end card is cropped awkwardly at the frame edge",
+      "Generic dark ground with a single warm accent fits the 'tasteful AI' look",
+      "The heirloom idea (a pan that outlives generations) is sound but delivered literally, with nothing marking the passing time except the number",
+      "The idea is decent: a pan that lasts generations, with years ticking forward (2026, 2058, 2084) in a projected spotlight. But it is told once and repeated.",
+      "The same composition repeats in every frame: one pan on a dark surface in a single elliptical spotlight with a number underneath. It is a slide deck with the digits swapped.",
+      "The modelling is crude. The handle is a flat rectangular bar, the pan has almost no material detail (no cast-iron grain, seasoning or patina), and nothing shows ageing even though the passage of time is the whole point.",
+      "The type is a stock slab/Cooper-style serif used straight, and 'Back it on Kickstarter' sits in a corner like a caption. There is no typographic craft.",
+      "The light is a single warm cone with muddy blacks, and the frames are inconsistently cropped and centred.",
+      "The concept, years passing as a moving pool of light over a cast-iron pan to signal a pan that lasts generations, is reasonable but literal: a projected year, then the next, then a Kickstarter end card",
+      "Almost the same composition in every frame: a dark pan in a spotlit oval on a dark table with a date beside it. Little happens",
+      "The pan is a simple primitive with a near-black, featureless body. There is no seasoning, patina or iron texture, though the subject is crying out for material detail",
+      "The type is a default Cooper-style slab serif, laid flat on the surface with no integration or scale idea. 'Back it on Kickstarter' is cropped at the bottom edge",
+      "Frame sizes and crops vary inconsistently, and the light is one undifferentiated warm spot. Those are template or amateur tells",
+      "The concept is good: years 2026, 2058, 2084 cast in a raking light beside a cast-iron pan, so the pan outlives its owners, with the sweeping light working like a sundial",
+      "The execution doesn't support it. The pan is low-poly blockwork (flat slab handle, simple cylinder), with no seasoning sheen, pitting or mass",
+      "Every frame repeats one setup: dark wood, one elliptical spot, one pan, one number. The light moves but nothing else changes, so the structure is near slide-like",
+      "Type is a default-feeling Cooper/Clarendon-style face set flat on the floor, ending on a plain 'Back it on Kickstarter' line that's cropped at the frame edge",
+      "The flipped pan is almost entirely black with no rim or bounce light, so the hero product is lost",
+      "The FERRO/Sheffield stamp is the only detailed element and still reads as a decal on a puck",
+      "One setup repeats in every frame: a pan on a dark table with a warm spotlight, and only the camera angle and the year change. It reads like slides.",
+      "The pan is a plain, smooth mesh. There is no cast-iron grain, seasoning, pitting or wear, which is the very texture a 'lasts generations' idea needs.",
+      "The light gobo carrying the years 2026/2058/2084 is the one idea. It is literal and obvious, a timeline in place of a story.",
+      "The type is a stock heavy slab/Cooper-style face projected flat. The end card 'Back it on Kickstarter' is cropped at the frame edge, a basic layout mistake.",
+      "The palette is all brown and black, low contrast and murky. The underside view of the logo is nearly black and hard to read, so the hero moment is poorly lit.",
+      "There is no other prop, human trace or change of state across 60 years, so the frames show little choreography."
+    ]
+  },
+  "refs_summary": {
+    "morph-studio-xreal-1s-2025": {
+      "overall": 7.56,
+      "judged_professional": "6/6",
+      "mean_rank": 1.67
+    },
+    "found-devialet-opera-de-paris-2022": {
+      "overall": 7.56,
+      "judged_professional": "6/6",
+      "mean_rank": 1.33
+    },
+    "osko-launch": {
+      "overall": 6.25,
+      "judged_professional": "6/6",
+      "mean_rank": 3
+    }
+  },
+  "ref_mean": 7.12,
+  "delta": -2.93,
+  "trials": [
+    {
+      "key": {
+        "A": "osko-launch",
+        "B": "morph-studio-xreal-1s-2025",
+        "C": "candidate",
+        "D": "found-devialet-opera-de-paris-2022"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.7,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 6,
+              "colour": 7,
+              "light_texture": 7,
+              "motion": 7,
+              "craft": 7,
+              "originality": 7
+            },
+            "tells": [
+              "The illustration changes register on purpose: a soft-lit 3D VW camper in a moonlit landscape, a toon-shaded fridge interior, flat vector golf characters and glossy emoji-style icons. That reads as a brand system that switches styles, not a template.",
+              "There is a story told across shots: an 'I.O.U.' sticky note on the purple tub inside the fridge, then a wide shot of a pair of retro fridges with one door open and the note inside, then gifting icons (coffee, beer, flying cash, heart, gift). The visual gags are specific, not a generic feature diagram.",
+              "The golfer's three frames (address pose, follow-through, slumped head in hand) are pose-to-pose character animation with comic timing.",
+              "The fridge-pair shot has a deliberate light design: the open door glows warm against black, with a floor reflection. The palette (mint, violet, warm yellow) is chosen."
+            ],
+            "gaps": [
+              "Without one material or palette tying the styles together, the piece reads as a sequence of vignettes, not as a single film. Adopt a single throughline like B's liquid-glass world.",
+              "The icon grid is a static 3x2 layout on black that feels like an asset sheet. It should be staged and choreographed as a scene.",
+              "The flat golfer illustration falls below the finish of the 3D shots. Its gradient shirt and default vector shapes need the same texture and light the fridge shots get."
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.93,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 7,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 9,
+              "craft": 9,
+              "originality": 8
+            },
+            "tells": [
+              "The 'EVOLUTION' idea is carried by material: the XREAL 1S glasses are born from water and glass. One shot shows the frame as a translucent organism with cellular, vein-like tendrils, and another shows a liquid gel pod with suspended bubbles.",
+              "The frames are dense and layered, with caustics, refraction, sub-surface scattering, chromatic fringe on the opening splash, depth of field and macro bubble foreground.",
+              "Shot scale varies a lot (explosive splash, hero reveal, extreme macro, abstract cellular wide), which implies choreographed fluid simulation and camera.",
+              "The monochrome ultramarine palette is committed to and consistent, with light used as the colour accent."
+            ],
+            "gaps": [
+              "The type is close to stock: a bold grotesk 'XREAL' plus a light '1S', and a widely tracked 'E V O L U T I O N' of the kind behind the AI-tell look. It is not integrated with the liquid (no refraction or distortion).",
+              "The all-blue palette risks reading as standard 'tech liquid' CG. One unexpected colour or a change of light temperature would make it more memorable.",
+              "The hero product frame is the most conventional shot. The glasses should be revealed through the transformation, not presented next to it."
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.72,
+            "scores": {
+              "idea": 5,
+              "composition": 4,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 4,
+              "motion": 3,
+              "craft": 3,
+              "originality": 4
+            },
+            "tells": [
+              "The same setup repeats in every frame: one skillet on a dark wood table in a single elliptical spotlight, with only the year swapped (2026 \u2192 2058 \u2192 2084). This is slide-deck structure.",
+              "The type is a default slab/Cooper-style serif laid flat on the table as a projected label, with no scale play or craft. 'Back it on Kickstarter' is cropped awkwardly at the frame edge.",
+              "The pan is a simple, plain model with crushed black shadows and almost no detail in the iron's patina or seasoning. The 'FERRO SHEFFIELD' embossed base is the only material moment.",
+              "The light is a single generic hard spot with no secondary bounce, atmosphere or dust. The palette is brown on black and monotonous.",
+              "The idea (a pan that lasts generations) is literal, and is told by numbers instead of image: nothing visibly ages, gets passed down or changes hands."
+            ],
+            "gaps": [
+              "Show time passing through image (hands, kitchens, patina, light changing across eras) instead of swapping a number under the same spotlight.",
+              "Make each frame a poster: vary the camera, scale and staging, and build real texture into the cast iron, wood and atmosphere the way B does with glass and water.",
+              "Develop a typographic voice (a custom stamp or foundry lettering tied to the embossed mark) and integrate the end-card in the frame instead of setting a cropped default serif line."
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 8,
+              "motion": 7,
+              "craft": 9,
+              "originality": 7
+            },
+            "tells": [
+              "This is luxury set design for Devialet, possibly a Lunar New Year edition: lacquer-red slatted panels, cream and travertine plinths with gold inlay, and arcs and gold-rimmed waves that echo Chinese architectural motifs.",
+              "The craft is high: stone grain, brushed gold, and a turning mechanism of watch-movement gears under a Phantom speaker that ties the brand's engineering to the set.",
+              "The sculptural ribbon arcs wrapping the speaker grille show camera choreography from wide product family to macro detail and back.",
+              "The red/cream/gold palette is deliberate and carefully balanced, with soft, physically plausible light."
+            ],
+            "gaps": [
+              "The structure is a conventional product turntable (wide, detail, mechanism, wide end pack). It needs a surprise or a story beat as strong as B's transformation.",
+              "Type is almost absent apart from the logo on the product. A considered title or calligraphic element integrated with the set would sharpen the cultural idea.",
+              "The final frame largely repeats the opening composition. The ending should change the space instead of bookending it."
+            ]
+          }
+        },
+        "ranking": [
+          "B",
+          "D",
+          "A",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 36.1,
+        "cost_usd": 0.3732826,
+        "tokens": 75046,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "osko-launch",
+        "B": "morph-studio-xreal-1s-2025",
+        "C": "found-devialet-opera-de-paris-2022",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.72,
+            "scores": {
+              "idea": 7,
+              "composition": 6,
+              "typography": 6,
+              "colour": 6,
+              "light_texture": 6,
+              "motion": 7,
+              "craft": 7,
+              "originality": 6
+            },
+            "tells": [
+              "A real narrative hook: an 'I.O.U.' sticky note left in a retro fridge, a promise paid back with coffee, beer, money, a heart or a gift. It reads as a story, not a feature diagram.",
+              "The fridge shot has a motivated interior light spilling onto a reflective floor, and the door-open beat implies staging and timing",
+              "The golfer frames are a proper pose-to-pose animation sequence (swing, follow-through, facepalm), which shows real character-animation timing",
+              "Each scene uses a different style: a moody 3D night van, glossy 3D fridge contents, a flat vector golfer and emoji-like icons. This looks like a deliberate vignette structure, but it costs the piece a single visual identity",
+              "The icon grid on black is the weakest frame. It is close to a stock emoji set laid out like a slide"
+            ],
+            "gaps": [
+              "Unify the scenes under one art direction (palette, rendering and line), so the switching styles read as an authored system rather than gathered assets",
+              "Replace the icon-grid slide with a designed transition where the objects come from the story world instead of sitting on a black field",
+              "Push the hand-lettered I.O.U. into a typographic motif that carries through the film and resolves at the end, instead of a one-off prop"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 6,
+              "composition": 7,
+              "typography": 5,
+              "colour": 6,
+              "light_texture": 8,
+              "motion": 8,
+              "craft": 8,
+              "originality": 5
+            },
+            "tells": [
+              "High-end fluid and cloth-like simulation: the glasses dissolve into and re-form from liquid, with layered caustics, refraction, bubbles and organic tendrils",
+              "There is clear choreography between frames: a spiralling fluid helix, then the hero reveal, then the liquid-cast glasses, then a macro surface, then the cellular 'evolution' world",
+              "Real depth of field, chromatic fringing and subsurface glow show the work of a serious CG pipeline",
+              "Against that, it uses the stock tech-launch palette (all electric blue on black), and the type is a generic wide-tracked sans ('E V O L U T I O N', 'XREAL 1S') placed like a lower-third",
+              "The idea that the product is born from liquid and evolves is category-standard for hardware launches"
+            ],
+            "gaps": [
+              "Break the monochrome blue with one unexpected palette decision, so it doesn't look like every other AR/VR launch film",
+              "Give the type a point of view: integrate it into the fluid, refract it or have it formed by it, instead of tracked caps floating over the render",
+              "Tie the liquid metaphor to something specific about this product (optics, display, lightness) rather than generic 'evolution'"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 8,
+              "motion": 7,
+              "craft": 9,
+              "originality": 7
+            },
+            "tells": [
+              "A fully built product world: cream stone plinths with gold inlay, layered arches, glass fluting and red lacquer drapes. It reads as a deliberate Lunar New Year edition with a specific cultural palette",
+              "Every frame works as a poster, with considered framing: a hero trio, a macro of the grille framed by sweeping ribbons, an overhead of the speaker on a clockwork mechanism of gears, and a centred Mania on a stepped plinth",
+              "Materials are convincing (matte travertine, brushed gold, soft fabric, fine edge bevels), and the soft light falls realistically with gentle contact shadows",
+              "The clockwork reveal is a real surprise and a nod to engineering and craft that is specific to the brand",
+              "Wordmark use is restrained (the logo on the product only), which suits a luxury piece"
+            ],
+            "gaps": [
+              "The plinth-and-arch product stage is a familiar luxury-CGI convention. Push the set into something only this brand could own",
+              "Add more camera and choreographic variety; several frames share a similar eye-level, centred plinth composition",
+              "Build the clockwork and ribbon ideas into one continuous transformation, so the film has a single memorable mechanic rather than a sequence of beautiful stills"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 5,
+              "composition": 3,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 4,
+              "motion": 3,
+              "craft": 3,
+              "originality": 4
+            },
+            "tells": [
+              "The same composition repeats across frames: one pan, one warm spotlight ellipse on a dark ground and a year number. It is a single layout with the words swapped (2026, 2058, 2084)",
+              "Flat, low-detail render: the pan is a near-primitive with no seasoning, patina, pitting or casting texture, despite cast iron being a subject that begs for material",
+              "Typography is a default slab/Clarendon-style face placed flat on the floor and lit by the same spotlight, with no scale contrast or layout idea. The 'Back it on Kickstarter' end card is cropped awkwardly at the frame edge",
+              "Generic dark ground with a single warm accent fits the 'tasteful AI' look",
+              "The heirloom idea (a pan that outlives generations) is sound but delivered literally, with nothing marking the passing time except the number"
+            ],
+            "gaps": [
+              "Show time passing in the image itself: patina, changing hands, kitchens and light across decades, instead of swapping a number under the same spotlight",
+              "Render the material properly: seasoned black iron, a cast surface texture, steam and oil, so the product earns its premium",
+              "Design the typography: a deliberate face, scale and placement integrated into the scene, and an end frame composed rather than cropped"
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "B",
+          "A",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 34.2,
+        "cost_usd": 0.1736716,
+        "tokens": 74902,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "found-devialet-opera-de-paris-2022",
+        "B": "morph-studio-xreal-1s-2025",
+        "C": "osko-launch",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 9,
+              "originality": 7
+            },
+            "tells": [
+              "The palette is deliberate: lacquer red, travertine cream and brushed-gold trim. It feels tied to a Lunar New Year edition, not picked from a default.",
+              "Materials are convincing: stone-textured plinths, gold inlay edges, and soft shadows from a single key light that are motivated by the scene.",
+              "The camera choreography varies. It goes from a wide hero shot to an orbit through ribbon arches, then a top-down reveal of a watch-style gear movement beneath the plinth, then a frontal close-up, then back to the group.",
+              "The gear reveal is a real idea. It ties the speaker to haute horlogerie, so the frame shows a concept and not just the product turning on a stand.",
+              "Type is almost absent apart from the product's own logo. That fits a luxury product film where the object carries the brand."
+            ],
+            "gaps": [
+              "The structure is a familiar luxury-product stage. Plinths, arches and curtains are close to genre convention, so add one image only Devialet could own beyond the gear reveal.",
+              "There is no typographic layer or end-frame idea. A considered type system tied to the edition would add authorship.",
+              "Most frames are symmetrical hero framings. More scale contrast or one unexpected camera move would add surprise."
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.88,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 9,
+              "craft": 9,
+              "originality": 8
+            },
+            "tells": [
+              "The idea is specific to the brief: the glasses grow out of fluid and organic tissue, a literal 'evolution' told through matter. It is not just a turntable.",
+              "The simulation work is dense and layered: splash fluid, gel membranes, caustic refraction, a vein-like filament network and droplet spheres with real depth of field.",
+              "Frames vary a lot in scale and state, from abstract macro to product hero to x-ray translucent glasses to membrane close-up to cellular field. That variety shows a real transformation sequence.",
+              "The monochrome cobalt palette is committed and stays consistent, and the lighting is rim-driven and dramatic.",
+              "The weakness is the type: a plain bold grotesk for 'XREAL 1S' and wide-tracked 'EVOLUTION' are close to default tech-launch type."
+            ],
+            "gaps": [
+              "The typography is generic, with tracked caps and a stock grotesk dropped over the image. Integrate the type into the fluid world, letting it refract, form from droplets or warp.",
+              "The all-blue palette risks reading as tech-launch clich\u00e9. A secondary accent or temperature shift at the climax would give the piece structure.",
+              "Some frames are effect-heavy and the product is hard to read. Give at least one beat of clarity that shows the product's design before it dissolves again."
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.55,
+            "scores": {
+              "idea": 7,
+              "composition": 6,
+              "typography": 5,
+              "colour": 6,
+              "light_texture": 6,
+              "motion": 7,
+              "craft": 6,
+              "originality": 6
+            },
+            "tells": [
+              "There is a real narrative thread: an 'I.O.U.' sticky note left in place of something taken from the fridge, with debts and favours (coffee, beer, cash, a gift) made concrete. That is a witty, specific idea, likely for a payments or gifting app.",
+              "The style changes deliberately from vignette to vignette: a moody 3D night drive, a CG fridge shelf, flat character animation of a golfer's swing ending in a facepalm, and an emoji-style icon grid. This reads as an episodic campaign, not a single tool's output.",
+              "The fridge frame has motivated interior light spilling into darkness and a floor reflection, which shows staged lighting choices.",
+              "Against it: the golfer is generic corporate-vector illustration, the icon grid is close to stock emoji, and the visual systems don't hang together."
+            ],
+            "gaps": [
+              "There is no unifying visual language. Pick one art direction, or a deliberate rule for switching styles, so the piece reads as authored and not as an assembled set.",
+              "The illustration and icons default to stock vector and emoji looks. Commission a distinctive character and icon style with texture and a point of view.",
+              "Typography is limited to handwritten 'I.O.U.' notes. Build a real type system around the IOU motif and resolve it in an end frame."
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.75,
+            "scores": {
+              "idea": 6,
+              "composition": 4,
+              "typography": 4,
+              "colour": 5,
+              "light_texture": 5,
+              "motion": 3,
+              "craft": 3,
+              "originality": 5
+            },
+            "tells": [
+              "The idea is decent: a pan that lasts generations, with years ticking forward (2026, 2058, 2084) in a projected spotlight. But it is told once and repeated.",
+              "The same composition repeats in every frame: one pan on a dark surface in a single elliptical spotlight with a number underneath. It is a slide deck with the digits swapped.",
+              "The modelling is crude. The handle is a flat rectangular bar, the pan has almost no material detail (no cast-iron grain, seasoning or patina), and nothing shows ageing even though the passage of time is the whole point.",
+              "The type is a stock slab/Cooper-style serif used straight, and 'Back it on Kickstarter' sits in a corner like a caption. There is no typographic craft.",
+              "The light is a single warm cone with muddy blacks, and the frames are inconsistently cropped and centred."
+            ],
+            "gaps": [
+              "Make time visible on the object itself: seasoning building up, hands and kitchens changing, light moving like a day or a life. Repeating one shot with new numbers isn't enough.",
+              "Raise the CG and material craft to A's level: real cast-iron texture, an accurately modelled handle and pour spouts, and a lived-in surface.",
+              "Design the type and composition with intent: scale contrast, numbers integrated into the scene with craft, and an end frame that isn't a corner caption."
+            ]
+          }
+        },
+        "ranking": [
+          "B",
+          "A",
+          "C",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 34.5,
+        "cost_usd": 0.1739504,
+        "tokens": 74904,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "osko-launch",
+        "B": "morph-studio-xreal-1s-2025",
+        "C": "found-devialet-opera-de-paris-2022",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.72,
+            "scores": {
+              "idea": 7,
+              "composition": 6,
+              "typography": 6,
+              "colour": 7,
+              "light_texture": 6,
+              "motion": 7,
+              "craft": 7,
+              "originality": 7
+            },
+            "tells": [
+              "Has a real narrative running through it: the 'I.O.U.' sticky note goes from a tub on a fridge shelf to an open fridge door glowing in the dark. It's a witty story of a small debt, not a feature diagram",
+              "Several art directions in one film: a night-time camper-van diorama, glossy 3D fridge contents, a flat-vector golfer drawn across three poses, and emoji-style icons. That reads as a deliberate anthology approach",
+              "The golfer's swing-and-slump sequence is clearly animated character acting with comic timing",
+              "The fridge frame is well lit: warm interior light against a black void, with a reflection on the floor",
+              "Weak points: the icon grid (coffee, beer, money, heart, gift) is close to stock emoji, and the flat golfer illustration is fairly default vector"
+            ],
+            "gaps": [
+              "The art directions don't hold together. Tie the camper van, the fridge, the golfer and the icons into one visual system or one transition idea, so the film reads as authored rather than assembled",
+              "Swap the generic emoji-style icon grid for icons drawn in the house style, matching the material quality of the fridge shots",
+              "Push the light and texture in the flat frames (the golfer, the icons) towards the richness of C, so that every frame stands alone as a poster"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 6,
+              "composition": 7,
+              "typography": 5,
+              "colour": 6,
+              "light_texture": 8,
+              "motion": 8,
+              "craft": 8,
+              "originality": 5
+            },
+            "tells": [
+              "High-end simulation work: liquid and glass shatter, the glasses re-formed as translucent organic matter, caustics, refraction and depth of field",
+              "Varied shot sizes from frame to frame, from extreme macro on the bubble membranes to a hero product shot, which suggests real camera choreography",
+              "Downsides: the monochrome electric blue is the standard tech-launch palette, and the brief is 'product dissolves into fluid'",
+              "The type is weak: a default bold grotesk 'XREAL' set against a light '1S', and 'EVOLUTION' in tracked caps floating in the centre. That is exactly the generic label treatment"
+            ],
+            "gaps": [
+              "Give the typography an idea. Integrate the type with the liquid, for example refracted through it or formed from it, instead of laying tracked caps over the render",
+              "Break the single-blue palette with a second temperature or an accent, so the film doesn't look like every other AR or tech launch",
+              "Find an idea specific to this product (what AR glasses actually show or change) instead of the generic 'material evolution' metaphor"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 8,
+              "motion": 7,
+              "craft": 9,
+              "originality": 7
+            },
+            "tells": [
+              "A distinctive palette: lacquer red, cream stone and gold inlay. It reads as a deliberate Lunar New Year or luxury cue, not a default colour",
+              "Carefully built set architecture: pleated red screens, arched gold rings, sweeping ribbons, and travertine-textured plinths whose shapes echo the speaker's form",
+              "Real material rendering: brushed gold, a matte white shell, a stone texture, and a revealed clockwork movement beneath the plinth, which is a surprise beat",
+              "The camera moves between wide, top-down and macro, with the product line regrouped across frames. That suggests choreography",
+              "Typography is almost absent apart from the product logos. The film leans on the image, which is right for it but adds no layer of its own"
+            ],
+            "gaps": [
+              "Add a typographic layer with a point of view, such as an end card or a title set in a luxury or seasonal custom face that ties into the gold linework",
+              "Bring the surprise of the clockwork reveal into more of the film so it doesn't settle into a premium plinth showcase",
+              "Introduce some contrast of rhythm or scale, for example an extreme macro on a material or a dramatic light change, to lift it from beautiful to memorable"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.7,
+            "scores": {
+              "idea": 6,
+              "composition": 4,
+              "typography": 4,
+              "colour": 5,
+              "light_texture": 5,
+              "motion": 3,
+              "craft": 3,
+              "originality": 5
+            },
+            "tells": [
+              "The concept, years passing as a moving pool of light over a cast-iron pan to signal a pan that lasts generations, is reasonable but literal: a projected year, then the next, then a Kickstarter end card",
+              "Almost the same composition in every frame: a dark pan in a spotlit oval on a dark table with a date beside it. Little happens",
+              "The pan is a simple primitive with a near-black, featureless body. There is no seasoning, patina or iron texture, though the subject is crying out for material detail",
+              "The type is a default Cooper-style slab serif, laid flat on the surface with no integration or scale idea. 'Back it on Kickstarter' is cropped at the bottom edge",
+              "Frame sizes and crops vary inconsistently, and the light is one undifferentiated warm spot. Those are template or amateur tells"
+            ],
+            "gaps": [
+              "Render the cast iron properly: seasoning sheen, pitting, wear building up across the decades, so the material itself tells the story of the years",
+              "Vary the staging and camera between frames, for example generations of hands, kitchens and changing light quality, instead of repeating one top-down spotlit layout",
+              "Commission or choose typography with intent, perhaps foundry-stamped numerals cast into the iron or etched by the light, and resolve the cropped, slide-like end card"
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "B",
+          "A",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 32.1,
+        "cost_usd": 0.1709714,
+        "tokens": 74763,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "osko-launch",
+        "B": "candidate",
+        "C": "found-devialet-opera-de-paris-2022",
+        "D": "morph-studio-xreal-1s-2025"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.6,
+            "scores": {
+              "idea": 7,
+              "composition": 6,
+              "typography": 5,
+              "colour": 6,
+              "light_texture": 6,
+              "motion": 6,
+              "craft": 6,
+              "originality": 6
+            },
+            "tells": [
+              "Has an actual narrative idea: the 'I.O.U.' sticky note in place of the missing food, repeated in the open retro fridge with its reflection, is a witty, specific gag about owing someone",
+              "The golfer sequence (setup, swing, head in hands) shows real character pose-to-pose animation and comic timing",
+              "The emoji grid (coffee, beer, flying money, heart, gift) ties back to the 'pay someone back' idea, so the reel reads as a brief-driven fintech/gifting spot",
+              "Against that, the styles don't hang together: a moody night 3D van, saturated toy-like 3D props, flat vector characters on grey, and stock-looking 3D emoji on black, with no unifying art direction",
+              "The only type is the handwritten I.O.U.; there is no typographic system",
+              "The emoji frame is close to stock/default icon sets and slide-like in layout"
+            ],
+            "gaps": [
+              "Commit to one art direction (or a deliberate rule for switching styles); right now the jumps between 3D, flat vector and emoji read as a compilation rather than a designed film",
+              "Bring C's level of material and light into the props: the bowl and bottles are plasticky and the light is generic, whereas the fridge frame proves the team can do motivated light and reflection",
+              "Replace the default-looking emoji grid with custom illustration and give the piece a typographic voice beyond one sticky note"
+            ]
+          },
+          "B": {
+            "verdict": "not professional",
+            "confidence": 0.6,
+            "scores": {
+              "idea": 7,
+              "composition": 5,
+              "typography": 4,
+              "colour": 5,
+              "light_texture": 4,
+              "motion": 4,
+              "craft": 3,
+              "originality": 5
+            },
+            "tells": [
+              "The concept is good: years 2026, 2058, 2084 cast in a raking light beside a cast-iron pan, so the pan outlives its owners, with the sweeping light working like a sundial",
+              "The execution doesn't support it. The pan is low-poly blockwork (flat slab handle, simple cylinder), with no seasoning sheen, pitting or mass",
+              "Every frame repeats one setup: dark wood, one elliptical spot, one pan, one number. The light moves but nothing else changes, so the structure is near slide-like",
+              "Type is a default-feeling Cooper/Clarendon-style face set flat on the floor, ending on a plain 'Back it on Kickstarter' line that's cropped at the frame edge",
+              "The flipped pan is almost entirely black with no rim or bounce light, so the hero product is lost",
+              "The FERRO/Sheffield stamp is the only detailed element and still reads as a decal on a puck"
+            ],
+            "gaps": [
+              "Model and shade the pan properly (cast-iron grain, seasoned oil sheen, wear, real thickness and a riveted handle) and light it with a rim so the hero survives in the dark",
+              "Develop the time idea through choreography (the pan worn across generations, hands changing, the light moving across a day or a lifetime) rather than swapping numbers in one shot",
+              "Give the type a point of view: integrate the years as projected light with grain, gobo or caustics, and design the end card instead of placing a caption that crops off-frame"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 7,
+              "composition": 9,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 9,
+              "originality": 7
+            },
+            "tells": [
+              "A deliberate, unusual palette: lacquer red, ivory and brushed gold gives the speakers a Lunar New Year context instead of a generic studio sweep",
+              "Rich material work: leather/stone-textured plinths with gold inlay, fluted glass, matte ceramic speaker shells, and an exposed watch-movement gear chamber under the speaker as a craft metaphor",
+              "Real choreography: ribbon arcs that wrap and unwrap the speaker, a top-down reveal into the mechanism, and a pull-back to the hero trio across a varied range of shots",
+              "Soft, motivated light with real shadows and subtle reflections; every frame holds up as a poster",
+              "Typography is almost absent (only the product's own logo), which suits a luxury product film but leaves no typographic idea"
+            ],
+            "gaps": [
+              "The idea is luxury set design rather than a concept only this brand could own; push the gear/mechanism metaphor into a real narrative beat",
+              "Add an end title or type system with the same craft as the set; right now type contributes nothing",
+              "Introduce one surprise or break in rhythm; the elegance is consistent but predictable for the category"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 5,
+              "colour": 7,
+              "light_texture": 9,
+              "motion": 9,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "Ambitious simulation work: the glasses form out of liquid and organic tissue-like structure (a 'grown, evolved' product), and the glasses dissolve and re-form across the frames",
+              "Dense, layered frames with caustics, subsurface translucency, bubbles, chromatic edges and depth of field: real light and material, not a gradient blob",
+              "Clear choreography: an explosive opening, the product reveal, a macro of the frame forming, and an organic cellular end field",
+              "Type lets it down: 'XREAL' with '1S' floating far right, and a widely tracked thin-caps 'E V O L U T I O N' centred over the image, which is the generic tasteful default",
+              "The all-blue palette is a familiar tech-launch choice"
+            ],
+            "gaps": [
+              "Typography needs an idea equal to the simulation (letterforms that grow or refract out of the liquid) rather than tracked caps laid over the image",
+              "Break the monochrome electric blue with a second controlled colour or temperature shift so frames don't blur together",
+              "Anchor the 'evolution' metaphor in something more specific to the product's function (display, optics) so the idea is ownable, not just 'liquid tech'"
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "D",
+          "A",
+          "B"
+        ]
+      },
+      "meta": {
+        "seconds": 38.4,
+        "cost_usd": 0.1806902,
+        "tokens": 75237,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "candidate",
+        "B": "morph-studio-xreal-1s-2025",
+        "C": "found-devialet-opera-de-paris-2022",
+        "D": "osko-launch"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "not professional",
+            "confidence": 0.65,
+            "scores": {
+              "idea": 5,
+              "composition": 4,
+              "typography": 4,
+              "colour": 5,
+              "light_texture": 5,
+              "motion": 3,
+              "craft": 3,
+              "originality": 4
+            },
+            "tells": [
+              "One setup repeats in every frame: a pan on a dark table with a warm spotlight, and only the camera angle and the year change. It reads like slides.",
+              "The pan is a plain, smooth mesh. There is no cast-iron grain, seasoning, pitting or wear, which is the very texture a 'lasts generations' idea needs.",
+              "The light gobo carrying the years 2026/2058/2084 is the one idea. It is literal and obvious, a timeline in place of a story.",
+              "The type is a stock heavy slab/Cooper-style face projected flat. The end card 'Back it on Kickstarter' is cropped at the frame edge, a basic layout mistake.",
+              "The palette is all brown and black, low contrast and murky. The underside view of the logo is nearly black and hard to read, so the hero moment is poorly lit.",
+              "There is no other prop, human trace or change of state across 60 years, so the frames show little choreography."
+            ],
+            "gaps": [
+              "Make the passing time real and material: rust, seasoning, wear, changing food and hands across generations, in place of the same pan with different numbers.",
+              "Light the hero product properly with rim and specular light that shows the metal. The FERRO stamp and handle disappear into black.",
+              "Design the type and end card as a system with deliberate scale, safe margins and a lockup. Don't let a default slab face drift off the frame."
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 6,
+              "colour": 7,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 9,
+              "originality": 7
+            },
+            "tells": [
+              "High-end fluid and particle simulation: the product dissolves into and re-forms from liquid, with caustics, refraction and subsurface detail.",
+              "Framing changes from frame to frame (extreme macro, hero front view, abstract cellular close-up), which suggests choreographed transitions.",
+              "The glasses rebuilt in liquid glass are a clear image of 'evolution' tied to the product.",
+              "The weak spot is typography. 'XREAL 1S' is set in a generic grotesk and widely tracked 'EVOLUTION' is a stock tech-launch move."
+            ],
+            "gaps": [
+              "Typography is the house-style default for tech launches. It needs a type idea built into the fluid world, such as type that refracts or forms out of the liquid.",
+              "An all-blue monochrome is safe for the category. A second temperature or accent would add tension and help it stand out among similar launch films.",
+              "The concept, product born from liquid, is well executed but common in tech launches. It needs one surprising beat no other launch would have."
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 8,
+              "composition": 9,
+              "typography": 6,
+              "colour": 9,
+              "light_texture": 8,
+              "motion": 8,
+              "craft": 9,
+              "originality": 8
+            },
+            "tells": [
+              "The set design is specific to this brand: Devialet's oval motif repeats in arches, gold-trimmed ribbons, curved screens and plinths with cutouts, so every element rhymes with the product.",
+              "The palette is unusual for the category: cream stone, brushed gold and lacquer red (it reads as a Lunar New Year edition), and it is applied with restraint.",
+              "The overhead shot reveals a watch-movement gearbox under the speaker, a surprise that links audio engineering to haute horlogerie.",
+              "Material work is excellent: travertine grain, satin metal edges, ribbed glass screens. Each frame works as a poster, and the hero-to-family recomposition shows choreography.",
+              "Type is barely present (a small logo on the product), and leaving it out lets the set carry the brand."
+            ],
+            "gaps": [
+              "Light is soft, even and a little catalogue-like. A more dramatic key light with moments of gold glint would raise it from luxury still life to film.",
+              "Its structure is a known luxury product-tour format. One stronger narrative turn, beyond the gear reveal, would push it toward the best of the year.",
+              "There is no typographic signature. A bespoke title or end card in the same oval-and-gold system would finish the piece."
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.55,
+            "scores": {
+              "idea": 6,
+              "composition": 6,
+              "typography": 5,
+              "colour": 5,
+              "light_texture": 5,
+              "motion": 6,
+              "craft": 6,
+              "originality": 5
+            },
+            "tells": [
+              "It has a real narrative device, an 'I.O.U.' note left in the fridge and on a food box, with comic timing across scenes (the fridge opens to reveal the note). That is a written gag, not a slide deck.",
+              "The styles are inconsistent: dark low-poly 3D van, glossy toy-like 3D fridge, flat vector golfer, emoji-style icons. It reads as a patchwork, not a designed system.",
+              "The golfer sequence is clip-art-level flat illustration with gradient shirts, and the icon grid (coffee, beer, money, heart, gift) is generic emoji-sticker vocabulary.",
+              "The handwritten I.O.U. and the reflective black floor under the fridges are small signs of craft. It is competent commercial work but unremarkable."
+            ],
+            "gaps": [
+              "Pick one visual language and commit to it. Mixed media with no rule makes the brand forgettable.",
+              "Replace the stock emoji and flat illustration with drawn or modelled assets that have a point of view and texture.",
+              "Push the I.O.U. gag into the whole structure, with escalating debts, payoffs and a typographic signature. It should be the film, not one of several scenes."
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "B",
+          "D",
+          "A"
+        ]
+      },
+      "meta": {
+        "seconds": 33.9,
+        "cost_usd": 0.1737116,
+        "tokens": 74904,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "critic": {
+    "answer": {
+      "scores": {
+        "motion": 5,
+        "sound": 5,
+        "craft": 5
+      },
+      "checks": {
+        "idea": true,
+        "invariant": true,
+        "arc": true,
+        "type_meaning": false,
+        "freeze_frame": false,
+        "ending": true,
+        "restraint": true,
+        "material": true,
+        "sync": true
+      },
+      "defects": [
+        "The pan is underexposed throughout: the blacks are crushed, so the hero object reads as a flat silhouette with no specular highlights or detail on the cast-iron surface (frames 4 and 5, pairs row 2).",
+        "Frame 5 is almost entirely a black mass taking up most of the frame. It is dead and unreadable as a poster.",
+        "The modelling is primitive. The handles and helper handle are flat extruded rectangles, the props are bare cylinders and a sphere, and the pan has no casting detail, pour spouts or wear to sell 'generations'.",
+        "The end card's 'Back it on Kickstarter' runs off the right edge and sits on the bottom edge with no safe margin.",
+        "The 'SHEFFIELD' and '2026' text on the emblem is soft and close to illegible. During the reveal, the embossed lettering rises out of pure black with very little light on it.",
+        "At 100%, the projected year numerals are soft and smeared, the wood texture is low-resolution, and there is visible compression noise and blocking in the dark gradients.",
+        "In pairs row 2, the light pool jumps from horizontal to vertical within 1/6 s. It reads as a pop rather than a motivated sweep of the sun.",
+        "The 2058 hold and the end card are both static for well over a second. The longest shot is 5.0 s, against a world-class median of about 2 s."
+      ],
+      "gaps": [
+        "The motion is almost entirely camera drift plus a swinging light pool. The pan never acts: it isn't used, aged, passed on or handled, and nothing has weight or contact. Top studios would choreograph the object and its patina changing with each year, not just swap the numerals.",
+        "Lighting and finish: a single hard spotlight on a near-black scene kills the material story of cast iron. It needs a rim or kicker light, specular roll-off on seasoned metal, higher-resolution wood and sharper projected type.",
+        "Sound: the build is a regular clock tick that gets denser to about 13.8 s, then a drop, one transient hit and a static low bed. It is a clean but thin device with few layers, no foley for the iron and little tonal development. The tail is flat when it should resolve musically on the logo."
+      ]
+    },
+    "meta": {
+      "seconds": 26.1,
+      "cost_usd": 0.2019892,
+      "tokens": 77977,
+      "models": [
+        "claude-opus-5-5"
+      ]
+    },
+    "pace": "final.mp4: 20.0s, 8 shots, median 2.50s, longest 5.00s\nper-second change: [10.8, 3.9, 24.7, 13.7, 16.8, 22.6, 20.1, 36.2, 43.7, 23.5, 18.2, 40.8, 47.4, 15.8, 22.9, 4.2, 7.5, 14.9, 9.3]\nPACE: FAIL \u2014 longest shot 5.0s > 2.5s; median shot 2.5s > 2.0s"
+  },
+  "full_scores": {
+    "idea": 5.5,
+    "composition": 4.0,
+    "typography": 4.0,
+    "colour": 5.0,
+    "light_texture": 4.5,
+    "motion": 4.0,
+    "craft": 4.0,
+    "originality": 4.5,
+    "sound": 5
+  },
+  "full_overall": 4.5,
+  "cost_usd": 1.448,
+  "judge_seconds": 235.3,
+  "verdict": "FAIL"
+}

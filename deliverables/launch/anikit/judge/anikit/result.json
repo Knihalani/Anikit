@@ -1,0 +1,923 @@
+{
+  "name": "anikit",
+  "tags": [
+    "product-launch",
+    "ui-product",
+    "kinetic-type"
+  ],
+  "refs": [
+    "hook-launching-whisk-with-google-labs-2025",
+    "coinbase-system-update",
+    "morph-studio-xreal-1s-2025"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 3.0,
+      "composition": 3.0,
+      "typography": 3.0,
+      "colour": 4.0,
+      "light_texture": 3.0,
+      "motion": 3.0,
+      "craft": 2.5,
+      "originality": 2.0
+    },
+    "overall": 2.94,
+    "judged_professional": "0/6",
+    "pro_rate": 0.0,
+    "mean_rank": 4,
+    "gaps": [
+      "No idea beyond showing that a prompt became an image; it needs a narrative or a formal concept that rewards watching",
+      "The modelling, lighting and texture are placeholder level; the scene wants real atmosphere: volumetric beam, rain on surfaces, wave detail",
+      "The typography is default serif placed like a slide; it needs a typographic system integrated with the image, as in D",
+      "Replace the primitive placeholder scene with a designed image: real atmosphere, rain, a working lighthouse beam and a sea with texture",
+      "Build a progression instead of a repeating grid. Each frame should show a new idea or shot, not more copies of the same card",
+      "Give the type a point of view (a custom or considered face, scale contrast, integration with the scene) instead of a default serif title placed over a picture",
+      "Build an actual idea instead of illustrating the prompt literally: the beam, the rain and the boat should drive the staging and the story",
+      "Replace primitives with designed assets: real lighthouse form, volumetric beam, rain with depth and motion blur, and real interaction between light and boat",
+      "Give the type a point of view rather than a default serif centred on the hero frame, and vary composition across shots instead of tiling one image",
+      "It needs an actual subject and image. Model or illustrate the lighthouse, sea and rain with real material and atmosphere instead of primitives, the way A builds its glasses from simulated liquid.",
+      "Replace the tile-and-duplicate structure with choreographed shots that change scale, angle and content from frame to frame.",
+      "Develop a typographic idea. Right now it is a default serif over a picture plus a prompt caption. Type should be part of the image system, as in C.",
+      "No idea beyond showing the prompt and its output; it needs a concept or a story rather than a feature demo",
+      "The scene needs real modelling, atmosphere and light (volumetric beam, wet surfaces, sea texture) instead of primitives and flat planes",
+      "Replace the repeated postcard grid with frames that are composed differently and choreographed with intent, and give the typography a real typographic idea",
+      "Replace the prompt-as-caption device with an actual concept. C turns its whole subject into its medium (ASCII), whereas here the lighthouse could be anything.",
+      "Build real material and light into the scene: volumetric beam, wet surfaces, rain that catches the light. As it stands, it is a flat diorama in a 3D card.",
+      "Choreograph progression rather than duplicating one card into a grid. Each beat needs a new composition and a change of scale or idea."
+    ],
+    "tells": [
+      "One composition repeated: the same lighthouse, sun and boat postcard, duplicated into a grid of tilted cards, with only the grade shifting from orange to blue",
+      "Primitive, untextured CG: a black box for the lighthouse, a flat plane of sea, rain as straight white lines, and a hard specular hotspot on the cards",
+      "Default italic editorial serif caption repeating the prompt text, ending on a slide-like serif title card ('Anikit Video') and a 'render spec.json' footer: it presents itself as automated output",
+      "There is little else on screen besides the lighthouse postcard; the moves are generic camera drift and card fan-outs",
+      "The subject is crude primitive geometry: the lighthouse is a black box with a stick, the 'landmass' is a flat black polygon, the boat is a tiny sprite, and the rain is straight white lines",
+      "The same image and the same caption ('A lighthouse at dusk, in rain. The beam finds a small boat.') repeat on every card. It is one composition multiplied into a grid, so little actually happens",
+      "Typography is a generic editorial serif with an italic caption, set like a slide. 'Anikit Video' is dropped over the image with no integration",
+      "The end card reads 'anikit-video render spec.json', which openly shows it is the output of an automated pipeline",
+      "The light is a single flat spotlight on cards with no material on the paper. The prompt says the beam finds a boat, but no beam is ever rendered",
+      "The same lighthouse image is repeated in every frame, as a card, a grid of cards, then cards tilted. This is one layout duplicated, not choreography",
+      "The 'lighthouse' is a black primitive block with a stick, and the 'beam' is a flat translucent rectangle. These are stock primitives with no modelling or atmosphere",
+      "A literal prompt sentence is printed as a caption ('A lighthouse at dusk, in rain. The beam finds a small boat.'), and the beam visibly does not find the boat",
+      "Default editorial serif title 'Anikit Video' centred over the image, plus 'anikit-video render spec.json'. This is a self-promo for an automated renderer",
+      "The rain is a few thin straight lines and the sea is a generic shader. Light is flat and unmotivated",
+      "The 'lighthouse' is a flat black box primitive with a thin pole, and the boat is a tiny silhouette sprite. These are stock primitives standing in for a subject.",
+      "The same card with the same image and the same caption, 'A lighthouse at dusk, in rain. The beam finds a small boat.', repeats in a tiled grid. It is one composition duplicated, with little happening.",
+      "A generic editorial serif headline ('Anikit Video') is slapped onto the image with no integration. The caption reads like a prompt, and the footer 'anikit-video render spec.json' points to an automated pipeline.",
+      "The rain is a few straight white lines and the light is a flat orange gradient with a sun disc. There is no real atmosphere, texture or motivated light.",
+      "The end card reads 'anikit-video render spec.json'. It is a demo of an automated video tool, and the prompt text ('A lighthouse at dusk, in rain. The beam finds a small boat.') appears as the caption on every card",
+      "The same image is repeated: one lighthouse render tiled into a grid of identical postcards, with one composition copied instead of developed",
+      "Primitive scene: a flat black block for the lighthouse, a rectangular plane for the beam, thin straight lines for rain, and a tiny clip-art boat",
+      "Generic editorial serif ('Anikit Video') set large over the image like a slide headline; flat light on the card surfaces, with no material or depth",
+      "The caption on every card reads like a generation prompt ('A lighthouse at dusk, in rain. The beam finds a small boat.'), and the end card says 'anikit-video render spec.json'. The film is showing off its own automated pipeline, not an idea.",
+      "The illustration is built from stock primitives: a black block for land, a thin rod and lit box for the lighthouse, a cutout boat, and rain streaks drawn as straight lines. The 'beam' is a flat rectangular quad.",
+      "One layout is repeated over and over: a polaroid card, duplicated into a tilted grid. The only change between frames is the camera move and a shift from orange to dusk-blue grading.",
+      "The type is a generic editorial serif italic for the caption and a default bold serif for the wordmark, placed like a slide over the image with no integration.",
+      "A virtual spotlight lights the card, but the light inside the image is flat and the 'rain' does not interact with anything."
+    ]
+  },
+  "refs_summary": {
+    "hook-launching-whisk-with-google-labs-2025": {
+      "overall": 6.12,
+      "judged_professional": "6/6",
+      "mean_rank": 3
+    },
+    "coinbase-system-update": {
+      "overall": 8.0,
+      "judged_professional": "6/6",
+      "mean_rank": 1
+    },
+    "morph-studio-xreal-1s-2025": {
+      "overall": 7.38,
+      "judged_professional": "6/6",
+      "mean_rank": 2
+    }
+  },
+  "ref_mean": 7.17,
+  "delta": -4.23,
+  "trials": [
+    {
+      "key": {
+        "A": "morph-studio-xreal-1s-2025",
+        "B": "hook-launching-whisk-with-google-labs-2025",
+        "C": "candidate",
+        "D": "coinbase-system-update"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 6,
+              "composition": 7,
+              "typography": 6,
+              "colour": 6,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 9,
+              "originality": 5
+            },
+            "tells": [
+              "High-end fluid and glass simulation: caustics, refraction, bubbles caught inside the frame of the glasses, and real subsurface depth in the material",
+              "The shots vary a lot: an explosive fluid burst, the product hero emerging from liquid, a macro on the material, and a cellular or neural macro world, which implies real choreography from abstraction to product and back",
+              "Restrained product typography: wordmark and model number split across the frame on either side of the product, plus a hairline wide-tracked 'EVOLUTION' sitting inside the image",
+              "Polished to the level of a large CG studio, but monochrome electric blue plus liquid is a very familiar look for tech launches"
+            ],
+            "gaps": [
+              "The liquid-and-blue tech-launch idea is generic; it needs a concept specific to AR glasses, such as what you see through them, not only what they are made of",
+              "The palette is one blue throughout; a second, deliberate colour or a shift in value would give it structure and surprise",
+              "Wide-tracked caps 'EVOLUTION' is a stock luxury-tech type move; the type should have a point of view the way D's type-as-image does"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.7,
+            "scores": {
+              "idea": 6,
+              "composition": 6,
+              "typography": 6,
+              "colour": 7,
+              "light_texture": 5,
+              "motion": 7,
+              "craft": 7,
+              "originality": 5
+            },
+            "tells": [
+              "A coherent brand system: saturated signature yellow, a playful wordplay headline ('START whisking TODAY') set very large over the generated result",
+              "UI cards are choreographed: carousel selection, a three-up subject/scene/style row, then an exploded collage of floating UI with tilted cards and a prompt field",
+              "A transition through an abstract warm yellow orb shows the frames are designed to link to each other",
+              "Still mostly a product UI walkthrough: cards, pills and a cursor click; the images are the tool's own AI output, so the feature is shown literally"
+            ],
+            "gaps": [
+              "The idea is literal (the product name plus a demo of the feature); it needs a memorable visual metaphor for 'whisking' ingredients together",
+              "Light, texture and depth are flat UI rendering; a material treatment like A's would give the collage frames physical presence",
+              "The typography is a clean but default geometric sans; scale contrast is present only in one frame"
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 3,
+              "composition": 3,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 3,
+              "motion": 3,
+              "craft": 3,
+              "originality": 2
+            },
+            "tells": [
+              "One composition repeated: the same lighthouse, sun and boat postcard, duplicated into a grid of tilted cards, with only the grade shifting from orange to blue",
+              "Primitive, untextured CG: a black box for the lighthouse, a flat plane of sea, rain as straight white lines, and a hard specular hotspot on the cards",
+              "Default italic editorial serif caption repeating the prompt text, ending on a slide-like serif title card ('Anikit Video') and a 'render spec.json' footer: it presents itself as automated output",
+              "There is little else on screen besides the lighthouse postcard; the moves are generic camera drift and card fan-outs"
+            ],
+            "gaps": [
+              "No idea beyond showing that a prompt became an image; it needs a narrative or a formal concept that rewards watching",
+              "The modelling, lighting and texture are placeholder level; the scene wants real atmosphere: volumetric beam, rain on surfaces, wave detail",
+              "The typography is default serif placed like a slide; it needs a typographic system integrated with the image, as in D"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 9,
+              "colour": 8,
+              "light_texture": 7,
+              "motion": 8,
+              "craft": 8,
+              "originality": 8
+            },
+            "tells": [
+              "A specific system: everything is built from ASCII and code glyphs, so the type is the image (a walking figure, coins, a planet with rings, padlocks), which suits a crypto or payments subject",
+              "Uncompromising monochrome Klein-blue ground with white glyphs, a committed palette rather than a default one",
+              "Every frame is dense and layered, with flow fields of characters, depth through glyph density, and code fragments in the text",
+              "Each frame is a different composition (a character, a flow field, a planet, a lockup with code, a grid of turning coins), which implies choreography and match-cut transitions"
+            ],
+            "gaps": [
+              "The ASCII/terminal aesthetic is a known trend; it needs a moment that pushes it further, such as breaking the grid or bringing in a second material",
+              "The UI label chips ('<<Crypto is...', 'Faster') feel bolted on next to the glyph world; they should be built from the same system",
+              "With no depth of light, the frames risk feeling flat over the length of the film; varying glyph scale, blur or emissive glow would add hierarchy"
+            ]
+          }
+        },
+        "ranking": [
+          "D",
+          "A",
+          "B",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 29.1,
+        "cost_usd": 0.165288,
+        "tokens": 74486,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "morph-studio-xreal-1s-2025",
+        "B": "hook-launching-whisk-with-google-labs-2025",
+        "C": "coinbase-system-update",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 6,
+              "colour": 7,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 9,
+              "originality": 6
+            },
+            "tells": [
+              "High-end simulation work: the glasses are rebuilt as liquid glass with caustics, refraction, trapped bubbles and believable subsurface light",
+              "The motion is choreographed: a cylinder bursts into splash, the product forms out of fluid, there is a macro pass over the gel surface, and it ends in a bubble/neural field. Each frame is a different shot and scale",
+              "Product lockup 'XREAL 1S' is split across the frame with the hero object between the words, a deliberate layout",
+              "Weakness: monochrome electric blue on black, and 'E V O L U T I O N' in widely tracked thin caps is the stock tech-launch title"
+            ],
+            "gaps": [
+              "The 'liquid tech' idea is a well-worn product-launch trope. It needs a concept tied to what AR glasses actually do (layered realities, seeing through), not just a fluid simulation",
+              "The all-blue palette makes it look like many other launch films. A second temperature or an unexpected colour would give it an identity",
+              "The tracked-caps 'EVOLUTION' card is generic. The type should interact with the material, for example refracting through or forming from the liquid, the way C's type is the image"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.7,
+            "scores": {
+              "idea": 6,
+              "composition": 6,
+              "typography": 6,
+              "colour": 7,
+              "light_texture": 4,
+              "motion": 7,
+              "craft": 7,
+              "originality": 5
+            },
+            "tells": [
+              "Coherent brand system: a saturated yellow field and rounded UI cards that feel deliberate, not placeholder",
+              "The narrative is clear: pick subject, scene and style, then reveal the remixed result as a full-bleed 'whisking' payoff, then explode into a layered UI collage. That shows real choreography",
+              "The 'whisking' wordplay with the Start/Today stack is witty and works",
+              "Weakness: this is essentially an animated UI walkthrough. The type is a default rounded grotesk, the light is flat, there is an empty yellow transition frame, and much of the imagery is the product's own AI output"
+            ],
+            "gaps": [
+              "The idea is a literal feature demo (pick three inputs, get an output). There is no conceptual leap of the kind C makes by turning the whole subject into a visual language",
+              "There is no material, light or depth. The flat yellow and UI cards need texture or dimensional staging to rise above product-marketing standard",
+              "The typography is house-default sans with little scale play beyond the one 'whisking' moment. That moment should be pushed into a typographic system across the whole piece"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 9,
+              "colour": 8,
+              "light_texture": 7,
+              "motion": 8,
+              "craft": 8,
+              "originality": 8
+            },
+            "tells": [
+              "A single, committed idea: the whole film is built from ASCII/terminal glyphs, a fitting language for crypto and payments",
+              "The type is the image: $ signs flow like particles, a glyph planet has an orbit ring, and coins rotate in a grid as character sets (Bitcoin, Ethereum, $) at different rotation phases",
+              "Every frame is a different composition (walking figure, flow field, sphere, padlocks with code, coin matrix) with consistent rules. That is real choreography and variety",
+              "A deliberate restricted palette (International Klein-like blue with white glyphs) and depth implied through glyph density and blur",
+              "Small UI label callouts ('<<Crypto is...', 'Faster') are used sparingly as punctuation"
+            ],
+            "gaps": [
+              "The blue/white single-accent ground risks reading as a stylised template. One unexpected colour beat or inversion would add surprise",
+              "The depth and light are simulated only by glyph density. Some frames (padlocks with code) feel flat and slide-like compared with the planet shot",
+              "ASCII rendering is a recognisable trend. The piece needs one moment that only this film could have, a payoff beyond the style itself"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 3,
+              "composition": 3,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 3,
+              "motion": 3,
+              "craft": 2,
+              "originality": 2
+            },
+            "tells": [
+              "The subject is crude primitive geometry: the lighthouse is a black box with a stick, the 'landmass' is a flat black polygon, the boat is a tiny sprite, and the rain is straight white lines",
+              "The same image and the same caption ('A lighthouse at dusk, in rain. The beam finds a small boat.') repeat on every card. It is one composition multiplied into a grid, so little actually happens",
+              "Typography is a generic editorial serif with an italic caption, set like a slide. 'Anikit Video' is dropped over the image with no integration",
+              "The end card reads 'anikit-video render spec.json', which openly shows it is the output of an automated pipeline",
+              "The light is a single flat spotlight on cards with no material on the paper. The prompt says the beam finds a boat, but no beam is ever rendered"
+            ],
+            "gaps": [
+              "Replace the primitive placeholder scene with a designed image: real atmosphere, rain, a working lighthouse beam and a sea with texture",
+              "Build a progression instead of a repeating grid. Each frame should show a new idea or shot, not more copies of the same card",
+              "Give the type a point of view (a custom or considered face, scale contrast, integration with the scene) instead of a default serif title placed over a picture"
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "A",
+          "B",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 29.5,
+        "cost_usd": 0.1677316,
+        "tokens": 74605,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "coinbase-system-update",
+        "B": "hook-launching-whisk-with-google-labs-2025",
+        "C": "morph-studio-xreal-1s-2025",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 7,
+              "motion": 8,
+              "craft": 8,
+              "originality": 8
+            },
+            "tells": [
+              "The whole film commits to one system: ASCII and glyph rendering on an electric International-Klein-style blue. The type is the image, which suits a crypto/payments subject well",
+              "Real variety from frame to frame: a walking figure, a flow field of $ symbols, an orbiting glyph planet, padlocks next to a code column, and a final grid of coins turning in 3D. Each frame has its own composition",
+              "Small typewriter labels ('<<Crypto is...', 'Faster') work like kinetic captions threaded into the image, not slide titles",
+              "The code column ('matchcut_engine.h', 'StartDirectPayment()') adds texture and a wink at the studio",
+              "The coin grid, with coins rotating at different phases, shows choreography and solid 3D-to-ASCII craft"
+            ],
+            "gaps": [
+              "The figure and padlock frames are close to familiar ASCII-shader tropes. A more ownable hero moment would help",
+              "A single blue/white palette across the whole piece flattens the arc. One deliberate colour or value break at the climax would add a beat",
+              "Light and depth come only from glyph density. Varying the glyph scale or adding depth-of-field layers would give C-level dimensionality"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 6,
+              "colour": 7,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 9,
+              "originality": 6
+            },
+            "tells": [
+              "High-end CGI: refractive liquid, caustics, subsurface glow, and the glasses rebuilt as a translucent water/gel object. The materials and light are real studio work",
+              "Clear arc from frame to frame: an exploding cylindrical form, the product reveal in fluid, the liquid glasses, a macro gel close-up, then an organic 'EVOLUTION' cell world",
+              "Shallow depth of field, chromatic fringing and volumetric backlight are all motivated by the subject",
+              "Product name lockup (XREAL / 1S) split across the frame around the hero object, as a deliberate layout"
+            ],
+            "gaps": [
+              "The idea of a liquid/fluid sim on deep blue is a well-worn tech-launch trope. It needs a concept specific to AR glasses",
+              "The typography is generic tracked caps ('E V O L U T I O N') and a plain grotesk lockup, with no typographic point of view",
+              "The monochrome blue palette makes the frames blur together. It needs a contrasting accent or a changing value structure"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.7,
+            "scores": {
+              "idea": 6,
+              "composition": 6,
+              "typography": 6,
+              "colour": 7,
+              "light_texture": 5,
+              "motion": 7,
+              "craft": 7,
+              "originality": 5
+            },
+            "tells": [
+              "Product promo for Google's Whisk: a cursor picks subject, scene and style cards, then the result is generated. A literal feature demo",
+              "Bold saturated yellow brand ground, a confident wordplay headline ('START whisking TODAY') over the generated image, and a radial yellow wipe transition. This is competent brand-team motion",
+              "The final frame is a dense composition of tilted UI cards with a floating prompt bar. It shows choreography, but it is still a UI-card collage",
+              "Placeholder white rectangles in frame 1 and flat lighting point to a functional explainer rather than craft-led work"
+            ],
+            "gaps": [
+              "The idea is the product UI walkthrough itself. It needs a memorable concept beyond 'pick three cards, get an image'",
+              "Flat UI cards on a flat yellow ground have no material, light or depth. It needs texture or dimensional staging",
+              "The type is the house product sans used at a default 'START / whisking / TODAY' scale. Push the typographic expression and how type and image work together"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 2,
+              "composition": 3,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 3,
+              "motion": 3,
+              "craft": 2,
+              "originality": 2
+            },
+            "tells": [
+              "The same lighthouse image is repeated in every frame, as a card, a grid of cards, then cards tilted. This is one layout duplicated, not choreography",
+              "The 'lighthouse' is a black primitive block with a stick, and the 'beam' is a flat translucent rectangle. These are stock primitives with no modelling or atmosphere",
+              "A literal prompt sentence is printed as a caption ('A lighthouse at dusk, in rain. The beam finds a small boat.'), and the beam visibly does not find the boat",
+              "Default editorial serif title 'Anikit Video' centred over the image, plus 'anikit-video render spec.json'. This is a self-promo for an automated renderer",
+              "The rain is a few thin straight lines and the sea is a generic shader. Light is flat and unmotivated"
+            ],
+            "gaps": [
+              "Build an actual idea instead of illustrating the prompt literally: the beam, the rain and the boat should drive the staging and the story",
+              "Replace primitives with designed assets: real lighthouse form, volumetric beam, rain with depth and motion blur, and real interaction between light and boat",
+              "Give the type a point of view rather than a default serif centred on the hero frame, and vary composition across shots instead of tiling one image"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "C",
+          "B",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 28.5,
+        "cost_usd": 0.166215,
+        "tokens": 74522,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "morph-studio-xreal-1s-2025",
+        "B": "hook-launching-whisk-with-google-labs-2025",
+        "C": "coinbase-system-update",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 6,
+              "colour": 7,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 9,
+              "originality": 6
+            },
+            "tells": [
+              "High-end CG liquid/glass simulation: refraction, caustics, subsurface translucency and fluid tendrils that form the XREAL glasses. This is real material and light work, not stock primitives.",
+              "Frames vary in scale and kind (macro splash, hero product, a fully liquid replica of the frames, an extreme close-up of the gel, an organic bubble field), which shows a planned sequence of build and transformation.",
+              "The product is integrated into the fluid simulation, and the reveal of glasses formed from liquid is a specific visual idea.",
+              "Typography is functional but thin. The tracked 'E V O L U T I O N' over the visual and the XREAL / 1S lockup split across the frame are close to the standard tech-launch formula."
+            ],
+            "gaps": [
+              "The idea stays in the familiar 'liquid tech product launch' category. C has a conceptual system that belongs to its subject alone.",
+              "The monochrome electric-blue palette is safe and expected for consumer tech. A second, unexpected colour or a tonal shift between acts would give it shape.",
+              "The type is an afterthought: generic tracked caps and a basic lockup. It needs a typographic idea that comes out of the liquid or optics concept, such as refracted or distorted type."
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.7,
+            "scores": {
+              "idea": 6,
+              "composition": 6,
+              "typography": 6,
+              "colour": 7,
+              "light_texture": 4,
+              "motion": 7,
+              "craft": 7,
+              "originality": 5
+            },
+            "tells": [
+              "A product demo with a clear narrative: pick a subject, a scene and a style, then see the combined output. The product logic gives it structure.",
+              "A committed, saturated yellow brand ground and a confident 'whisking' headline over the generated image show deliberate brand choices.",
+              "The final frame is an exploded UI collage with tilted cards, chips, icons and a prompt bar. That is competent studio UI animation choreography.",
+              "It still leans on the UI-card / pill / cursor vocabulary, and the hero imagery is the product's own AI output. The craft is in the packaging, not the image."
+            ],
+            "gaps": [
+              "It is literal: the product's UI plus a diagram of the feature. There is no conceptual leap a viewer would remember beyond the yellow.",
+              "Light and texture are flat across the UI frames, and the abstract yellow sun transition is an effect without a subject. Material depth like A's would raise it.",
+              "Typography is a clean brand grotesk set in standard places. It needs scale contrast or an expressive treatment like C's type-as-image system."
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 9,
+              "colour": 8,
+              "light_texture": 7,
+              "motion": 8,
+              "craft": 8,
+              "originality": 8
+            },
+            "tells": [
+              "A complete ASCII and character-glyph rendering system: figures, coins, a planet, padlocks and currency marks are all built from type characters ($, #, <, 0/1). Type is the image, which suits a crypto and payments subject.",
+              "A deliberate, unusual palette: monochrome white on saturated IKB-like blue, held with discipline across every frame.",
+              "Frames vary a lot (a running figure, a coin moving through flow fields, an orbiting glyph planet, a lock grid with a code readout, a grid of rotating coins). This shows choreography and rhythm rather than one swapped layout.",
+              "Small editorial touches: '<<Crypto is...' and 'Faster' tags in inverted boxes, and code-readout text with in-jokes (matchcut_engine.h). The system has a point of view."
+            ],
+            "gaps": [
+              "The ASCII and terminal aesthetic is a known trend. It needs more surprise to break out of the genre, such as a moment that breaks the system.",
+              "Without real light or depth the frames can flatten. Layered z-depth or glow in more shots (as the planet frame begins to do) would add weight.",
+              "The copy lines are small and secondary. A bolder typographic beat at hero scale would anchor the narrative."
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 3,
+              "composition": 3,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 3,
+              "motion": 3,
+              "craft": 2,
+              "originality": 2
+            },
+            "tells": [
+              "The 'lighthouse' is a flat black box primitive with a thin pole, and the boat is a tiny silhouette sprite. These are stock primitives standing in for a subject.",
+              "The same card with the same image and the same caption, 'A lighthouse at dusk, in rain. The beam finds a small boat.', repeats in a tiled grid. It is one composition duplicated, with little happening.",
+              "A generic editorial serif headline ('Anikit Video') is slapped onto the image with no integration. The caption reads like a prompt, and the footer 'anikit-video render spec.json' points to an automated pipeline.",
+              "The rain is a few straight white lines and the light is a flat orange gradient with a sun disc. There is no real atmosphere, texture or motivated light."
+            ],
+            "gaps": [
+              "It needs an actual subject and image. Model or illustrate the lighthouse, sea and rain with real material and atmosphere instead of primitives, the way A builds its glasses from simulated liquid.",
+              "Replace the tile-and-duplicate structure with choreographed shots that change scale, angle and content from frame to frame.",
+              "Develop a typographic idea. Right now it is a default serif over a picture plus a prompt caption. Type should be part of the image system, as in C."
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "A",
+          "B",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 29.8,
+        "cost_usd": 0.169847,
+        "tokens": 74706,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "morph-studio-xreal-1s-2025",
+        "B": "candidate",
+        "C": "coinbase-system-update",
+        "D": "hook-launching-whisk-with-google-labs-2025"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 6,
+              "composition": 7,
+              "typography": 5,
+              "colour": 6,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 8,
+              "originality": 5
+            },
+            "tells": [
+              "High-end fluid and glass simulation: the glasses form out of water, and the refraction, caustics, rim light and bubble detail are physically believable",
+              "Frames change in kind, from splash to a product reveal on a liquid plane, a macro of the liquid-glass frame, a lens close-up and an organic cell-and-bubble field, so there is real choreography and change of scale",
+              "The product turns into a material, a full-sim pipeline that template or AI tools do not produce consistently across shots",
+              "Type is weak and generic: a bold grotesk 'XREAL' plus a thin '1S' set apart, and a widely tracked 'E V O L U T I O N' laid over the image like a slide"
+            ],
+            "gaps": [
+              "The all-blue liquid-tech look is a familiar category convention; it needs a palette or material twist that belongs only to this product, not to every hardware launch",
+              "Typography is an afterthought (tracked caps over the image, default grotesk); bring type into the simulation as C does with its glyph system",
+              "The idea, 'product emerges from water / evolution', is literal; it needs a more specific concept tied to what AR glasses do"
+            ]
+          },
+          "B": {
+            "verdict": "not professional",
+            "confidence": 0.93,
+            "scores": {
+              "idea": 3,
+              "composition": 4,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 3,
+              "motion": 3,
+              "craft": 3,
+              "originality": 2
+            },
+            "tells": [
+              "The end card reads 'anikit-video render spec.json'. It is a demo of an automated video tool, and the prompt text ('A lighthouse at dusk, in rain. The beam finds a small boat.') appears as the caption on every card",
+              "The same image is repeated: one lighthouse render tiled into a grid of identical postcards, with one composition copied instead of developed",
+              "Primitive scene: a flat black block for the lighthouse, a rectangular plane for the beam, thin straight lines for rain, and a tiny clip-art boat",
+              "Generic editorial serif ('Anikit Video') set large over the image like a slide headline; flat light on the card surfaces, with no material or depth"
+            ],
+            "gaps": [
+              "No idea beyond showing the prompt and its output; it needs a concept or a story rather than a feature demo",
+              "The scene needs real modelling, atmosphere and light (volumetric beam, wet surfaces, sea texture) instead of primitives and flat planes",
+              "Replace the repeated postcard grid with frames that are composed differently and choreographed with intent, and give the typography a real typographic idea"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 9,
+              "colour": 8,
+              "light_texture": 7,
+              "motion": 8,
+              "craft": 8,
+              "originality": 8
+            },
+            "tells": [
+              "One committed system: everything (a running figure, coins, a planet with rings, padlocks, a grid of tokens) is drawn in ASCII and monospace glyphs, so the type is the image",
+              "A bold two-colour palette (electric ultramarine and white) used with discipline; it is a deliberate choice, not one accent on a dark ground",
+              "Glyph flow fields and varying density show texture and implied motion; the turning coins in the final grid show animated rotation phases",
+              "Small UI labels ('<<Crypto is...', 'Faster') and code blocks are part of the language rather than placeholders, and the scale runs from a single figure to a full field to a dense grid"
+            ],
+            "gaps": [
+              "The ASCII-art aesthetic is popular right now; it needs one moment that breaks or escalates the system to be remembered as more than a style",
+              "Some frames lean on familiar crypto icons (Bitcoin, $, padlock); the imagery could be less literal",
+              "Depth is mostly flat, so adding layering, focus or a light behaviour within the glyph field would add the physical richness A has"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.7,
+            "scores": {
+              "idea": 6,
+              "composition": 6,
+              "typography": 6,
+              "colour": 7,
+              "light_texture": 5,
+              "motion": 7,
+              "craft": 7,
+              "originality": 5
+            },
+            "tells": [
+              "A product promo for Google's Whisk with a clear narrative: choose subject, scene and style, then the combined result, then the UI exploding into floating cards",
+              "A saturated yellow brand ground with considered UI motion: cursor interaction, the carousel sliding, a radial wipe transition (the orange arc frame), and a final collage of tilted cards",
+              "The 'whisking' headline over the full-bleed result shows some scale contrast and a playful verb pun",
+              "Much of the content is literal app UI (pills, cards, checkmarks), the expected structure for a feature explainer"
+            ],
+            "gaps": [
+              "The idea is the standard 'show the feature UI' explainer; it needs a concept beyond demonstrating the product flow",
+              "Typography is a friendly geometric sans with small tracked labels ('START / TODAY'); push it to a stronger typographic voice",
+              "The flat yellow and UI cards lack texture and light; give the frames depth and material, or a single visual system like C's"
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "A",
+          "D",
+          "B"
+        ]
+      },
+      "meta": {
+        "seconds": 28.6,
+        "cost_usd": 0.1651796,
+        "tokens": 74475,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "candidate",
+        "B": "hook-launching-whisk-with-google-labs-2025",
+        "C": "coinbase-system-update",
+        "D": "morph-studio-xreal-1s-2025"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "not professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 3,
+              "composition": 4,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 4,
+              "motion": 3,
+              "craft": 3,
+              "originality": 2
+            },
+            "tells": [
+              "The caption on every card reads like a generation prompt ('A lighthouse at dusk, in rain. The beam finds a small boat.'), and the end card says 'anikit-video render spec.json'. The film is showing off its own automated pipeline, not an idea.",
+              "The illustration is built from stock primitives: a black block for land, a thin rod and lit box for the lighthouse, a cutout boat, and rain streaks drawn as straight lines. The 'beam' is a flat rectangular quad.",
+              "One layout is repeated over and over: a polaroid card, duplicated into a tilted grid. The only change between frames is the camera move and a shift from orange to dusk-blue grading.",
+              "The type is a generic editorial serif italic for the caption and a default bold serif for the wordmark, placed like a slide over the image with no integration.",
+              "A virtual spotlight lights the card, but the light inside the image is flat and the 'rain' does not interact with anything."
+            ],
+            "gaps": [
+              "Replace the prompt-as-caption device with an actual concept. C turns its whole subject into its medium (ASCII), whereas here the lighthouse could be anything.",
+              "Build real material and light into the scene: volumetric beam, wet surfaces, rain that catches the light. As it stands, it is a flat diorama in a 3D card.",
+              "Choreograph progression rather than duplicating one card into a grid. Each beat needs a new composition and a change of scale or idea."
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.75,
+            "scores": {
+              "idea": 6,
+              "composition": 6,
+              "typography": 6,
+              "colour": 7,
+              "light_texture": 5,
+              "motion": 6,
+              "craft": 7,
+              "originality": 5
+            },
+            "tells": [
+              "This is a branded product promo (Whisk Experiment) with a confident, ownable saturated yellow and a clear Subject \u2192 Scene \u2192 Style \u2192 result narrative.",
+              "The 'start whisking today' lockup uses a large rounded grotesk with small tracked caps above and below. It is clean but follows the familiar tech-launch formula.",
+              "The final frame is a dense collage of UI cards, pills, icons and the generated image, with layered depth. It reads as competent house-style product marketing.",
+              "The product's AI-generated imagery (anime character, jungle city) carries most of the visual interest, and the frame itself contributes little that is distinctive.",
+              "There is a plain gradient yellow transition frame, a moment where the film has no subject."
+            ],
+            "gaps": [
+              "The idea is a literal demo of the feature: pick three inputs and get an output. It needs a conceit beyond the UI walkthrough that a viewer would remember.",
+              "Typography stops at clean defaults. It needs a typographic idea, such as type that is itself 'whisked' or remixed, to match C's integration of type and image.",
+              "Material and light are flat UI shading. The transitions, like the yellow sweep, could carry texture and physicality instead of a plain gradient."
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 9,
+              "composition": 8,
+              "typography": 9,
+              "colour": 8,
+              "light_texture": 7,
+              "motion": 8,
+              "craft": 8,
+              "originality": 9
+            },
+            "tells": [
+              "The whole world is rendered in ASCII and code glyphs on an electric International Klein\u2013style blue. The medium is the message for a crypto/payments subject. This idea is specific to the piece.",
+              "Type is the image: a figure, padlocks, coins and a planet are all built from characters, with $ signs swirling as particles and real code snippets ('matchcut_engine.h', 'StartDirectPayment()') as texture.",
+              "Every frame has a new composition: a walking figure, a flow field with a coin, a planet with an orbiting ring, a lock grid with a terminal, and a matrix of spinning coins. The choreography clearly evolves.",
+              "Small inverted labels ('<<Crypto is...', 'Faster') act as typographic punctuation and are well scaled against the dense glyph fields.",
+              "The palette is disciplined to one colour, but each frame is dense and layered, with density gradients that imply depth and light."
+            ],
+            "gaps": [
+              "The ASCII aesthetic is a known trend. To feel fully unprecedented it needs a moment that breaks its own system, such as a scale shift or a colour intrusion.",
+              "The monochrome blue risks monotony over full length. A second value or accent beat at the climax would add a stronger arc.",
+              "Light is implied only through glyph density. Real depth-of-field or glow passes on the 3D-mapped glyphs would add the physicality D has."
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 6,
+              "colour": 7,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 9,
+              "originality": 6
+            },
+            "tells": [
+              "This is high-end CG for the XREAL 1S. The glasses are reimagined as liquid and translucent, with vein-like internal structures, bubbles and refraction, and the 'evolution' theme is carried through organic material.",
+              "Light and material are superb: caustics, subsurface translucency, motion-blurred splash with chromatic aberration, and a believable fluid simulation.",
+              "There is real variety in the frames, from an extreme macro of the temple arm to a hero splash, a frontal liquid-sculpture shot, a macro of a bubble interior and a cellular title card. This is shot-to-shot choreography with weight.",
+              "The type is a restrained bold grotesk wordmark and a widely tracked 'E V O L U T I O N'. It is competent but close to the generic tech-launch formula.",
+              "The all-blue liquid look is a well-worn category convention for tech product films."
+            ],
+            "gaps": [
+              "The liquid-hero-product look is category convention. It needs a concept specific to AR glasses, the way C makes its subject into its medium.",
+              "Typography is a generic tracked-caps title over the image. Type should be integrated with the material, refracted or formed from the liquid.",
+              "The single blue palette is safe. A deliberate counter-colour or tonal shift would make frames memorable rather than merely beautiful."
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "D",
+          "B",
+          "A"
+        ]
+      },
+      "meta": {
+        "seconds": 33.4,
+        "cost_usd": 0.172567,
+        "tokens": 74842,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "critic": {
+    "answer": {
+      "scores": {
+        "motion": 4,
+        "sound": 4,
+        "craft": 5
+      },
+      "checks": {
+        "idea": true,
+        "invariant": true,
+        "arc": false,
+        "type_meaning": false,
+        "freeze_frame": false,
+        "ending": true,
+        "restraint": true,
+        "material": true,
+        "sync": null
+      },
+      "defects": [
+        "Shots run a near-uniform ~5s each (median 4.97s, longest 5.03s), so it plays as an evenly spaced slideshow; per-second change drops to 2.5\u20135 around 15\u201317s, which is dead air",
+        "Pair 2 shows the incoming card as a semi-transparent plane with the caption ghosting through the scene, a cheap crossfade between flat cards rather than a physical overlap with occlusion and shadow",
+        "The blank card sliding in (pair 1) moves almost nothing in 1/6 s and has no motion blur, no lift, no contact shadow and no paper flex, so it reads as weightless and linear",
+        "Lighthouse is a crude black box-and-stick silhouette and the beam is a flat untextured polygon, which undercuts the 'beam finds a small boat' line the piece is built on",
+        "Rain is sparse static hairlines that barely change between frames 1/6 s apart, so it reads as a texture overlay rather than falling rain",
+        "Specular flare blob at the top-left corner is clipped hard by the frame edge in several shots",
+        "In the grid shots the captions are cropped mid-word at the frame edges and become illegibly small, with no hierarchy telling the eye where to land",
+        "The 100% crop shows only a smooth gradient with fine uniform noise; the noise holds off banding, but there is no paper fibre or tooth, so the card looks like a CG plane",
+        "Audio: the broadband noise bursts are brick-walled flat at ~19.5 kHz, a synthesized-noise signature; the tonal bed is a few static partials, sparse plucks in the first ~5 s, then repeated noise swells"
+      ],
+      "gaps": [
+        "Pacing and choreography: replace the 5-second metronome of shots with cuts and moves driven by the idea (one card, then a few, then an avalanche of identical cards) at 1\u20131.5s, with real easing, overlap and weighted paper physics on the cards",
+        "Sound design: the score is thin static tones plus generic filtered-noise whooshes; it needs produced music with dynamics building toward a peak, and paper, rain and foley hits locked to card landings and cuts",
+        "Finish and world: the scene inside the card (box lighthouse, flat beam, hairline rain) is placeholder grade; it needs real atmosphere, volumetric beam falloff, rain with motion, and tactile paper with light wrapping over it, so the 'same film every time' claim feels worth repeating"
+      ]
+    },
+    "meta": {
+      "seconds": 26.1,
+      "cost_usd": 0.17735099999999998,
+      "tokens": 75161,
+      "models": [
+        "claude-opus-5-5"
+      ]
+    },
+    "pace": "final.mp4: 30.0s, 7 shots, median 4.97s, longest 5.03s\nper-second change: [24.0, 17.0, 20.6, 22.3, 30.5, 9.5, 6.9, 32.3, 12.5, 9.6, 36.8, 36.7, 31.6, 17.8, 33.6, 5.2, 2.6, 2.5, 19.7, 72.5, 26.8, 38.8, 40.2, 32.4, 70.6, 38.8, 23.2, 9.5, 10.9]\nPACE: FAIL \u2014 longest shot 5.0s > 2.5s; median shot 5.0s > 2.0s"
+  },
+  "full_scores": {
+    "idea": 3.0,
+    "composition": 3.0,
+    "typography": 3.0,
+    "colour": 4.0,
+    "light_texture": 3.0,
+    "motion": 3.5,
+    "craft": 3.75,
+    "originality": 2.0,
+    "sound": 4
+  },
+  "full_overall": 3.25,
+  "cost_usd": 1.184,
+  "judge_seconds": 205.0,
+  "verdict": "FAIL"
+}

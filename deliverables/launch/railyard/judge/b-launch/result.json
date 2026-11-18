@@ -1,0 +1,932 @@
+{
+  "name": "b-launch",
+  "tags": [
+    "product-launch",
+    "motion-design"
+  ],
+  "refs": [
+    "coinbase-system-update",
+    "jpmorgan-payments",
+    "morph-studio-xreal-1s-2025"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 4.0,
+      "composition": 4.0,
+      "typography": 3.0,
+      "colour": 5.0,
+      "light_texture": 4.0,
+      "motion": 3.0,
+      "craft": 3.0,
+      "originality": 3.0
+    },
+    "overall": 3.62,
+    "judged_professional": "0/6",
+    "pro_rate": 0.0,
+    "mean_rank": 4,
+    "gaps": [
+      "Replace the font-pretending-to-be-handwriting with real lettering or proper stroke animation that the pencil actually draws",
+      "Break the repeated card-centred layout: vary scale, camera and structure the way B changes the system in every frame",
+      "Find an idea beyond 'write the word Paid': a metaphor specific to instant settlement that a viewer would remember",
+      "Make the handwriting real: animated stroke-by-stroke lettering with ink weight and a pen that follows the line, not a font revealed under a floating pencil",
+      "Break the single-card layout; add camera moves, scale changes and paper physics so the frames are choreographed, not swapped",
+      "Find an idea beyond 'signed = paid', and give the light a direction, cast shadows and paper material on the level of C",
+      "It needs real lettering or a captured hand stroke with a pen tip tracking the ink, plus ink bleed and pressure, to sell the analogue idea",
+      "It needs a progression of compositions (scale shifts, camera moves, a payoff) instead of four near-identical centred cards",
+      "It needs a distinctive palette and lighting with real shadows and material contact, as in A, rather than a flat vignette on stock paper",
+      "Replace the font with real lettering (filmed or animated stroke-by-stroke with a matched pen path) so the core handwriting conceit is credible",
+      "Break the repeated card layout: change camera, scale and depth across shots and add physical interaction (paper moving, ink bleeding)",
+      "Find an idea beyond 'Sent \u2192 Paid \u2192 logo', a visual metaphor for instant settlement that viewers would remember, plus a deliberate typographic hierarchy for the end card",
+      "Make the writing real: drawn or captured strokes that the pen actually leads, with ink pressure, bleed and timing. The gesture would then carry the idea instead of a font.",
+      "Break the repeated single-card composition. Vary scale, camera and depth, and build frames with layers the way D builds a whole system out of one visual language.",
+      "Find a specific idea beyond literally writing 'Paid'. For example, make the act of settlement physical or surprising, and develop a palette and type pairing with a point of view.",
+      "Replace the font-driven 'handwriting' with real or custom lettering that has stroke weight, ink behaviour and timing, and make the pen actually perform it the way C's objects are physically lit and grounded.",
+      "Break the repeated card-on-black composition: vary scale, camera, depth and staging so each frame is its own poster, not one layout with the word changed.",
+      "Find a less literal metaphor for settlement than writing 'Paid.', and set the endline with typographic intent instead of a script caption pasted under the logo."
+    ],
+    "tells": [
+      "The 'handwriting' is a script font, not real pen strokes: 'Sent.' has jittery, malformed letterforms, and the pencil tip does not line up with the stroke it is supposed to be making",
+      "The same composition repeats: one card centred on a dark ground, the word swapped (Sent. / Paid. / Railyard), then a cream version followed by a gold version",
+      "Generic 'tasteful' cream, gold and dark palette with one navy accent",
+      "A literal, obvious idea for a payments brand (handwritten 'Paid.', grid of checkmarks) ending on a slide-like tagline, 'One API call. Instant settlement.', in a default casual script",
+      "Paper texture is a flat overlay; the lighting is a generic vignette and nothing in the film is moved by it",
+      "The 'handwriting' is a stock script font with jittery, warped letterforms, not real penned strokes; the 'Sent.' strike-through is glitchy and malformed",
+      "The pencil floats near the words rather than tracking the stroke being drawn, and its angle and position look pasted on",
+      "The same layout repeats: a card in the middle of a dark field with a script word on it, swapped from 'Sent.' to 'Paid.' to 'Railyard'. It is a slide-deck structure",
+      "The tagline 'One API call. Instant settlement.' is set in a default casual script like a slide caption, and the product name plus feature line is literal",
+      "The checkmark grid is a mechanical copy-paste repeat; the light is a uniform soft vignette with no motivated source",
+      "The 'handwriting' is an off-the-shelf script font, and the pen tip doesn't track the stroke being written, so the core conceit of hand-writing is faked",
+      "The same composition repeats: a card with a word in the centre, then a gold card with the same word in blue; slide-deck structure with the words swapped (Sent \u2192 Paid \u2192 Railyard)",
+      "The grid of identical yellow sticky notes with checkmarks is a duplicated, unconsidered asset field",
+      "The tagline 'One API call. Instant settlement.' is set small in the same script font as the logo, with no hierarchy or typographic idea",
+      "The light is a uniform vignette, with no real paper shadow, ink sheen or pen contact; the stock paper texture is applied flat",
+      "The idea is literal: product name plus 'paid' and a checkmark, and nothing a viewer would remember",
+      "The 'handwriting' is a default script font: letterforms repeat identically and the pen tip does not follow the stroke path",
+      "The 'Sent.' strike-through is a crude overlay, not a written gesture",
+      "The same card-on-dark layout repeats with only the words and colour swapped (cream to mustard), a slide-deck structure",
+      "The literal product pitch line 'One API call. Instant settlement.' is set in the same script, with no hierarchy",
+      "Flat vignette lighting and a generic paper texture; the sticky-note grid of checkmarks is a duplicated tile with no variation",
+      "It is built like a slide deck: one card per frame with a word swapped in ('Sent.', 'Paid.', 'Railyard'), then the same card again in gold and blue.",
+      "The 'handwriting' is a script font with rough edges added. The letters repeat identically, and the pen tip does not follow the stroke being written, so the writing is not choreographed.",
+      "The idea is literal and the brand looks invented: a fintech name plus a tagline ('One API call. Instant settlement.') set in a default casual script. Nothing in it would stick with a viewer.",
+      "Cream paper, a mustard accent and one dark ground make up the whole palette, with the same flat overhead light everywhere. The paper texture reads as a stock overlay, not a lit material.",
+      "The grid of tick-marked cards is the only moment of scale change, and it is a stock repeat pattern.",
+      "Every frame repeats the same layout: a paper card on a dark ground with one centred handwritten word. It works like a slide deck where only the word changes ('Sent.', 'Paid.', 'Railyard').",
+      "The script is a default handwriting font, not real lettering. 'Sent.' has broken, jittery strokes with no consistent pen pressure, and the pen tip doesn't line up with where the stroke is being drawn.",
+      "The pen is a flat, generic prop that floats in the same diagonal pose in every shot. It casts almost no believable shadow and never touches the paper.",
+      "The idea is literal and obvious: signing a word means 'payment done'. It ends on an endline set like a slide ('One API call. Instant settlement.'), and the brand name 'Railyard' reads as a placeholder.",
+      "The grid of checkmark cards is a duplicated tile with one swapped cell. It's an effect with no development, and the same checkmark glyph is pasted into every card.",
+      "The light is flat and unmotivated: one soft vignette that never changes, with a paper texture that looks like an overlay."
+    ]
+  },
+  "refs_summary": {
+    "coinbase-system-update": {
+      "overall": 7.81,
+      "judged_professional": "6/6",
+      "mean_rank": 1.67
+    },
+    "jpmorgan-payments": {
+      "overall": 7.06,
+      "judged_professional": "6/6",
+      "mean_rank": 2.33
+    },
+    "morph-studio-xreal-1s-2025": {
+      "overall": 7.25,
+      "judged_professional": "6/6",
+      "mean_rank": 2
+    }
+  },
+  "ref_mean": 7.37,
+  "delta": -3.75,
+  "trials": [
+    {
+      "key": {
+        "A": "morph-studio-xreal-1s-2025",
+        "B": "coinbase-system-update",
+        "C": "candidate",
+        "D": "jpmorgan-payments"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.82,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 6,
+              "colour": 7,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "High-end fluid/particle simulation with believable refraction, caustics and subsurface in the liquid-formed glasses",
+              "Clear choreography across frames: the product is shattered, re-forms as liquid, gets a hero reveal, goes into macro, then dissolves into the 'EVOLUTION' cellular world",
+              "Real product (XREAL 1S) with a logo lockup integrated into the splash rather than placed on top of it",
+              "Camera distance changes a lot from shot to shot (wide, hero, extreme macro), which points to planned shots, not one repeated layout"
+            ],
+            "gaps": [
+              "The all-blue liquid-tech palette is the default look for a gadget launch; a second, unexpected colour or material would make it ownable",
+              "The typography is thin: a bold-sans wordmark and widely tracked caps 'EVOLUTION' on top of the image, with no typographic idea of its own",
+              "'Liquid becomes product' is a well-worn launch trope; it needs a concept tied to what AR glasses actually do, as B ties its form to its subject"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 9,
+              "colour": 8,
+              "light_texture": 6,
+              "motion": 8,
+              "craft": 8,
+              "originality": 8
+            },
+            "tells": [
+              "A single committed system: the whole film is rendered in ASCII and monospace glyphs, so the type is the image",
+              "Bold flat Klein-blue with white glyphs makes a confident palette with no gradients",
+              "Every frame has a different structure: a walking figure, a coin flow-field, an orbiting glyph planet, a padlock column with a code panel, a grid of spinning coins",
+              "Witty in-world copy ('<<Crypto is...', 'Faster', '#include matchcut_engine.h', '**Secure') woven into the texture rather than laid on top as slide titles",
+              "Inferred motion has variety: a walk cycle, flow fields, an orbit, coins rotating at different phases across the grid"
+            ],
+            "gaps": [
+              "The subject icons (dollar coins, Bitcoin, padlocks) are the literal crypto vocabulary; the metaphors could be braver",
+              "Flat and depthless by design, with little tonal range or layering of glyph density to give the bigger moments weight",
+              "The ASCII-render aesthetic is a recognisable trend; it needs one moment that breaks the system to surprise the viewer"
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.78,
+            "scores": {
+              "idea": 4,
+              "composition": 4,
+              "typography": 3,
+              "colour": 5,
+              "light_texture": 5,
+              "motion": 3,
+              "craft": 3,
+              "originality": 3
+            },
+            "tells": [
+              "The 'handwriting' is a script font, not real pen strokes: 'Sent.' has jittery, malformed letterforms, and the pencil tip does not line up with the stroke it is supposed to be making",
+              "The same composition repeats: one card centred on a dark ground, the word swapped (Sent. / Paid. / Railyard), then a cream version followed by a gold version",
+              "Generic 'tasteful' cream, gold and dark palette with one navy accent",
+              "A literal, obvious idea for a payments brand (handwritten 'Paid.', grid of checkmarks) ending on a slide-like tagline, 'One API call. Instant settlement.', in a default casual script",
+              "Paper texture is a flat overlay; the lighting is a generic vignette and nothing in the film is moved by it"
+            ],
+            "gaps": [
+              "Replace the font-pretending-to-be-handwriting with real lettering or proper stroke animation that the pencil actually draws",
+              "Break the repeated card-centred layout: vary scale, camera and structure the way B changes the system in every frame",
+              "Find an idea beyond 'write the word Paid': a metaphor specific to instant settlement that a viewer would remember"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.7,
+            "scores": {
+              "idea": 6,
+              "composition": 7,
+              "typography": 6,
+              "colour": 7,
+              "light_texture": 8,
+              "motion": 6,
+              "craft": 8,
+              "originality": 5
+            },
+            "tells": [
+              "Accomplished glass and brushed-gold materials with a consistent raking sunlight, believable shadows and refraction",
+              "Real client branding (J.P.Morgan Payments) with considered UI detail on the glass tablet",
+              "Varied set-ups: a wave chart, a phone tap with ripples, a tiled floor node, a tablet, a stacked lock coin"
+            ],
+            "gaps": [
+              "Close to the generic 'premium fintech 3D' look (cream ground, gold, glass icons on discs); it needs a visual idea only this brand could own",
+              "The icons are literal (lock, clock, cart, chart); replace the feature-diagram metaphors with a narrative or a surprise",
+              "Typography is just UI text on screens; give type an expressive role in the film, as B does"
+            ]
+          }
+        },
+        "ranking": [
+          "B",
+          "A",
+          "D",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 26.5,
+        "cost_usd": 0.1632032,
+        "tokens": 74373,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "morph-studio-xreal-1s-2025",
+        "B": "coinbase-system-update",
+        "C": "jpmorgan-payments",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 6,
+              "colour": 7,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 9,
+              "originality": 7
+            },
+            "tells": [
+              "High-end fluid and liquid-glass simulation: the glasses dissolve into water, re-form and fill with bubbles, with real caustics, refraction and subsurface glow",
+              "Frames vary widely: tight macro on liquid material, a hero product shot, an abstract organic cell field. The camera moves through scale, which points to real choreography",
+              "The 'XREAL 1S' lockup is split across the frame with the product between the two words, which ties type and image together",
+              "The type is restrained and mostly functional; widely tracked 'EVOLUTION' over the abstract frame is the most familiar move in the piece",
+              "The monochrome electric-blue palette is consistent but a well-worn tech-launch convention"
+            ],
+            "gaps": [
+              "The all-blue palette is a tech-launch default; one unexpected secondary hue or a temperature shift would give it an identity of its own",
+              "Typography never goes beyond a label; let the type take on the liquid material or get caught in the simulation",
+              "The 'evolution through water' metaphor is beautifully executed but loosely tied to what AR glasses do; a sharper conceptual link would raise the idea score"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.75,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 8,
+              "colour": 7,
+              "light_texture": 5,
+              "motion": 7,
+              "craft": 7,
+              "originality": 8
+            },
+            "tells": [
+              "The whole film is built from ASCII and monospace glyphs (a walking figure, coin, planet, locks, a grid of crypto tokens), so the type is the image",
+              "A committed single-ink palette, white on IKB-like blue, used as a deliberate graphic system",
+              "Each frame has a different composition: figure, flow field, orbit, triptych with code, grid. The glyph fields imply real displacement and morph animation",
+              "Small label tags ('Crypto is...', 'Faster') work as a narrative device inside the system",
+              "Weak points: crypto iconography (\u20bf, $, padlocks) is literal, and the token grid frame tends toward repetition"
+            ],
+            "gaps": [
+              "Depth and light are flat by design; layered glyph density or a depth-of-field falloff would add the material richness that A and C have",
+              "The symbols are literal (dollar signs, padlocks, coin logos); swap them for a less obvious visual metaphor",
+              "The grid and triptych frames feel like a system demo; one surprising hero moment that breaks the ASCII rule would give it a peak"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.75,
+            "scores": {
+              "idea": 6,
+              "composition": 8,
+              "typography": 6,
+              "colour": 7,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 8,
+              "originality": 5
+            },
+            "tells": [
+              "Strong art-directed lighting: hard window-light shadows, glass and brushed gold that refract and catch light, and a believable paper ground",
+              "Considered objects: stacked translucent waves for data, a coin that ripples into a phone, a tiled floor with an inlaid glowing ring",
+              "Real brand UI in the tablet frame, with a proper display serif for the balance figure and a JPMorgan wordmark",
+              "Cream ground, single gold accent and floating glass icons sit close to the current 'premium fintech 3D' trend, which limits originality",
+              "The icon-on-coin motifs (clock, lock, cart) are literal feature illustrations"
+            ],
+            "gaps": [
+              "The idea is a well-lit list of features (payments, security, analytics); it needs one central metaphor that carries through the whole film",
+              "The cream-and-gold glassy look is now a widely copied trend; push the palette or materials toward something only this brand would own",
+              "The type is UI-only; there is no typographic moment with scale or expression to anchor the film"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 4,
+              "composition": 4,
+              "typography": 3,
+              "colour": 5,
+              "light_texture": 4,
+              "motion": 3,
+              "craft": 3,
+              "originality": 3
+            },
+            "tells": [
+              "The 'handwriting' is a stock script font with jittery, warped letterforms, not real penned strokes; the 'Sent.' strike-through is glitchy and malformed",
+              "The pencil floats near the words rather than tracking the stroke being drawn, and its angle and position look pasted on",
+              "The same layout repeats: a card in the middle of a dark field with a script word on it, swapped from 'Sent.' to 'Paid.' to 'Railyard'. It is a slide-deck structure",
+              "The tagline 'One API call. Instant settlement.' is set in a default casual script like a slide caption, and the product name plus feature line is literal",
+              "The checkmark grid is a mechanical copy-paste repeat; the light is a uniform soft vignette with no motivated source"
+            ],
+            "gaps": [
+              "Make the handwriting real: animated stroke-by-stroke lettering with ink weight and a pen that follows the line, not a font revealed under a floating pencil",
+              "Break the single-card layout; add camera moves, scale changes and paper physics so the frames are choreographed, not swapped",
+              "Find an idea beyond 'signed = paid', and give the light a direction, cast shadows and paper material on the level of C"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "C",
+          "B",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 30.9,
+        "cost_usd": 0.16723480000000002,
+        "tokens": 74569,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "jpmorgan-payments",
+        "B": "coinbase-system-update",
+        "C": "morph-studio-xreal-1s-2025",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 7,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 9,
+              "originality": 6
+            },
+            "tells": [
+              "Raking hard-light shafts and long cast shadows that change across shots read as a deliberate lighting design, not flat default light",
+              "Glass and gold materials have believable refraction, edge glints and contact shadows, and the floor has a fine paper grain",
+              "Each frame is a different object (wave graph, phone, inlaid floor medallion, tablet with stylus, stacked lock-coins), with motion echoes on the coin stack and wave layers, so there is real variation from shot to shot",
+              "Branded UI ($2.45M, J.P. Morgan wordmark) is set with care and sits on the glass, so the type belongs to the object instead of floating over it",
+              "Cream-and-gold luxury fintech is a familiar look, but here it is fully worked out rather than left as an empty frame"
+            ],
+            "gaps": [
+              "The idea stays near 'premium glass icons of banking features'; it needs a narrative or visual twist that only this client could own, like B's ASCII-world premise",
+              "The palette is safe category luxury (cream/gold); one unexpected colour or material would make it memorable",
+              "Several shots repeat the same 'hero object on a lit table' setup; it needs a bolder change of scale or camera between beats"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 9,
+              "composition": 8,
+              "typography": 9,
+              "colour": 8,
+              "light_texture": 7,
+              "motion": 9,
+              "craft": 8,
+              "originality": 9
+            },
+            "tells": [
+              "The whole world is built from ASCII and code glyphs: a walking figure, a coin comet, a planet of tumbling numerals, padlocks and spinning coin grids, so the type itself is the image and medium and message fit together",
+              "One saturated electric-blue ground with white glyphs is a committed, ownable palette",
+              "Glyph fields have flow direction, density gradients and 3D rotation (coins seen at many angles, a ringed planet), which shows real choreography and dimensional thinking inside a 2D character system",
+              "Small reversed-out label tags ('<<Crypto is...', 'Faster') act as a deliberate typographic voice that moves the narrative forward",
+              "Code-snippet details (matchcut_engine.h, StartDirectPayment()) reward close viewing"
+            ],
+            "gaps": [
+              "Light and depth are mostly implied by glyph density; adding real depth-of-field or luminance layering would lift the 'texture' shots",
+              "The crypto iconography (Bitcoin coins, padlocks, $ signs) is literal; the figures could carry a less obvious metaphor",
+              "The unchanging blue ground across every beat risks monotony; one tonal inversion or colour break at the climax would add surprise"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.7,
+            "scores": {
+              "idea": 6,
+              "composition": 7,
+              "typography": 5,
+              "colour": 6,
+              "light_texture": 8,
+              "motion": 7,
+              "craft": 8,
+              "originality": 5
+            },
+            "tells": [
+              "High-end fluid and caustic simulation: the product forms out of water, with refraction, bubbles and sub-surface glow handled competently",
+              "The shots vary well: macro abstraction, product hero, liquid-cast glasses, extreme close-up, cellular 'evolution' field",
+              "Typography is weak: a generic bold grotesk 'XREAL 1S' split across the frame and a widely tracked thin-caps 'EVOLUTION' centred over busy imagery, the default tech-launch move",
+              "Dark navy and electric blue is the category default for tech launch films"
+            ],
+            "gaps": [
+              "The liquid-genesis concept is a stock tech-launch trope; it needs an idea specific to what AR glasses actually do",
+              "The type needs a point of view and integration with the image (B's type is the image); right now it is laid over the frame like a slide",
+              "The palette is monochrome category blue; a deliberate second colour or material contrast would sharpen the hero moments"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 4,
+              "composition": 4,
+              "typography": 3,
+              "colour": 5,
+              "light_texture": 4,
+              "motion": 3,
+              "craft": 3,
+              "originality": 3
+            },
+            "tells": [
+              "The 'handwriting' is an off-the-shelf script font, and the pen tip doesn't track the stroke being written, so the core conceit of hand-writing is faked",
+              "The same composition repeats: a card with a word in the centre, then a gold card with the same word in blue; slide-deck structure with the words swapped (Sent \u2192 Paid \u2192 Railyard)",
+              "The grid of identical yellow sticky notes with checkmarks is a duplicated, unconsidered asset field",
+              "The tagline 'One API call. Instant settlement.' is set small in the same script font as the logo, with no hierarchy or typographic idea",
+              "The light is a uniform vignette, with no real paper shadow, ink sheen or pen contact; the stock paper texture is applied flat",
+              "The idea is literal: product name plus 'paid' and a checkmark, and nothing a viewer would remember"
+            ],
+            "gaps": [
+              "It needs real lettering or a captured hand stroke with a pen tip tracking the ink, plus ink bleed and pressure, to sell the analogue idea",
+              "It needs a progression of compositions (scale shifts, camera moves, a payoff) instead of four near-identical centred cards",
+              "It needs a distinctive palette and lighting with real shadows and material contact, as in A, rather than a flat vignette on stock paper"
+            ]
+          }
+        },
+        "ranking": [
+          "B",
+          "A",
+          "C",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 30.4,
+        "cost_usd": 0.16863860000000003,
+        "tokens": 74640,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "morph-studio-xreal-1s-2025",
+        "B": "coinbase-system-update",
+        "C": "jpmorgan-payments",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 6,
+              "colour": 7,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 9,
+              "originality": 7
+            },
+            "tells": [
+              "Heavy fluid and particle simulation: the glasses are built from water, with viscous strands, bubbles inside the volume and caustic refraction, all of it hard to fake",
+              "Real material work: subsurface translucency, refracted highlights and depth of field that changes from shot to shot",
+              "Shot variety (macro detail, hero product, pull-back, abstract cell close-up) shows planned camera choreography, not one layout repeated",
+              "The type is restrained and placed with intent: the brand mark and model number sit either side of the product, and the spaced-out 'EVOLUTION' is set inside the organic tangle"
+            ],
+            "gaps": [
+              "The all-blue palette is a familiar tech-launch look; one unexpected colour accent or a shift in temperature would make it its own",
+              "The type is generic-grotesk and timid, and the wide-tracked 'EVOLUTION' is a clich\u00e9; it needs a typographic idea as strong as the simulation",
+              "The 'liquid as genesis' metaphor is close to well-worn hardware-launch territory; it needs a sharper link between water and the product's actual story"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.75,
+            "scores": {
+              "idea": 8,
+              "composition": 7,
+              "typography": 8,
+              "colour": 7,
+              "light_texture": 6,
+              "motion": 8,
+              "craft": 7,
+              "originality": 8
+            },
+            "tells": [
+              "A specific system idea: the whole world is rendered in ASCII glyphs, and the subject (crypto, code, money) is made of the same material as the type",
+              "Glyph fields have flow direction (streams, an orbiting planet, a walking figure), which suggests real procedural motion and choreography",
+              "The strong IKB-like single blue is a deliberate, committed palette choice, not a dark-ground default",
+              "Monospace code, label tags ('<<Crypto is...', 'Faster') and illustration are woven together on one grid"
+            ],
+            "gaps": [
+              "The ASCII-art aesthetic is a known trend; it needs a moment of surprise that breaks the system",
+              "The flat blue ground has no light or depth; layering glyph density into volumetric depth would add richness",
+              "The coin grid in the last frame reads as a repeated pattern; it needs a stronger narrative build to a final payoff"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.7,
+            "scores": {
+              "idea": 6,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 6,
+              "craft": 8,
+              "originality": 5
+            },
+            "tells": [
+              "Considered art direction: warm beige, gold and glass, plus raking window-light shadows with a real gobo feel",
+              "Material rendering is high quality: glass edges with refraction, brushed gold and a wood-inlay floor",
+              "Every frame changes object and camera angle, with a consistent world",
+              "Real brand UI is integrated into the glass tablet with a proper financial-serif hierarchy"
+            ],
+            "gaps": [
+              "Icons (lock, cart, clock) on glass discs are the stock fintech 3D vocabulary; it needs an image only this brand could own",
+              "Mostly single-object-on-floor compositions with lots of empty space; it needs denser, layered frames",
+              "The motion appears to be modest object reveals and echo trails; it needs choreography with weight and transitions that connect the frames"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.75,
+            "scores": {
+              "idea": 4,
+              "composition": 4,
+              "typography": 3,
+              "colour": 5,
+              "light_texture": 4,
+              "motion": 3,
+              "craft": 3,
+              "originality": 3
+            },
+            "tells": [
+              "The 'handwriting' is a default script font: letterforms repeat identically and the pen tip does not follow the stroke path",
+              "The 'Sent.' strike-through is a crude overlay, not a written gesture",
+              "The same card-on-dark layout repeats with only the words and colour swapped (cream to mustard), a slide-deck structure",
+              "The literal product pitch line 'One API call. Instant settlement.' is set in the same script, with no hierarchy",
+              "Flat vignette lighting and a generic paper texture; the sticky-note grid of checkmarks is a duplicated tile with no variation"
+            ],
+            "gaps": [
+              "Replace the font with real lettering (filmed or animated stroke-by-stroke with a matched pen path) so the core handwriting conceit is credible",
+              "Break the repeated card layout: change camera, scale and depth across shots and add physical interaction (paper moving, ink bleeding)",
+              "Find an idea beyond 'Sent \u2192 Paid \u2192 logo', a visual metaphor for instant settlement that viewers would remember, plus a deliberate typographic hierarchy for the end card"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "B",
+          "C",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 26.2,
+        "cost_usd": 0.1624586,
+        "tokens": 74331,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "morph-studio-xreal-1s-2025",
+        "B": "candidate",
+        "C": "jpmorgan-payments",
+        "D": "coinbase-system-update"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 6,
+              "colour": 7,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "The glasses become liquid glass and then turn into a hero object full of trapped bubbles and caustics. That transformation is the brand story, not effect for its own sake.",
+              "The simulation work is high-end: fluid tearing apart at the opening, refraction inside thick acrylic, cells branching inside the 'EVOLUTION' sphere.",
+              "The scale and framing change a lot from shot to shot: an extreme macro of a fluid burst, a floating product, a symmetrical front view of the hero object, a tight crop of the material, then a bubble field. That suggests real camera choreography.",
+              "The type is restrained and placed on purpose. 'XREAL' and '1S' are split around the product, and the widely tracked 'EVOLUTION' sits inside the image instead of over it."
+            ],
+            "gaps": [
+              "The palette is only electric blue on black, which is the default look for tech launches. A second colour or a temperature shift would give it an identity of its own.",
+              "The type is a plain grotesk with tracked caps, close to a template lockup. It needs a typographic idea that fits the liquid metaphor.",
+              "The concept (product turns into fluid, then 'evolution') is a well-worn category trope. It needs one surprising image that only this product could have, like D's ASCII-world premise."
+            ]
+          },
+          "B": {
+            "verdict": "not professional",
+            "confidence": 0.75,
+            "scores": {
+              "idea": 4,
+              "composition": 4,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 4,
+              "motion": 3,
+              "craft": 3,
+              "originality": 3
+            },
+            "tells": [
+              "It is built like a slide deck: one card per frame with a word swapped in ('Sent.', 'Paid.', 'Railyard'), then the same card again in gold and blue.",
+              "The 'handwriting' is a script font with rough edges added. The letters repeat identically, and the pen tip does not follow the stroke being written, so the writing is not choreographed.",
+              "The idea is literal and the brand looks invented: a fintech name plus a tagline ('One API call. Instant settlement.') set in a default casual script. Nothing in it would stick with a viewer.",
+              "Cream paper, a mustard accent and one dark ground make up the whole palette, with the same flat overhead light everywhere. The paper texture reads as a stock overlay, not a lit material.",
+              "The grid of tick-marked cards is the only moment of scale change, and it is a stock repeat pattern."
+            ],
+            "gaps": [
+              "Make the writing real: drawn or captured strokes that the pen actually leads, with ink pressure, bleed and timing. The gesture would then carry the idea instead of a font.",
+              "Break the repeated single-card composition. Vary scale, camera and depth, and build frames with layers the way D builds a whole system out of one visual language.",
+              "Find a specific idea beyond literally writing 'Paid'. For example, make the act of settlement physical or surprising, and develop a palette and type pairing with a point of view."
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 6,
+              "composition": 8,
+              "typography": 6,
+              "colour": 7,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 8,
+              "originality": 5
+            },
+            "tells": [
+              "The raking window light and long cast shadows on a sand-coloured ground are motivated and consistent across shots, and the edges of the glass and gold catch the light properly.",
+              "Glass, brushed gold and wood are controlled as materials. The vault-floor frame, with gold inlay seams and a glowing ring, shows real design effort.",
+              "The coin travels through the piece, from a coin with chart ribbons to a phone to a vault to a stack of locked coins. That suggests a planned throughline.",
+              "The JPMorgan wordmark and a believable UI ('$2.45M', 'MONTHLY SUMMARY') are integrated into the objects, not pasted on top."
+            ],
+            "gaps": [
+              "The visual language is close to the generic 'tasteful premium fintech' look: cream ground, gold accent, glass icons with a lock and a cart. It needs one unexpected image or a metaphor that belongs only to this piece.",
+              "The icons are stock pictograms (lock, cart, circle) and the UI type is standard. The typography needs a voice comparable to D's character-based world.",
+              "The camera height and the neutral backdrop barely change between frames. More scale contrast and a sharper break from the pattern would give the cut some surprise."
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 9,
+              "composition": 8,
+              "typography": 9,
+              "colour": 8,
+              "light_texture": 7,
+              "motion": 9,
+              "craft": 8,
+              "originality": 9
+            },
+            "tells": [
+              "Type is the image. Every object (a walking figure, a $ coin, a planet, padlocks, a grid of spinning coins) is drawn in ASCII and monospace characters. That system is specific to a crypto and payments subject and holds up across the whole piece.",
+              "Characters flow in streams and $-signs pile up and cascade. The coins in the final grid are each caught at a different point in their rotation, which shows real choreography and timing between frames.",
+              "The single saturated International-Klein-style blue with white glyphs is a deliberate, confident limit, not a default accent. Without photographic light it still builds depth through glyph density and size.",
+              "UI fragments ('<<Crypto is...', 'Faster', code-boot text) are used as typographic punctuation inside the system, not as slide copy."
+            ],
+            "gaps": [
+              "ASCII-art rendering is a known technique. It needs one more shift to escape the lineage, such as a moment where the character system breaks or changes register.",
+              "The monochrome blue risks fatiguing the viewer over the full running time. A controlled second colour or an inverted beat would add rhythm and hierarchy.",
+              "Some frames get dense enough that the read suffers, notably the padlocks beside the code block. Tighter density control would make the key words land harder."
+            ]
+          }
+        },
+        "ranking": [
+          "D",
+          "A",
+          "C",
+          "B"
+        ]
+      },
+      "meta": {
+        "seconds": 31.6,
+        "cost_usd": 0.17216700000000001,
+        "tokens": 74822,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "candidate",
+        "B": "coinbase-system-update",
+        "C": "jpmorgan-payments",
+        "D": "morph-studio-xreal-1s-2025"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "not professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 4,
+              "composition": 4,
+              "typography": 3,
+              "colour": 5,
+              "light_texture": 4,
+              "motion": 3,
+              "craft": 3,
+              "originality": 3
+            },
+            "tells": [
+              "Every frame repeats the same layout: a paper card on a dark ground with one centred handwritten word. It works like a slide deck where only the word changes ('Sent.', 'Paid.', 'Railyard').",
+              "The script is a default handwriting font, not real lettering. 'Sent.' has broken, jittery strokes with no consistent pen pressure, and the pen tip doesn't line up with where the stroke is being drawn.",
+              "The pen is a flat, generic prop that floats in the same diagonal pose in every shot. It casts almost no believable shadow and never touches the paper.",
+              "The idea is literal and obvious: signing a word means 'payment done'. It ends on an endline set like a slide ('One API call. Instant settlement.'), and the brand name 'Railyard' reads as a placeholder.",
+              "The grid of checkmark cards is a duplicated tile with one swapped cell. It's an effect with no development, and the same checkmark glyph is pasted into every card.",
+              "The light is flat and unmotivated: one soft vignette that never changes, with a paper texture that looks like an overlay."
+            ],
+            "gaps": [
+              "Replace the font-driven 'handwriting' with real or custom lettering that has stroke weight, ink behaviour and timing, and make the pen actually perform it the way C's objects are physically lit and grounded.",
+              "Break the repeated card-on-black composition: vary scale, camera, depth and staging so each frame is its own poster, not one layout with the word changed.",
+              "Find a less literal metaphor for settlement than writing 'Paid.', and set the endline with typographic intent instead of a script caption pasted under the logo."
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 8,
+              "composition": 7,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 7,
+              "motion": 8,
+              "craft": 8,
+              "originality": 8
+            },
+            "tells": [
+              "It commits to a single system: everything (a running figure, a coin, a planet with rings, padlocks, a grid of spinning coins) is built from typographic ASCII glyphs, so type is the image, not a label.",
+              "The palette is a bold, deliberate monochrome: electric International-Klein-style blue with white. It's unusual for a fintech or crypto piece and instantly recognisable.",
+              "There are clear signs of choreography: glyph fields flow in directional streams ('<<<<'), the coins appear to rotate through different phases across the grid, and objects resolve out of noise and dissolve back into it.",
+              "Witty diegetic detail: code fragments ('matchcut_engine.h', 'StartDirectPayment()'), tag labels ('<<Crypto is...', 'Faster'), and the $ signs forming smoke or clouds.",
+              "The scenes vary (character, cosmic, security, grid) while the visual language stays the same."
+            ],
+            "gaps": [
+              "Some frames (the padlocks with the code panel) drift toward literal icon-plus-terminal illustration. Push the metaphors further, past 'lock = secure' and 'coin = crypto'.",
+              "Hierarchy gets busy. The densest frames would gain from more negative space and scale contrast so one hero form reads instantly, the way C isolates one object.",
+              "Add more tonal depth or light within the glyph field (density gradients, a second value, bloom) so it gains the material richness of C and D."
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 7,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 9,
+              "originality": 7
+            },
+            "tells": [
+              "The light is real and motivated: hard window-blind shadows rake across a warm sand ground, and the caustics through glass and the gold edge highlights look physically plausible.",
+              "The material vocabulary is consistent and considered: frosted glass, brushed gold, matte paper and wood-inlay tiles, all held in a restrained champagne palette that suits a private-bank brand.",
+              "It builds a design system rather than a stock primitive. The coin/token motif carries through as the chart wave, a phone tap with ripples, a node in a tiled network, a stylus on a glass dashboard, and stacked coins with a lock.",
+              "The typography is the brand's own serif wordmark plus a well-set dashboard UI ($2.45M, tracked small caps for 'MONTHLY SUMMARY'), integrated into the objects as surface detail, not slapped on.",
+              "The camera, angle and scale change from frame to frame, from macro top-down to low hero, which implies purposeful motion design."
+            ],
+            "gaps": [
+              "The ideas stay close to fintech iconography (coin, phone tap, lock, dashboard). It needs one surprising concept that only this brand could own.",
+              "The motion implied is elegant but safe: objects rotate and settle. A bolder transformation between scenes would raise the choreography.",
+              "The icons on the coins (clock, cart, lock) are generic glyphs. Custom pictograms would match the craft of the rendering."
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.75,
+            "scores": {
+              "idea": 6,
+              "composition": 7,
+              "typography": 5,
+              "colour": 7,
+              "light_texture": 8,
+              "motion": 8,
+              "craft": 8,
+              "originality": 5
+            },
+            "tells": [
+              "High-end liquid and glass simulation: the glasses are re-formed from fluid, with refractive bubbles, splashes and an organic vein structure, and they read as genuine CG with real refraction and caustics.",
+              "The frames show energetic motion and variety (a splash, a product reveal, a full macro liquid shell, a cellular 'evolution' world), which suggests strong dynamic choreography.",
+              "The cobalt-on-black palette is consistent but very familiar from tech product launches.",
+              "The typography is weak: a bold grotesk 'XREAL' and '1S' split either side of the product, plus a widely tracked thin-caps 'EVOLUTION' floating centred. These are conventional launch-film defaults."
+            ],
+            "gaps": [
+              "Typography has no idea. It needs a typographic system that lives in the fluid world rather than tracked caps over a render, like B's type-as-image approach.",
+              "Liquid-glass product reveals in blue are a well-worn genre. It needs a specific concept or a palette departure to become memorable.",
+              "Compositions are mostly centre-weighted hero shots. More asymmetric, graphic framing, like C's lighting-driven layouts, would make each frame a poster."
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "B",
+          "D",
+          "A"
+        ]
+      },
+      "meta": {
+        "seconds": 35.1,
+        "cost_usd": 0.1776078,
+        "tokens": 75098,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "critic": {
+    "answer": {
+      "scores": {
+        "motion": 5,
+        "sound": 6,
+        "craft": 6
+      },
+      "checks": {
+        "idea": true,
+        "invariant": true,
+        "arc": false,
+        "type_meaning": false,
+        "freeze_frame": false,
+        "ending": true,
+        "restraint": true,
+        "material": true,
+        "sync": true
+      },
+      "defects": [
+        "Ink strokes have a noisy, chewed displacement edge that looks like a procedural roughen filter rather than real ink bleed or nib pressure; the stroke width barely changes with direction",
+        "The pen is a flat CG stick. Its tip does not convincingly drive the stroke (no lift, angle change or pressure), so the writing reads as a write-on reveal with a prop pinned to it",
+        "The 'Rai' mid-write frame and the plain cream frames are mostly empty paper: dead air with one small subject off to one side",
+        "The tagline 'One API call. Instant settlement.' is set in a small, thin script that is soft at delivery size and fights the hero wordmark",
+        "The 7x5 card grid uses identical checkmarks on near-identical, slightly jittered cards. The random rotation reads as noise rather than designed variation",
+        "The 'Sent.' S carries a scribble artifact that reads as a stroke-order error, not as intent",
+        "There are no strip captures, and the frame pairs show mostly rigid translation of cards with no visible overshoot, settle or motion blur"
+      ],
+      "gaps": [
+        "Motion is mostly write-on reveals and linear card slides. Writing needs real nib physics (pressure, lift, hand acceleration), and the transitions need weighted card handoffs with overlap, settle and blur, plus a stronger set-piece than a static grid. The peak comes at about 45%, not 60-80%",
+        "Pacing and dead air: shots run 2.8-3.8s with long holds on a nearly empty page while a word writes out. The grid multiplication moment, the one strong idea, is too short and not escalated. Cut the writing time and build the multiplication up to the peak",
+        "Finish: the ink edges look like a procedural roughen filter, the pen is plastic and unlit against the paper's raking light, and the end-card type hierarchy is weak. The sound is dense and produced, with a good drop-out before the logo, but it is a wall of constant transients with little dynamic range and few pen or paper foley details tied to the strokes"
+      ]
+    },
+    "meta": {
+      "seconds": 25.6,
+      "cost_usd": 0.1758478,
+      "tokens": 74965,
+      "models": [
+        "claude-opus-5-5"
+      ]
+    },
+    "pace": "final.mp4: 15.0s, 5 shots, median 2.80s, longest 3.77s\nper-second change: [11.1, 52.5, 14.2, 13.8, 71.0, 56.7, 51.4, 62.2, 12.7, 8.8, 45.8, 22.9, 14.9, 13.8]\nPACE: FAIL \u2014 longest shot 3.8s > 2.5s; median shot 2.8s > 2.0s"
+  },
+  "full_scores": {
+    "idea": 4.0,
+    "composition": 4.0,
+    "typography": 3.0,
+    "colour": 5.0,
+    "light_texture": 4.0,
+    "motion": 4.0,
+    "craft": 4.5,
+    "originality": 3.0,
+    "sound": 6
+  },
+  "full_overall": 4.17,
+  "cost_usd": 1.187,
+  "judge_seconds": 206.3,
+  "verdict": "FAIL"
+}

@@ -1,0 +1,8 @@
+judging ferro vs ['morph-studio-xreal-1s-2025', 'found-devialet-opera-de-paris-2022', 'osko-launch']
+  trial 0: {'A': 'osko-launch', 'B': 'morph-studio-xreal-1s-2025', 'C': 'candidate', 'D': 'found-devialet-opera-de-paris-2022'}  ranking=['B', 'D', 'A', 'C']  36.1s $0.3732826
+  trial 1: {'A': 'osko-launch', 'B': 'morph-studio-xreal-1s-2025', 'C': 'found-devialet-opera-de-paris-2022', 'D': 'candidate'}  ranking=['C', 'B', 'A', 'D']  34.2s $0.1736716
+  trial 2: {'A': 'found-devialet-opera-de-paris-2022', 'B': 'morph-studio-xreal-1s-2025', 'C': 'osko-launch', 'D': 'candidate'}  ranking=['B', 'A', 'C', 'D']  34.5s $0.1739504
+  trial 3: {'A': 'osko-launch', 'B': 'morph-studio-xreal-1s-2025', 'C': 'found-devialet-opera-de-paris-2022', 'D': 'candidate'}  ranking=['C', 'B', 'A', 'D']  32.1s $0.1709714
+  trial 4: {'A': 'osko-launch', 'B': 'candidate', 'C': 'found-devialet-opera-de-paris-2022', 'D': 'morph-studio-xreal-1s-2025'}  ranking=['C', 'D', 'A', 'B']  38.4s $0.1806902
+  trial 5: {'A': 'candidate', 'B': 'morph-studio-xreal-1s-2025', 'C': 'found-devialet-opera-de-paris-2022', 'D': 'osko-launch'}  ranking=['C', 'B', 'D', 'A']  33.9s $0.1737116
+{"name": "ferro", "verdict": "FAIL", "ref_mean": 7.12, "delta": -2.93, "cost_usd": 1.448, "cand_overall": 4.19, "judged_pro": "0/6"}

@@ -1,0 +1,10 @@
+judging b-launch vs ['coinbase-system-update', 'jpmorgan-payments', 'morph-studio-xreal-1s-2025']
+  trial 0: {'A': 'morph-studio-xreal-1s-2025', 'B': 'coinbase-system-update', 'C': 'candidate', 'D': 'jpmorgan-payments'}  ranking=['B', 'A', 'D', 'C']  26.5s $0.1632032
+  trial 1: {'A': 'morph-studio-xreal-1s-2025', 'B': 'coinbase-system-update', 'C': 'jpmorgan-payments', 'D': 'candidate'}  ranking=['A', 'C', 'B', 'D']  30.9s $0.16723480000000002
+  trial 2: {'A': 'jpmorgan-payments', 'B': 'coinbase-system-update', 'C': 'morph-studio-xreal-1s-2025', 'D': 'candidate'}  ranking=['B', 'A', 'C', 'D']  30.4s $0.16863860000000003
+  trial 3: {'A': 'morph-studio-xreal-1s-2025', 'B': 'coinbase-system-update', 'C': 'jpmorgan-payments', 'D': 'candidate'}  ranking=['A', 'B', 'C', 'D']  26.2s $0.1624586
+  trial 4: {'A': 'morph-studio-xreal-1s-2025', 'B': 'candidate', 'C': 'jpmorgan-payments', 'D': 'coinbase-system-update'}  ranking=['D', 'A', 'C', 'B']  31.6s $0.17216700000000001
+  trial 5: {'A': 'candidate', 'B': 'coinbase-system-update', 'C': 'jpmorgan-payments', 'D': 'morph-studio-xreal-1s-2025'}  ranking=['C', 'B', 'D', 'A']  35.1s $0.1776078
+{"name": "b-launch", "verdict": "FAIL", "ref_mean": 7.37, "delta": -3.75, "cost_usd": 1.187, "cand_overall": 3.62, "judged_pro": "0/6"}
+
+b-launch: 3.62 (judged pro 0/6, verdict FAIL) vs r1 3.75 / r2 3.62; full 4.17 vs r1 4.28 / r2 4.11. Result: deliverables/launch/railyard/judge/b-launch/result.json

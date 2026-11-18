@@ -1,0 +1,8 @@
+judging anikit vs ['hook-launching-whisk-with-google-labs-2025', 'coinbase-system-update', 'morph-studio-xreal-1s-2025']
+  trial 0: {'A': 'morph-studio-xreal-1s-2025', 'B': 'hook-launching-whisk-with-google-labs-2025', 'C': 'candidate', 'D': 'coinbase-system-update'}  ranking=['D', 'A', 'B', 'C']  29.1s $0.165288
+  trial 1: {'A': 'morph-studio-xreal-1s-2025', 'B': 'hook-launching-whisk-with-google-labs-2025', 'C': 'coinbase-system-update', 'D': 'candidate'}  ranking=['C', 'A', 'B', 'D']  29.5s $0.1677316
+  trial 2: {'A': 'coinbase-system-update', 'B': 'hook-launching-whisk-with-google-labs-2025', 'C': 'morph-studio-xreal-1s-2025', 'D': 'candidate'}  ranking=['A', 'C', 'B', 'D']  28.5s $0.166215
+  trial 3: {'A': 'morph-studio-xreal-1s-2025', 'B': 'hook-launching-whisk-with-google-labs-2025', 'C': 'coinbase-system-update', 'D': 'candidate'}  ranking=['C', 'A', 'B', 'D']  29.8s $0.169847
+  trial 4: {'A': 'morph-studio-xreal-1s-2025', 'B': 'candidate', 'C': 'coinbase-system-update', 'D': 'hook-launching-whisk-with-google-labs-2025'}  ranking=['C', 'A', 'D', 'B']  28.6s $0.1651796
+  trial 5: {'A': 'candidate', 'B': 'hook-launching-whisk-with-google-labs-2025', 'C': 'coinbase-system-update', 'D': 'morph-studio-xreal-1s-2025'}  ranking=['C', 'D', 'B', 'A']  33.4s $0.172567
+{"name": "anikit", "verdict": "FAIL", "ref_mean": 7.17, "delta": -4.23, "cost_usd": 1.184, "cand_overall": 2.94, "judged_pro": "0/6"}

@@ -1,0 +1,947 @@
+{
+  "name": "tern",
+  "tags": [
+    "product-launch",
+    "cg-3d"
+  ],
+  "refs": [
+    "morph-studio-xreal-1s-2025",
+    "found-devialet-opera-de-paris-2022",
+    "osko-launch"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 4.0,
+      "composition": 4.0,
+      "typography": 3.0,
+      "colour": 4.0,
+      "light_texture": 4.0,
+      "motion": 3.0,
+      "craft": 3.0,
+      "originality": 3.0
+    },
+    "overall": 3.5,
+    "judged_professional": "0/6",
+    "pro_rate": 0.0,
+    "mean_rank": 4,
+    "gaps": [
+      "It needs a real idea beyond waveform-as-landscape. D gives the product a whole designed world with cultural specificity, material and ritual",
+      "It needs a typographic point of view: a chosen or custom face, scale contrast, and type that interacts with the terrain on purpose rather than being clipped by it",
+      "Give it real light and texture: the ridges need geology or material, the device needs to sit in the scene's light, and the composition needs to change shot to shot (camera moves, scale shifts, close-ups) instead of one lower-third horizon",
+      "Develop a concept beyond 'waveform = mountain', or at least choreograph the landscape (camera moves, scale shifts, sound becoming terrain over time), as C does with its set.",
+      "Give the type a typographic system with real lock-ups, deliberate interaction with the terrain and hierarchy, instead of default serif headlines that collide with or get clipped by the image.",
+      "Render the product and terrain with real materials and lighting (rim light, contact shadows, surface detail) so the frames carry the depth and finish of B and C.",
+      "Replace the literal waveform-equals-landscape metaphor with an idea about what being 'caught whole' actually feels like to a user",
+      "Build a real typographic system with scale contrast, a considered face and deliberate interaction with the image, instead of a default serif placed like a slide title",
+      "Introduce real choreography and camera variety, plus motivated light and material on both product and terrain; right now every frame is the same wide shot",
+      "It needs an idea beyond 'waveform = landscape'. Find something specific about what 'caught whole' means for the user, the way C turns the speaker into horology.",
+      "Render the product and the terrain with real material, light and texture. Ground the device with shadows and reflections and add depth layers, as C does.",
+      "Replace the default serif-on-dark slide layout with a typographic system that has scale contrast and real interaction with the image, and vary the compositions across frames.",
+      "It needs a specific idea beyond 'waveform = mountains'. Find a concept only this product could own and build the film around it",
+      "Commit to typography with a point of view: a custom or characterful face, expressive scale, and type that interacts physically with the terrain instead of floating on it",
+      "Add real light and material, such as rock, dust, atmosphere and a properly modelled product, plus a varied shot language (macro, camera moves, scale shifts) so it is not five versions of one horizon",
+      "Swap the literal waveform-as-landscape metaphor for an idea specific to the device, such as what gets 'caught' in a recording, and show it with real material and light",
+      "Develop a typographic system: a chosen or custom face, real scale contrast and type that interacts with the terrain on purpose. Right now it is default serif text placed on top",
+      "Give each frame its own composition and camera (macro, scale shifts, a hard cut to the product in use) instead of one horizon layout repeated with different peaks"
+    ],
+    "tells": [
+      "Textbook 'tasteful AI' look: dark warm-brown ground, one orange rim-line accent, small moon, mostly empty frame",
+      "Generic editorial serif headline ('Caught whole.', 'Tern') with a small sans-ish subline 'Lift to record.', placed like slide text. There is no typographic idea beyond 'big serif top-left'",
+      "Literal, obvious idea: sound waveform = mountain range = 'record'. It is a visual pun on the feature, not something a viewer would remember",
+      "The same composition repeats in every frame (horizon in the lower third, empty sky, ridge silhouettes) with only the ridge height and words changing, like a slide deck",
+      "Craft errors: the 'Tern' wordmark is clipped by the ridge in frame 4 without reading as a deliberate occlusion; the first frame has a hard horizontal seam/glitch through the reflection; the device is a plain stock-like rounded slab placed on the ridge with no lighting relationship",
+      "Flat, foggy, unmotivated light with no material on the 'mountains'; it is a gradient with an outline stroke",
+      "It matches the generic 'tasteful AI' look: a dark, muddy mauve-brown ground, a single orange accent, a lone sun dot, and a mostly empty frame.",
+      "The type is a default editorial display serif ('Caught whole.', 'Tern', 'Lift to record.') placed like a slide, with no integration or scale idea.",
+      "Placement errors: in frame 4 the mountain crudely cuts off the 'Tern' wordmark, and in frame 3 the headline collides with the waveform spike.",
+      "The idea is literal: an audio waveform becomes a mountain range for a recording device. It is the obvious metaphor.",
+      "The same horizon composition repeats in every frame with only the peak height and the words swapped, so very little happens.",
+      "The product is a plain black rounded rectangle with no material, reflections or grounding; it sits pasted onto the ridge.",
+      "The light is flat and the haze is uniform, with no texture in the terrain.",
+      "The 'tasteful AI' formula: dark, muddy-brown ground, a single orange accent rim-line, a generic editorial serif ('Caught whole.', 'Tern') and a small subtitle ('Lift to record.') set like slide text",
+      "A literal, obvious idea: an audio recorder shown as audio waveforms that become mountains. It is a diagram of the feature",
+      "The same composition is repeated in every frame: horizon, moon dot, waveform ridge, with words swapped in and out",
+      "Visible craft failures: frame 1 has a hard horizontal seam or tearing between the waveform and its reflection; the 'Tern' wordmark is clumsily cut off by the terrain with no clear occlusion intent",
+      "Placeholder-like product: a featureless black rounded slab with three dots, flatly lit and not grounded in the scene",
+      "Haze and light are flat and unmotivated; terrain has no material quality",
+      "It matches the generic 'tasteful AI' look: a dark brown-grey ground, one orange accent line and a generic editorial serif ('Caught whole.', 'Tern', 'Lift to record.') set like slide text.",
+      "The idea is literal: an audio waveform becomes mountains for an audio recorder. That is the product name plus a diagram of the feature.",
+      "Every frame repeats the same layout: one horizon, a pale sun dot, a peak rising, and a headline top-left or bottom-left with the words swapped.",
+      "There is a visible artefact in frame 1: a hard horizontal seam where the mirrored ripple layer cuts across the image. That is unfinished compositing.",
+      "The product is a flat dark rounded rectangle with no material, reflection or contact shadow, pasted onto the terrain. The light is flat haze with no motivated source.",
+      "The type collision ('Tern' half buried in mountains) feels accidental rather than a designed integration.",
+      "It matches the 'tasteful AI' formula closely: a dark brown-grey gradient ground, one orange accent line, a lone pale moon dot, and an empty frame",
+      "A generic editorial serif ('Caught whole.', 'Tern', 'Lift to record.') is set like slides: a left-aligned headline with a small subhead underneath and no scale or typographic idea beyond 'big serif'",
+      "The idea is literal: an audio waveform is drawn as a mountain range for a recording device. Sound-as-landscape is the most obvious visual metaphor available",
+      "The same composition repeats across frames (horizon, ridges, sun, text block). Only the peak height and the words change",
+      "The product is a featureless black rounded slab with three dots, which reads as a placeholder object. The light is flat haze with no real material or texture on the terrain",
+      "'Tern' fills the bottom-left while being occluded by ridges, but the overlap looks accidental rather than designed",
+      "Matches the generic 'tasteful AI' look closely: a dark brown-to-mauve ground, one burnt-orange accent line, a lone moon dot and mostly empty frames",
+      "The type is a default-looking editorial serif ('Caught whole.', 'Tern') with a small sans subline ('Lift to record.') placed like a slide. The only typographic gesture is the wordmark hidden behind a ridge, and it is clumsy rather than intended",
+      "The idea is literal: a sound waveform becomes a mountain range for a recording device. It is the product name plus a diagram of its feature",
+      "Frames 2 to 5 reuse the same horizon composition, and only the peak height and the copy change",
+      "The product render is a plain black pill sitting on the terrain, with no contact shadow or integration. The light is a flat gradient haze with no real source",
+      "The ripple in frame 1 shows a visible horizontal seam or tear across the image, a compositing artefact"
+    ]
+  },
+  "refs_summary": {
+    "morph-studio-xreal-1s-2025": {
+      "overall": 7.19,
+      "judged_professional": "6/6",
+      "mean_rank": 2.17
+    },
+    "found-devialet-opera-de-paris-2022": {
+      "overall": 7.69,
+      "judged_professional": "6/6",
+      "mean_rank": 1.17
+    },
+    "osko-launch": {
+      "overall": 6.62,
+      "judged_professional": "6/6",
+      "mean_rank": 2.67
+    }
+  },
+  "ref_mean": 7.17,
+  "delta": -3.67,
+  "trials": [
+    {
+      "key": {
+        "A": "osko-launch",
+        "B": "morph-studio-xreal-1s-2025",
+        "C": "candidate",
+        "D": "found-devialet-opera-de-paris-2022"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 8,
+              "composition": 7,
+              "typography": 7,
+              "colour": 7,
+              "light_texture": 7,
+              "motion": 7,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "A narrative running gag: an 'I.O.U.' sticky note turns up in a CG fridge shelf and again in a fully lit retro fridge. That is an observed human joke, not a feature diagram",
+              "The film switches media on purpose: night-scene camper van with moon and volumetric hills, physically lit 3D fridge with floor reflection and interior glow, flat character animation of a golfer in a three-pose swing-and-shame sequence, and a glossy emoji-style icon grid (coffee, beer, winged cash, heart, gift)",
+              "The golfer frame implies clear key-pose acting and comic timing: address, follow-through, facepalm",
+              "The handwritten I.O.U. is the only type and it fits the idea. It works as a prop, not as a slide caption",
+              "Consistent finish across styles: soft gradients on the character's shirt, specular highlights on the icons, believable glass and plastic on the shelf"
+            ],
+            "gaps": [
+              "The styles feel like a run of separate vignettes; it needs a stronger visual through-line (shared palette, transition logic or match cuts) to read as one authored world rather than a multi-style ad",
+              "The icon grid frame is the weakest image: centred, symmetrical, on a black void. Give it composition and context the way the fridge shot has",
+              "The palette is broadly 'friendly brand' (mint, magenta, cobalt); it needs the deliberate, ownable colour discipline of D's ivory/gold/lacquer-red"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 6,
+              "composition": 7,
+              "typography": 5,
+              "colour": 6,
+              "light_texture": 8,
+              "motion": 8,
+              "craft": 8,
+              "originality": 5
+            },
+            "tells": [
+              "High-end fluid and particle simulation: the glasses form out of a liquid shell, with caustics, refraction, bubbles and fibrous strands that read as real sims, not stock primitives",
+              "Real product (XREAL 1S) shown in context with hero beauty lighting and believable chromatic edge fringing on the first frame's motion",
+              "Clear choreography across the frames: liquid explosion, product reveal with wordmark, glasses as a liquid casting, macro close-up, then a cellular/neural 'EVOLUTION' end",
+              "The weak point is typography: the wordmark and a widely tracked thin-caps 'EVOLUTION' are dropped over the image with no integration",
+              "Monochrome electric blue is the default 'tech launch' palette"
+            ],
+            "gaps": [
+              "The idea is the category clich\u00e9 ('liquid tech evolution'). It needs a concept specific to what AR glasses do for a person, the way D ties the product to a precise cultural and material world",
+              "Typography is set like supers on top of the image; build type into the sim (refracted, formed from liquid, occluded) or choose a face with a point of view",
+              "Single-hue blue throughout flattens the frames; add a counter-colour or a shift in value structure so each shot can stand as a distinct poster"
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 4,
+              "composition": 4,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 4,
+              "motion": 3,
+              "craft": 3,
+              "originality": 3
+            },
+            "tells": [
+              "Textbook 'tasteful AI' look: dark warm-brown ground, one orange rim-line accent, small moon, mostly empty frame",
+              "Generic editorial serif headline ('Caught whole.', 'Tern') with a small sans-ish subline 'Lift to record.', placed like slide text. There is no typographic idea beyond 'big serif top-left'",
+              "Literal, obvious idea: sound waveform = mountain range = 'record'. It is a visual pun on the feature, not something a viewer would remember",
+              "The same composition repeats in every frame (horizon in the lower third, empty sky, ridge silhouettes) with only the ridge height and words changing, like a slide deck",
+              "Craft errors: the 'Tern' wordmark is clipped by the ridge in frame 4 without reading as a deliberate occlusion; the first frame has a hard horizontal seam/glitch through the reflection; the device is a plain stock-like rounded slab placed on the ridge with no lighting relationship",
+              "Flat, foggy, unmotivated light with no material on the 'mountains'; it is a gradient with an outline stroke"
+            ],
+            "gaps": [
+              "It needs a real idea beyond waveform-as-landscape. D gives the product a whole designed world with cultural specificity, material and ritual",
+              "It needs a typographic point of view: a chosen or custom face, scale contrast, and type that interacts with the terrain on purpose rather than being clipped by it",
+              "Give it real light and texture: the ridges need geology or material, the device needs to sit in the scene's light, and the composition needs to change shot to shot (camera moves, scale shifts, close-ups) instead of one lower-third horizon"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 8,
+              "composition": 9,
+              "typography": 7,
+              "colour": 9,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 9,
+              "originality": 7
+            },
+            "tells": [
+              "A specific, ownable world: the Devialet Phantom range staged in a lunar-new-year architectural set of lacquer-red screens, ivory stone plinths, gold inlay, fluted glass and moon-gate arcs",
+              "A deliberate, unusual palette (ivory, champagne gold, Chinese red) held across every shot",
+              "Real material and light: travertine-like plinth texture, brushed gold edges, matte white shells, soft sun-like key with long shadows, reflective floor",
+              "Surprise and choreography: ribbons sweep into a gyroscopic cage around the speaker, a top-down shot reveals a watch-movement gear mechanism beneath the plinth (a nod to French horology/engineering), varied hero, macro and overhead angles",
+              "Typography is withheld except the engraved DEVIALET on the product, so the brand is carried by the object. That suits the luxury tone"
+            ],
+            "gaps": [
+              "The art direction belongs to a familiar 'luxury product on plinths' genre; one more unexpected conceptual turn would push it from strong studio work to best-of-year",
+              "The film has no typographic voice of its own; a designed seasonal title or end-card integrated into the architecture would make it complete",
+              "The wides at the start and end mirror each other closely; a more dramatic final beat (scale shift, light change, the mechanism in motion) would give it a stronger arc"
+            ]
+          }
+        },
+        "ranking": [
+          "D",
+          "A",
+          "B",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 38.5,
+        "cost_usd": 0.37433440000000007,
+        "tokens": 75097,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "osko-launch",
+        "B": "morph-studio-xreal-1s-2025",
+        "C": "found-devialet-opera-de-paris-2022",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.7,
+            "scores": {
+              "idea": 7,
+              "composition": 6,
+              "typography": 5,
+              "colour": 6,
+              "light_texture": 7,
+              "motion": 7,
+              "craft": 7,
+              "originality": 7
+            },
+            "tells": [
+              "There is a running narrative gag: the 'I.O.U.' sticky note shows up first on a container in the fridge, then inside a retro fridge with the door opening. This is a story beat a person wrote, not a template.",
+              "It switches between media on purpose: a moonlit 3D van in a night landscape, a lit 3D fridge interior with a floor reflection, a flat character animation of a golf swing in three poses, and a grid of emoji-style icons. This reads as an anthology or a brief shared across several directors.",
+              "The golf sequence shows real character key poses (backswing, follow-through, head-in-hands slump), so the timing and acting are clearly animated by hand.",
+              "The fridge shot has motivated light: interior spill falls onto a dark floor and reflects there.",
+              "Against it: the styles do not add up to one visual system, the icon grid is close to stock emoji, and the only visible type is the handwritten note."
+            ],
+            "gaps": [
+              "Bring the mixed styles together with a shared palette, grain or line treatment so the piece reads as one authored film rather than a compilation.",
+              "Replace the near-stock emoji grid with designed icons that carry the same wit as the I.O.U. idea.",
+              "Give the typography a role (titling or a brand lock-up) that matches C's level of finish, instead of relying only on the scribbled note."
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 6,
+              "composition": 7,
+              "typography": 6,
+              "colour": 6,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 9,
+              "originality": 6
+            },
+            "tells": [
+              "Heavy fluid and particle simulation: liquid splits away from a ribbed form, the glasses re-form as translucent liquid, and there are caustic-lit bubbles and droplets. This is expensive, high-end FX and lighting work.",
+              "The frames clearly progress: a splash, the product reveal with the XREAL 1S lock-up placed in depth, a macro of the material, then a cellular 'EVOLUTION' world. Each one is a different scale and camera move.",
+              "The light has real subsurface quality, refraction and depth of field.",
+              "Against it: the monochrome electric blue and the 'liquid tech reveal' are well-worn tropes for consumer-tech launches, and the widely tracked thin caps 'E V O L U T I O N' is a stock tech-ad typographic move."
+            ],
+            "gaps": [
+              "Find a concept specific to AR glasses rather than the generic 'liquid evolution' metaphor; right now the visuals could launch any device.",
+              "Break the single-hue blue palette with a counter colour or a temperature shift so the frames do not blur together.",
+              "Give the typography a point of view; the widely spaced thin caps over the simulation is the most template-like element in an otherwise top-end piece."
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 9,
+              "originality": 7
+            },
+            "tells": [
+              "It uses a distinctive, deliberate palette (lacquer red, ivory, brushed gold, travertine-like stone) that fits a Devialet / Lunar New Year 'Op\u00e9ra' collection theme.",
+              "Material work is excellent: stone plinths with gold inlay, ribbed glass, fabric-white shells, and a reveal of watch-like gears beneath the pedestal. That gear reveal is a real idea about the engineering inside the product.",
+              "The set is architected rather than a stock backdrop: arches, ribboned bands sweeping over the speaker, and layered planes in depth.",
+              "The camera choreography varies (hero wide, macro grille, top-down into the mechanism, frontal portrait, closing hero) and the light is soft and motivated, with real contact shadows.",
+              "Type is limited to the product engraving, which suits a luxury object film."
+            ],
+            "gaps": [
+              "Push the gear and mechanism reveal into a bigger, more surprising set piece; right now it is one shot in an otherwise elegant showroom.",
+              "Add a typographic or graphic layer with character, such as a red-and-gold title treatment, to give the piece a signature beyond the product renders.",
+              "Take more compositional risks; several frames fall back on centred, symmetrical product-on-plinth framing."
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 4,
+              "composition": 3,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 4,
+              "motion": 3,
+              "craft": 3,
+              "originality": 3
+            },
+            "tells": [
+              "It matches the generic 'tasteful AI' look: a dark, muddy mauve-brown ground, a single orange accent, a lone sun dot, and a mostly empty frame.",
+              "The type is a default editorial display serif ('Caught whole.', 'Tern', 'Lift to record.') placed like a slide, with no integration or scale idea.",
+              "Placement errors: in frame 4 the mountain crudely cuts off the 'Tern' wordmark, and in frame 3 the headline collides with the waveform spike.",
+              "The idea is literal: an audio waveform becomes a mountain range for a recording device. It is the obvious metaphor.",
+              "The same horizon composition repeats in every frame with only the peak height and the words swapped, so very little happens.",
+              "The product is a plain black rounded rectangle with no material, reflections or grounding; it sits pasted onto the ridge.",
+              "The light is flat and the haze is uniform, with no texture in the terrain."
+            ],
+            "gaps": [
+              "Develop a concept beyond 'waveform = mountain', or at least choreograph the landscape (camera moves, scale shifts, sound becoming terrain over time), as C does with its set.",
+              "Give the type a typographic system with real lock-ups, deliberate interaction with the terrain and hierarchy, instead of default serif headlines that collide with or get clipped by the image.",
+              "Render the product and terrain with real materials and lighting (rim light, contact shadows, surface detail) so the frames carry the depth and finish of B and C."
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "B",
+          "A",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 33.6,
+        "cost_usd": 0.1744982,
+        "tokens": 74925,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "found-devialet-opera-de-paris-2022",
+        "B": "morph-studio-xreal-1s-2025",
+        "C": "osko-launch",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 8,
+              "motion": 7,
+              "craft": 9,
+              "originality": 7
+            },
+            "tells": [
+              "Real product (Devialet Phantom / Mania / Dione range) rendered with accurate materials: gold-leaf trim, ceramic white, sandstone-textured plinths, lacquered red drapes",
+              "A coherent art direction: an Asian lunar-new-year palette of vermilion, cream and gold carried through set pieces like arched screens, ribbon sweeps and fluted glass",
+              "Real variety in framing: wide hero line-up, macro through looping ribbons, top-down reveal of a clockwork gear mechanism under the plinth, frontal product portrait, a reassembled final line-up",
+              "The hidden watch-movement gears under the pedestal are an actual surprise that says 'precision engineering' without words",
+              "Soft, motivated studio light with grounded contact shadows and subtle reflections"
+            ],
+            "gaps": [
+              "The set is luxurious but built from familiar CG-showroom grammar (plinths, arches, ribbons); it needs one bolder spatial idea like the gear reveal, carried through the whole piece",
+              "No visible typographic system; the brand only appears as a product logo, so an end card or integrated type would give it identity beyond the render",
+              "Opening and closing frames are near-identical line-ups; the choreography could build to a more transformed final state"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 6,
+              "colour": 7,
+              "light_texture": 9,
+              "motion": 9,
+              "craft": 9,
+              "originality": 8
+            },
+            "tells": [
+              "Real product (XREAL 1S glasses) with a specific concept: the glasses are born from, dissolved into and reformed out of liquid and organic tissue ('EVOLUTION')",
+              "Complex simulation work: shattering streams, glasses cast in translucent jelly with veins and bubbles, cellular macro worlds. This takes a studio to make, not a preset",
+              "Strong frame-to-frame choreography: explosive particle burst, product hero, gelatinous reformation, macro texture, cellular wide shot. It reads as an arc of destruction and genesis",
+              "Caustics, subsurface scattering and refraction all handled convincingly; the material is the subject"
+            ],
+            "gaps": [
+              "The monochrome electric-blue palette is the tech-launch default; a second, unexpected colour would make it more memorable",
+              "Typography is mostly functional: a bold-sans product name and a widely tracked 'EVOLUTION' are close to the generic tracked-caps trope. Type should be integrated into the liquid world",
+              "The organic sci-fi imagery risks tipping into spectacle; a clearer link between 'evolution' and what the product actually does would make the idea land harder"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.6,
+            "scores": {
+              "idea": 7,
+              "composition": 6,
+              "typography": 5,
+              "colour": 6,
+              "light_texture": 6,
+              "motion": 7,
+              "craft": 6,
+              "originality": 7
+            },
+            "tells": [
+              "A real narrative throughline with wit: an 'I.O.U.' note replaces the eaten leftovers on a shelf, then reappears in an empty retro fridge. A concrete, human, shareable idea (likely a payments or gifting brand)",
+              "Deliberate mixing of styles across vignettes (moody 3D van at night, glossy 3D fridge interior, flat character animation of a golfer's swing-and-despair, emoji-like icon grid) suggests a multi-artist anthology approach",
+              "The golfer's three poses show real animation acting (anticipation, follow-through, a facepalm payoff)",
+              "The hand-lettered I.O.U. sticky note is a small, characterful type gesture that carries the concept"
+            ],
+            "gaps": [
+              "Visual cohesion is weak: the styles feel stitched together rather than art-directed into one system, and the icon grid in particular looks like stock emoji",
+              "The flat golfer illustration is close to vector-default character style; it needs a more distinctive drawing hand",
+              "Lighting and material quality varies a lot between vignettes; it needs the consistent finish and density that B and A sustain in every frame"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 4,
+              "composition": 4,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 4,
+              "motion": 3,
+              "craft": 3,
+              "originality": 3
+            },
+            "tells": [
+              "The 'tasteful AI' formula: dark, muddy-brown ground, a single orange accent rim-line, a generic editorial serif ('Caught whole.', 'Tern') and a small subtitle ('Lift to record.') set like slide text",
+              "A literal, obvious idea: an audio recorder shown as audio waveforms that become mountains. It is a diagram of the feature",
+              "The same composition is repeated in every frame: horizon, moon dot, waveform ridge, with words swapped in and out",
+              "Visible craft failures: frame 1 has a hard horizontal seam or tearing between the waveform and its reflection; the 'Tern' wordmark is clumsily cut off by the terrain with no clear occlusion intent",
+              "Placeholder-like product: a featureless black rounded slab with three dots, flatly lit and not grounded in the scene",
+              "Haze and light are flat and unmotivated; terrain has no material quality"
+            ],
+            "gaps": [
+              "Replace the literal waveform-equals-landscape metaphor with an idea about what being 'caught whole' actually feels like to a user",
+              "Build a real typographic system with scale contrast, a considered face and deliberate interaction with the image, instead of a default serif placed like a slide title",
+              "Introduce real choreography and camera variety, plus motivated light and material on both product and terrain; right now every frame is the same wide shot"
+            ]
+          }
+        },
+        "ranking": [
+          "B",
+          "A",
+          "C",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 30.3,
+        "cost_usd": 0.1698832,
+        "tokens": 74707,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "osko-launch",
+        "B": "morph-studio-xreal-1s-2025",
+        "C": "found-devialet-opera-de-paris-2022",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 6,
+              "colour": 7,
+              "light_texture": 7,
+              "motion": 7,
+              "craft": 7,
+              "originality": 7
+            },
+            "tells": [
+              "Each beat uses a different visual mode on purpose: a moonlit night drive with a VW bus, a macro shot inside a fridge, flat golf illustration and a grid of glossy emoji-like icons. That reads as a planned anthology, not a template.",
+              "There is a running gag that pays off: the hand-lettered 'I.O.U.' sticky note goes from a tupperware lid to the inside of a retro fridge, and the fridge has a real light spill and a reflection on the floor.",
+              "The golfer is drawn as a three-pose sequence (address, swing, facepalm), so the animator is thinking in comic timing.",
+              "The light is motivated: a rim light from the moon, the cold glow from the fridge interior, soft studio light on the shelf."
+            ],
+            "gaps": [
+              "The styles are not unified. The icon grid in particular looks like a stock emoji set and drops the craft level, so give the anthology a shared texture, palette or grain.",
+              "There is almost no typography apart from the I.O.U. lettering. A typographic system would tie the vignettes together and carry the brand.",
+              "Frames are mostly single objects centred in the frame. Push the staging and depth the way C's layered sets do."
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 6,
+              "composition": 7,
+              "typography": 4,
+              "colour": 6,
+              "light_texture": 8,
+              "motion": 8,
+              "craft": 8,
+              "originality": 5
+            },
+            "tells": [
+              "There is high-end liquid and glass simulation: the glasses form out of fluid, caustics and refraction on a translucent shell, and bubbles carrying fibre-like filaments. That is expensive simulation and lookdev work.",
+              "The frames run from abstract fluid to product reveal to macro detail to a cellular 'EVOLUTION' world, which reads as choreographed camera travel through the material.",
+              "The typography is the weak point: 'XREAL \u2026 1S' in a generic bold grotesk split across the frame, and 'E V O L U T I O N' in widely tracked thin caps over the image. Both are default tech-launch type."
+            ],
+            "gaps": [
+              "The palette is a single blue throughout, which is the generic tech-launch clich\u00e9. It needs a second colour idea or a tonal shift across acts the way C contrasts red and ivory.",
+              "The type needs a point of view. Integrate it into the liquid, through scale or refraction, instead of overlaying tracked caps.",
+              "The idea is 'product made of liquid', which is a familiar CG trope. Tie the metaphor to something specific about the product so the film can't be mistaken for any other gadget launch."
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 9,
+              "originality": 7
+            },
+            "tells": [
+              "The palette is deliberate and unusual: lacquer red, travertine stone, ivory and brushed gold. It ties into Devialet's own materials and reads as Lunar New Year or luxury without being literal.",
+              "The material work is excellent: stone plinths with gold inlay, fluted glass, ribbons in a frosted finish, soft area light with believable occlusion.",
+              "The film has a specific idea: the plinth opens to reveal watch-like gears, which equates the speaker with haute horlogerie. Only this brand could do this piece.",
+              "The shots vary from hero group to ribbon macro to top-down mechanism to frontal Mania to closing group, so there is real camera choreography inside one consistent set.",
+              "There is barely any type (only the DEVIALET mark on the product). That suits a product-as-jewel film, but it leaves no typographic signature."
+            ],
+            "gaps": [
+              "The opening and closing tableaux are close to a standard pedestal product-display composition. A more daring final frame would lift it.",
+              "There is no typographic or graphic layer. One crafted title moment would give the film a signature.",
+              "The motion is implied to be mostly slow orbits and reveals. More surprise or rhythm, beyond the gear reveal, would push it toward the top tier."
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 4,
+              "composition": 4,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 3,
+              "motion": 3,
+              "craft": 3,
+              "originality": 3
+            },
+            "tells": [
+              "It matches the generic 'tasteful AI' look: a dark brown-grey ground, one orange accent line and a generic editorial serif ('Caught whole.', 'Tern', 'Lift to record.') set like slide text.",
+              "The idea is literal: an audio waveform becomes mountains for an audio recorder. That is the product name plus a diagram of the feature.",
+              "Every frame repeats the same layout: one horizon, a pale sun dot, a peak rising, and a headline top-left or bottom-left with the words swapped.",
+              "There is a visible artefact in frame 1: a hard horizontal seam where the mirrored ripple layer cuts across the image. That is unfinished compositing.",
+              "The product is a flat dark rounded rectangle with no material, reflection or contact shadow, pasted onto the terrain. The light is flat haze with no motivated source.",
+              "The type collision ('Tern' half buried in mountains) feels accidental rather than a designed integration."
+            ],
+            "gaps": [
+              "It needs an idea beyond 'waveform = landscape'. Find something specific about what 'caught whole' means for the user, the way C turns the speaker into horology.",
+              "Render the product and the terrain with real material, light and texture. Ground the device with shadows and reflections and add depth layers, as C does.",
+              "Replace the default serif-on-dark slide layout with a typographic system that has scale contrast and real interaction with the image, and vary the compositions across frames."
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "A",
+          "B",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 31.2,
+        "cost_usd": 0.17257139999999999,
+        "tokens": 74843,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "osko-launch",
+        "B": "candidate",
+        "C": "found-devialet-opera-de-paris-2022",
+        "D": "morph-studio-xreal-1s-2025"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.72,
+            "scores": {
+              "idea": 7,
+              "composition": 6,
+              "typography": 6,
+              "colour": 7,
+              "light_texture": 7,
+              "motion": 7,
+              "craft": 7,
+              "originality": 7
+            },
+            "tells": [
+              "A recurring narrative device: the handwritten 'I.O.U.' sticky note shows up on a food container in the fridge and again inside the opened retro fridge. That is a story beat with a payoff, not an effect with no subject",
+              "Several art styles that are clearly directed: a moonlit 3D van with soft rim light, a shallow-focus fridge shelf with believable plastic and glass materials, a flat-illustration golfer drawn as a 3-pose action sequence with a comic slump at the end, and a set of 3D emoji-style icons",
+              "The golfer poses show real character animation timing (backswing, follow-through, dejection), which points to keyframed acting rather than template motion",
+              "The fridge reveal uses a reflective floor and warm interior light spilling into black, which is a deliberate lighting idea",
+              "The mixed aspect ratios and styles read as a campaign cut-down or case-study reel. That costs it unity but not credibility"
+            ],
+            "gaps": [
+              "The art direction is fragmented: the flat golfer and emoji grid share no visual language with the 3D fridge world. Unify the palette, material and lighting rules so the film reads as one piece, as C does",
+              "The emoji icon grid is the weakest frame. It is a symmetrical 3x2 layout with stock-feeling icons on black. Integrate the gift and coffee objects into the fridge world instead of laying them out like a UI sheet",
+              "No typographic system is visible beyond the handwritten note. Develop type, such as the handwriting turned into a title system, to carry the brand and the idea"
+            ]
+          },
+          "B": {
+            "verdict": "not professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 4,
+              "composition": 3,
+              "typography": 3,
+              "colour": 3,
+              "light_texture": 3,
+              "motion": 3,
+              "craft": 3,
+              "originality": 2
+            },
+            "tells": [
+              "It matches the 'tasteful AI' formula closely: a dark brown-grey gradient ground, one orange accent line, a lone pale moon dot, and an empty frame",
+              "A generic editorial serif ('Caught whole.', 'Tern', 'Lift to record.') is set like slides: a left-aligned headline with a small subhead underneath and no scale or typographic idea beyond 'big serif'",
+              "The idea is literal: an audio waveform is drawn as a mountain range for a recording device. Sound-as-landscape is the most obvious visual metaphor available",
+              "The same composition repeats across frames (horizon, ridges, sun, text block). Only the peak height and the words change",
+              "The product is a featureless black rounded slab with three dots, which reads as a placeholder object. The light is flat haze with no real material or texture on the terrain",
+              "'Tern' fills the bottom-left while being occluded by ridges, but the overlap looks accidental rather than designed"
+            ],
+            "gaps": [
+              "It needs a specific idea beyond 'waveform = mountains'. Find a concept only this product could own and build the film around it",
+              "Commit to typography with a point of view: a custom or characterful face, expressive scale, and type that interacts physically with the terrain instead of floating on it",
+              "Add real light and material, such as rock, dust, atmosphere and a properly modelled product, plus a varied shot language (macro, camera moves, scale shifts) so it is not five versions of one horizon"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.93,
+            "scores": {
+              "idea": 8,
+              "composition": 9,
+              "typography": 7,
+              "colour": 9,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 9,
+              "originality": 8
+            },
+            "tells": [
+              "An unusual and deliberate palette: lacquer red, travertine/bone stone, brushed gold and white enamel. It references Lunar New Year and luxury without clich\u00e9",
+              "Rich material work: stone plinths with gold inlays, ribbed glass screens, layered arches and enamel speaker shells under soft, motivated architectural light with real contact shadows",
+              "The camera varies: a wide product family, a close-up through looping gold ribbons, a top-down reveal of watch-like gears beneath a turntable, a frontal hero, then a low hero group. That shows choreography and a build",
+              "The gear reveal is the specific idea: the speaker as haute-horlogerie, an engineered object revealed mechanically. It is surprising and on-brand",
+              "Every frame works as a poster. Type is minimal (an embossed logo on the product), and leaving the type out keeps the focus on the objects as jewellery"
+            ],
+            "gaps": [
+              "Typography is close to absent. An end-frame type treatment carved into the same stone and gold system would complete the piece",
+              "The plinth-and-arches product-stage set is a well-worn luxury trope. One more unexpected structural transformation like the gear reveal would lift it from excellent to memorable",
+              "The end frame partly repeats the opening group composition. A more decisive final image would land the narrative"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 6,
+              "colour": 7,
+              "light_texture": 9,
+              "motion": 9,
+              "craft": 9,
+              "originality": 6
+            },
+            "tells": [
+              "High-end fluid and particle simulation: splash crowns, caustic droplets, gel-like transparent glasses with internal bubbles and vein-like filaments. This is expensive simulation and lookdev, not a stock effect",
+              "Strong scale variation and choreography: an exploding streak, a hero product in liquid, a full liquid-glass reconstruction of the glasses, a macro on the temple arm, and a cellular 'evolution' close",
+              "The glasses form out of a fluid, which ties the material transformation to the 'evolution' message",
+              "The palette is a monochrome electric blue, a very common choice in tech launches",
+              "Type is a functional brand lockup ('XREAL 1S') and wide-tracked 'E V O L U T I O N', which is competent but conventional and close to the tracked-caps clich\u00e9"
+            ],
+            "gaps": [
+              "The blue liquid-tech look is generic for the category. A more ownable palette or material idea like C's would separate it from every other gadget launch",
+              "The typography is safe: a default-feeling grotesk lockup and a wide-tracked single word. Integrate type into the fluid (refracted, formed by the simulation) to give it a point of view",
+              "The 'evolution' metaphor is fairly literal. A sharper narrative idea would turn simulation spectacle into something memorable"
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "D",
+          "A",
+          "B"
+        ]
+      },
+      "meta": {
+        "seconds": 35.2,
+        "cost_usd": 0.17561940000000004,
+        "tokens": 74993,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "candidate",
+        "B": "morph-studio-xreal-1s-2025",
+        "C": "found-devialet-opera-de-paris-2022",
+        "D": "osko-launch"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "not professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 5,
+              "composition": 4,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 4,
+              "motion": 4,
+              "craft": 4,
+              "originality": 3
+            },
+            "tells": [
+              "Matches the generic 'tasteful AI' look closely: a dark brown-to-mauve ground, one burnt-orange accent line, a lone moon dot and mostly empty frames",
+              "The type is a default-looking editorial serif ('Caught whole.', 'Tern') with a small sans subline ('Lift to record.') placed like a slide. The only typographic gesture is the wordmark hidden behind a ridge, and it is clumsy rather than intended",
+              "The idea is literal: a sound waveform becomes a mountain range for a recording device. It is the product name plus a diagram of its feature",
+              "Frames 2 to 5 reuse the same horizon composition, and only the peak height and the copy change",
+              "The product render is a plain black pill sitting on the terrain, with no contact shadow or integration. The light is a flat gradient haze with no real source",
+              "The ripple in frame 1 shows a visible horizontal seam or tear across the image, a compositing artefact"
+            ],
+            "gaps": [
+              "Swap the literal waveform-as-landscape metaphor for an idea specific to the device, such as what gets 'caught' in a recording, and show it with real material and light",
+              "Develop a typographic system: a chosen or custom face, real scale contrast and type that interacts with the terrain on purpose. Right now it is default serif text placed on top",
+              "Give each frame its own composition and camera (macro, scale shifts, a hard cut to the product in use) instead of one horizon layout repeated with different peaks"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 6,
+              "colour": 7,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "Dense, layered simulation work: shattered and extruded ribbons, liquid glass eyewear forming from fluid, caustics and bubbles. These are hard technical problems and they are solved well",
+              "The product is translated into material: the glasses are rebuilt as translucent liquid with internal structure, which follows the 'evolution' line",
+              "Every frame uses a different scale and camera (explosive wide shot, hero product, macro of the frame, cellular close-up), which implies real choreography",
+              "Real light: rim lighting, refraction and depth-of-field are consistent across the shots",
+              "Weaknesses: the type is a standard tech grotesk with a tracked-caps 'EVOLUTION' on top, and the single electric-blue palette is a common category convention"
+            ],
+            "gaps": [
+              "The typography is the weak point. The tracked-caps 'EVOLUTION' and the plain wordmark could be in any tech launch, so it needs type with a point of view that is integrated into the fluid",
+              "The all-blue palette is a category default. A second colour or a temperature shift would give it a recognisable identity, as C's red and gold does",
+              "Push the narrative beyond 'tech material forms from liquid' so the piece has a more specific idea that a viewer would remember"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 9,
+              "originality": 7
+            },
+            "tells": [
+              "A deliberate, unusual palette of cinnabar red, ivory, travertine and brushed gold, tied to a seasonal or lunar-new-year luxury story without falling into clich\u00e9",
+              "Very precise material work: matte stone plinths, gold inlay lines, a watch-movement gear train set inside a turntable, and soft but directional daylight with real contact shadows",
+              "The set design is built around the product's own geometry. The circles, arcs and ribbon loops echo the speaker's form and the fan-like ridges",
+              "Every frame is a well-composed poster, and the shots vary: a group still life, ribbons orbiting a macro detail, a top-down mechanism reveal, a hero shot and a final group",
+              "There is no visible headline type apart from the product logo. The absence mostly serves the piece because the brand is carried by the objects themselves"
+            ],
+            "gaps": [
+              "The motion implied is mostly elegant camera moves around a set. More surprise in the choreography (a transformation or reveal beyond the gear-movement shot) would make it memorable",
+              "The concept is luxury still life with seasonal colours. A sharper conceptual hook would take it from excellent craft to a piece people share",
+              "If type appears, it should match the material language, for example an engraved or gold-inlay end card, rather than relying on the product logo alone"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.6,
+            "scores": {
+              "idea": 7,
+              "composition": 6,
+              "typography": 5,
+              "colour": 6,
+              "light_texture": 6,
+              "motion": 6,
+              "craft": 6,
+              "originality": 6
+            },
+            "tells": [
+              "A real comedic idea runs through it: an 'I.O.U.' note left in place of the food you took, which turns into gifting and paying people back (coffee, beer, money, heart, gift icons). It is a specific, human insight, not a feature diagram",
+              "It mixes several aspect ratios and illustration styles (night-time van scene, stylised CG fridge, flat golf character, 3D emoji icons), which suggests a deliberate multi-spot social campaign",
+              "The golfer's three-pose sequence has clear timing and comedy, and the fridge reveal uses lighting and reflection to make the punchline land",
+              "Weaknesses: the styles are inconsistent from frame to frame, the icon grid is close to stock emoji, and the flat vector golfer comes near clip-art territory"
+            ],
+            "gaps": [
+              "Unify the visual language. The jump between CG fridge, flat vector character and emoji grid reads as a set of assets rather than one authored film",
+              "Raise the material and light craft of the flat and icon sections to the fridge shot's level, giving them texture, shadow and grounding",
+              "Bring hand-drawn or custom type beyond the 'I.O.U.' note into the system, for example as an end line, so the joke carries through to the brand moment"
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "B",
+          "D",
+          "A"
+        ]
+      },
+      "meta": {
+        "seconds": 32.5,
+        "cost_usd": 0.1740948,
+        "tokens": 74912,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "critic": {
+    "answer": {
+      "scores": {
+        "motion": 5,
+        "sound": 4,
+        "craft": 6
+      },
+      "checks": {
+        "idea": true,
+        "invariant": true,
+        "arc": false,
+        "type_meaning": false,
+        "freeze_frame": false,
+        "ending": true,
+        "restraint": true,
+        "material": true,
+        "sync": true
+      },
+      "defects": [
+        "Opening frame has a hard horizontal seam where the ripple and reflection plate meets the ridge plate. It reads as a compositing split, not a designed wipe.",
+        "In the reveal shot the ridge cuts through the 'Tern' wordmark and clips the 'n'. It reads as a layering accident, not a deliberate occlusion.",
+        "The final lockup peak touches the period of 'Lift to record.' The tangency looks unplanned.",
+        "Pairs show near-identical frames 1/6 s apart: slow linear camera drift, with ridges barely changing. 8 of 19 seconds are effectively static.",
+        "Shots cut on a rigid 2.5 s grid (2.5 / 5.0 / 7.5 / 10 / 12.5 s), visible as rectangular blocks in the spectrogram. The edit is metronomic, not phrased.",
+        "Device close-up is a flat, low-detail render: soft bevel, generic concentric-ring mics, and a gradient sheen with no real specular response.",
+        "The audio is rectangular full-band noise slabs (2.5\u20135 s, 10\u201312.5 s) with hard on/off edges, plus static harmonic stacks. It sounds like a generated synth bed, not mixed sound design.",
+        "The 'Caught whole.' spike is a stiff vertical extrusion with no anticipation or settle visible in the samples."
+      ],
+      "gaps": [
+        "Motion: the waveform-to-landscape idea never gets a hero move. Ridges need to grow, crest and settle with real easing, overlap and follow-through. The camera drifts linearly and the transitions are hard cuts on a fixed grid, with no match cuts or handoffs between waveform, ripple and device.",
+        "Sound: replace the block-noise slabs with designed foley and room tone (wind, a recorder click, the tern call 'caught whole'). Build a real dynamic arc with a peak around 70% and a clean release, and land the transients on picture events, not on the 2.5 s timer.",
+        "Finish and composition: fix the plate seam and the accidental type occlusion. Render the device with proper materials and light. Give each shot a poster-grade focal point instead of empty sky or a half-cropped object, so the type-landscape interplay looks authored."
+      ]
+    },
+    "meta": {
+      "seconds": 23.6,
+      "cost_usd": 0.1744076,
+      "tokens": 74955,
+      "models": [
+        "claude-opus-5-5"
+      ]
+    },
+    "pace": "final.mp4: 20.0s, 6 shots, median 2.50s, longest 5.00s\nper-second change: [6.0, 4.3, 13.9, 5.0, 22.6, 11.4, 6.5, 19.4, 1.7, 23.6, 2.8, 2.2, 14.6, 11.5, 18.1, 9.3, 6.2, 5.0, 3.6]\nPACE: FAIL \u2014 longest shot 5.0s > 2.5s; median shot 2.5s > 2.0s; 8/19 seconds look like the previous second"
+  },
+  "full_scores": {
+    "idea": 4.0,
+    "composition": 4.0,
+    "typography": 3.0,
+    "colour": 4.0,
+    "light_texture": 4.0,
+    "motion": 4.0,
+    "craft": 4.5,
+    "originality": 3.0,
+    "sound": 4
+  },
+  "full_overall": 3.83,
+  "cost_usd": 1.415,
+  "judge_seconds": 224.9,
+  "verdict": "FAIL"
+}
