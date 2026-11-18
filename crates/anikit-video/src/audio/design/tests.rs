@@ -485,3 +485,30 @@ fn auto_survives_shader_channels_and_nested_layers() {
     let ev = evaluator(spec);
     let _ = auto::plan_cues(&ev, ev.sound.as_ref().unwrap());
 }
+
+#[test]
+fn animated_3d_objects_are_heard() {
+    // A chrome ball bouncing by expression (|sin|): it hits the floor every 0.5 s.
+    // A box gliding with an ease-out must not count as a hit.
+    let spec = serde_json::json!({
+        "size": [320, 180], "fps": 30, "sound": { "density": 1.0 },
+        "scenes": [{ "duration": 2, "layers": [{ "component": "scene3d", "props": {
+            "env": "cyc", "quality": "draft",
+            "camera": { "keys": [{ "t": 0, "pos": [0, 1.5, 6], "target": [0, 0.5, 0], "focal": 35 }] },
+            "objects": [
+                { "type": "sphere", "radius": 0.2, "material": "chrome", "pos": "=[0.8, 0.2 + 1.2*abs(sin(t*6.2832)), 0]" },
+                { "type": "box", "material": "plastic", "keys": [ { "t": 0, "pos": [-2, 0.5, 0] }, { "t": 1.5, "pos": [-1, 0.5, 0], "ease": "outCubic" } ] }
+            ]
+        } }] }]
+    });
+    let ev = evaluator(spec);
+    let cues = auto::plan_cues(&ev, ev.sound.as_ref().unwrap());
+    let hits: Vec<_> = cues.iter().filter(|c| c.why.contains("collides")).collect();
+    // Floor contacts at 0.5, 1.0, 1.5 s (sin crosses zero), all metal, right of centre.
+    assert!(hits.len() >= 3, "{cues:?}");
+    for h in &hits {
+        assert_eq!(h.name, "metal", "{hits:?}");
+        let k = (h.at * 2.0).round() / 2.0;
+        assert!((h.at - k).abs() < 0.05 && k > 0.0, "{hits:?}");
+    }
+}

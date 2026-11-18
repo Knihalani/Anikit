@@ -6,7 +6,7 @@
 - **Hard stops and spring overshoots:** a landing on the contact frame (thump, wood or glass by palette; an impact for the hero).
 - **Pop-ins and reveals:** pops, plus soft air on wipes and masks.
 - **Text:** a tick when text changes; counters get one ticker.
-- **Physics (`scene3d`):** each collision clacks in its body's material (metal, glass, ceramic, wood, stone), panned through the camera, and is heard in slow motion too.
+- **3D (`scene3d`):** physics collisions and keyframed/expression mechanisms (a stop, a bounce, a reversal, in rotation too) clack in the object's material (metal, glass, ceramic, wood, stone), panned through the camera, in slow motion too.
 - **Transitions:** a swish on slide, push, wipe, zoom and glitch.
 - **The bus:** pans each sound to its place on screen (±0.6), shares one space, dips the music 2–5 dB under hits (starting 30 ms early), adds an optional ambience bed, and masters to **−14 LUFS / −1 dBTP**.
 - **Restraint:** a density budget lets the most salient events win; 30–50 % of motion stays silent. Camera moves count once, and steady loops make no sound.
