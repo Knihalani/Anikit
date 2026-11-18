@@ -48,6 +48,7 @@ pub const RECIPES: &[(&str, &str)] = &[
     ("kinetic-slam", include_str!("../recipes/kinetic-slam.json")),
     ("whip-transition", include_str!("../recipes/whip-transition.json")),
     ("chrome-hero", include_str!("../recipes/chrome-hero.json")),
+    ("precision-macro", include_str!("../recipes/precision-macro.json")),
     ("particle-ignite", include_str!("../recipes/particle-ignite.json")),
     ("domino-cascade", include_str!("../recipes/domino-cascade.json")),
     ("raymarch-world", include_str!("../recipes/raymarch-world.json")),
