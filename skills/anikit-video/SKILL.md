@@ -11,7 +11,7 @@ description: Make extraordinary motion videos fast with anikit-video, a native r
 2. **Reference:** with web access, look at a few pieces of top work in this genre and name what makes them good. Local images: `anikit-video board refs/` turns them into palette, type and texture tokens.
 3. **Style frames:** write 2–3 contrasting first frames as one-scene specs in one file, `preview` it, and pick the strongest before building the rest.
 4. **Build, then loop:** `anikit-video preview s.json` (~1 s for 2D) validates, prints unknown keys first, writes `s-sheet.png` (one frame per second), the top notes, pace and a final-render estimate. Look at the sheet; fix; repeat. `--at 1,4.5,8` writes several moments in one image at full detail.
-5. **Ship gate** (below), then **ONE** `anikit-video render s.json -o out.mp4 --sheet contact.png`. Follow `preview`'s advice on how to run it: in the foreground with a 10-minute timeout, or, for a longer final, in the background while you wait for that process to exit in the same turn. Don't end your turn until the file exists. Later fixes: `render --from A --to B`.
+5. **Second pair of eyes and ship gate** (below), then **ONE** `anikit-video render s.json -o out.mp4 --sheet contact.png`. Follow `preview`'s advice on how to run it: in the foreground with a 10-minute timeout, or, for a longer final, in the background while you wait for that process to exit in the same turn. Don't end your turn until the file exists. Later fixes: `render --from A --to B`.
 
 If you build from source instead of installing, run `cargo build --release -p anikit-video` once in the foreground with a 10-minute timeout; polling a background build costs many turns.
 
@@ -43,20 +43,13 @@ Everything here is a starting point, never a ceiling: anything the spec keys don
 - **Print and hand:** `"brush": true` on strokes, `"halftone": {…}`, riso/screenprint filters, patterns and grids (`docs graphic`).
 - **Living systems:** components `fluid`, `physarum`, scene3d particles and physics; library shaders (`anikit-video recipes`) (`docs fluid`, `docs physarum`, `docs particles`).
 
-**Costs:** 2D renders at 100+ fps; shaders 50–400 ms a frame; ray-traced 3D and particles 0.5–1.5 s a frame (keep 3D shots to 2–4 s). `motionBlur` only where motion is fast. `--quality best` is several times slower; standard is the final.
+**Costs:** 2D renders at 100+ fps; shaders 50–400 ms a frame; ray-traced 3D and particles 0.5–1.5 s a frame (keep 3D shots to 2–4 s). Heavy layers (full-frame shaders, 3D, 10k+ shapes) need a time budget: check `preview`'s final-render estimate and keep the final under about 5 minutes. `motionBlur` only where motion is fast. `--quality best` is several times slower; standard is the final.
 
-## Self-review, then ship gate (one more iteration here is worth it)
+## Second pair of eyes (before the final render)
 
-Look at your contact sheet and answer, then fix and preview again. These are the questions the blind judge fails pieces on most:
-- **The device:** is it literal? Say the idea without the brand name and without the feature's mechanism; if nothing is left, it's the name drawn or the feature diagrammed. Does the one device *escalate* every beat, or does it play once?
-- **The poster test:** pause anywhere. Would that frame hold up as a poster (14 of 15 round-1 films failed this)? Does any layout repeat with the words swapped?
-- **The arc:** does energy build to a peak at about ⅔ and land (11 of 15 had a flat arc)? Is there one surprise?
-- **Colour and continuity:** does colour change with the arc (sodium orange → water cyan), or is it one accent on near-black throughout? Do layouts flow into each other, with shared elements carried across (`carry`), rather than being swapped like slides? (A MOGRAPH A/B: restructuring alone lifted a piece 3.25 → 4.38; fonts on top added 0.)
-- **Material at 100%:** does a crop show material from the subject (grain, edge, light falloff), or flat vector and filter noise?
-- **Type and sound:** is the type a choice for this world, living in the scene rather than an eyebrow-plus-headline lockup? Do motion, camera and sound carry weight from the subject's own materials?
-`critique --render` flags the measurable ones (`layout`, `label`, `motion`, `arc`, `eye-trace`).
+Before the final render, get a second pair of eyes. Spawn a subagent as an independent art director. Give it only the brief, your contact sheet and the output of `anikit-video critique s.json --render`. Ask it for the 3 weakest things, with frame references, judged against professional work in this genre, and for the one change that would most lift the piece. Then make those changes (restructure if it says so) and preview again before rendering. With no subagent tool, `critique --render` is the fallback.
 
-### Ship gate (before the one final render)
+## Ship gate (before the one final render)
 
 Open the sheet and three full-size stills and answer in writing, a line each:
 
