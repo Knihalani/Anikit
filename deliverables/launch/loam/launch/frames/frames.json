@@ -1,0 +1,5472 @@
+{
+ "size": "9:16",
+ "fps": 30,
+ "scenes": [
+  {
+   "duration": 1,
+   "background": "#1E1614",
+   "layers": [
+    {
+     "component": "illo",
+     "props": {
+      "view": [
+       1080,
+       1920
+      ],
+      "palette": {
+       "wall": "#3A2A22",
+       "wallLo": "#1E1614",
+       "sun": "#F2B566",
+       "sunDeep": "#D98E45",
+       "shelf": "#5C3B27",
+       "shelfLo": "#2C1A12",
+       "shelfHi": "#7A5034",
+       "glaze": "#2F5D57",
+       "glazeHi": "#4C8A7E",
+       "clay": "#CDB89B",
+       "clayLo": "#9E8466",
+       "dry": "#BE9A6C",
+       "dryHi": "#D6B788",
+       "dryLo": "#8E6E4A",
+       "wet": "#3E2719",
+       "wetLo": "#24160F",
+       "wetHi": "#5A3A24",
+       "root": "#EBDDBF",
+       "rootLo": "#B9A27C",
+       "leaf": "#2F7D52",
+       "leafHi": "#62B06C",
+       "leafLo": "#1C4E3E",
+       "stem": "#3E7A45",
+       "water": "#57B6E8",
+       "waterHi": "#A9DDF5",
+       "waterLo": "#2C7FB8",
+       "sensor": "#ECE7DD",
+       "sensorLo": "#A9A296",
+       "ink": "#140E0C"
+      },
+      "light": {
+       "angle": 215,
+       "rim": 30,
+       "color": "#FFE0A8",
+       "shadow": "#2A1636",
+       "strength": 1.0
+      },
+      "hand": {
+       "weight": [
+        0.6,
+        3.6
+       ],
+       "wobble": 1.2,
+       "rough": 0.6,
+       "boil": 8,
+       "gaps": 0.2
+      },
+      "corners": "soft",
+      "misregister": [
+       1.5,
+       1
+      ],
+      "grain": 0.05,
+      "groups": [
+       {
+        "name": "p_sens",
+        "animate": {
+         "keys": [
+          {
+           "t": 0,
+           "y": -260.0
+          },
+          {
+           "t": -1,
+           "y": -260.0
+          },
+          {
+           "t": -0.65,
+           "y": 0,
+           "ease": "outBack"
+          }
+         ]
+        }
+       },
+       {
+        "name": "p_plant",
+        "pivot": [
+         540,
+         830.0
+        ],
+        "sway": {
+         "rotate": 1.2,
+         "period": 3.2,
+         "phase": 0.7
+        }
+       }
+      ],
+      "shapes": [
+       {
+        "shape": "rect",
+        "x": 0,
+        "y": 0,
+        "w": 1080,
+        "h": 1920,
+        "fill": {
+         "stops": [
+          [
+           0,
+           "$wall"
+          ],
+          [
+           1,
+           "$wallLo"
+          ]
+         ],
+         "angle": 80,
+         "steps": 4,
+         "dither": 0.18
+        },
+        "wobble": 0,
+        "rough": 0,
+        "grain": 0.07,
+        "corners": "sharp",
+        "shade": 0
+       },
+       {
+        "shape": "polygon",
+        "name": "mullV",
+        "points": [
+         [
+          300,
+          150
+         ],
+         [
+          350,
+          156
+         ],
+         [
+          330,
+          1560
+         ],
+         [
+          282,
+          1560
+         ]
+        ],
+        "visible": false
+       },
+       {
+        "shape": "polygon",
+        "name": "mullH",
+        "points": [
+         [
+          -60,
+          760
+         ],
+         [
+          720,
+          800
+         ],
+         [
+          718,
+          846
+         ],
+         [
+          -60,
+          806
+         ]
+        ],
+        "visible": false
+       },
+       {
+        "shape": "polygon",
+        "points": [
+         [
+          -40,
+          180
+         ],
+         [
+          700,
+          260
+         ],
+         [
+          640,
+          1500
+         ],
+         [
+          -40,
+          1460
+         ]
+        ],
+        "fill": "$sun",
+        "opacity": 0.9,
+        "cut": [
+         "mullV",
+         "mullH"
+        ],
+        "grain": 0.09,
+        "texture": {
+         "style": "paper",
+         "amount": 0.6
+        },
+        "corners": 8,
+        "shade": 0
+       },
+       {
+        "shape": "rect",
+        "x": -20,
+        "y": 1600,
+        "w": 1120,
+        "h": 360,
+        "fill": {
+         "stops": [
+          [
+           0,
+           "$shelfHi"
+          ],
+          [
+           0.08,
+           "$shelf"
+          ],
+          [
+           1,
+           "$shelfLo"
+          ]
+         ],
+         "angle": 90,
+         "steps": 5,
+         "dither": 0.15
+        },
+        "grain": 0.08,
+        "texture": {
+         "style": "contour",
+         "amount": 0.25
+        },
+        "corners": "sharp",
+        "shade": 0
+       },
+       {
+        "shape": "rect",
+        "x": -20,
+        "y": 1590,
+        "w": 1120,
+        "h": 18,
+        "fill": "$shelfHi",
+        "shade": 0,
+        "corners": "sharp"
+       },
+       {
+        "shape": "polygon",
+        "points": [
+         [
+          144.0,
+          834.0
+         ],
+         [
+          936.0,
+          834.0
+         ],
+         [
+          852.0,
+          1620.0
+         ],
+         [
+          228.0,
+          1620.0
+         ]
+        ],
+        "fill": "$glaze",
+        "name": "p_body",
+        "shade": {
+         "amount": 0.7,
+         "offset": 0.1
+        },
+        "shadow": {
+         "dx": 70.0,
+         "dy": 18.0,
+         "flatten": 0.15,
+         "opacity": 0.5
+        },
+        "texture": {
+         "style": "halftone",
+         "amount": 0.35,
+         "scale": 0.9
+        },
+        "grain": 0.05
+       },
+       {
+        "shape": "polygon",
+        "points": [
+         [
+          150.0,
+          860
+         ],
+         [
+          930.0,
+          860
+         ],
+         [
+          848.0,
+          1616.0
+         ],
+         [
+          232.0,
+          1616.0
+         ]
+        ],
+        "fill": "$clay",
+        "shade": {
+         "amount": 0.35,
+         "offset": 0.05
+        },
+        "grain": 0.08,
+        "texture": {
+         "style": "stipple",
+         "amount": 0.35
+        }
+       },
+       {
+        "shape": "rect",
+        "x": 134.0,
+        "y": 826.0,
+        "w": 812.0,
+        "h": 58.0,
+        "radius": 10.0,
+        "fill": "$glazeHi",
+        "shade": {
+         "amount": 0.6,
+         "offset": 0.2
+        },
+        "grain": 0.05
+       },
+       {
+        "shape": "rect",
+        "x": 146.0,
+        "y": 852.0,
+        "w": 788.0,
+        "h": 40.0,
+        "fill": "$clay",
+        "shade": 0.2,
+        "grain": 0.06
+       },
+       {
+        "shape": "polygon",
+        "name": "p_soil",
+        "points": [
+         [
+          184.0,
+          900.0
+         ],
+         [
+          896.0,
+          900.0
+         ],
+         [
+          821.4,
+          1586.0
+         ],
+         [
+          258.6,
+          1586.0
+         ]
+        ],
+        "fill": {
+         "stops": [
+          [
+           0,
+           "$dryHi"
+          ],
+          [
+           0.4,
+           "$dry"
+          ],
+          [
+           1,
+           "$dryLo"
+          ]
+         ],
+         "angle": 90,
+         "steps": 4,
+         "dither": 0.2
+        },
+        "texture": {
+         "style": "stipple",
+         "amount": 0.9,
+         "scale": 1.1
+        },
+        "grain": 0.12,
+        "shade": 0
+       },
+       {
+        "shape": "blob",
+        "cx": 279.6673418080297,
+        "cy": 1475.9165314308248,
+        "rx": 14.136163042026382,
+        "ry": 10.873971570789525,
+        "fill": "$dryHi",
+        "clipTo": "p_soil",
+        "shade": 0.5,
+        "lumpy": 0.4,
+        "seed": 121,
+        "opacity": 0.9
+       },
+       {
+        "shape": "blob",
+        "cx": 536.749782009462,
+        "cy": 1214.8661385014123,
+        "rx": 12.823637780856325,
+        "ry": 9.864336754504865,
+        "fill": "$dryLo",
+        "clipTo": "p_soil",
+        "shade": 0.5,
+        "lumpy": 0.4,
+        "seed": 97,
+        "opacity": 0.9
+       },
+       {
+        "shape": "blob",
+        "cx": 531.3539394451931,
+        "cy": 1506.0159799178086,
+        "rx": 9.76076304214727,
+        "ry": 7.508279263190206,
+        "fill": "$clayLo",
+        "clipTo": "p_soil",
+        "shade": 0.5,
+        "lumpy": 0.4,
+        "seed": 781,
+        "opacity": 0.9
+       },
+       {
+        "shape": "blob",
+        "cx": 730.2162319533489,
+        "cy": 1376.466360600099,
+        "rx": 8.316067557349937,
+        "ry": 6.396975044115337,
+        "fill": "$dryLo",
+        "clipTo": "p_soil",
+        "shade": 0.5,
+        "lumpy": 0.4,
+        "seed": 606,
+        "opacity": 0.9
+       },
+       {
+        "shape": "blob",
+        "cx": 857.0327352343927,
+        "cy": 1511.3364121931331,
+        "rx": 5.557902801492576,
+        "ry": 4.2753098473019815,
+        "fill": "$dryLo",
+        "clipTo": "p_soil",
+        "shade": 0.5,
+        "lumpy": 0.4,
+        "seed": 666,
+        "opacity": 0.9
+       },
+       {
+        "shape": "blob",
+        "cx": 569.4856806289696,
+        "cy": 1536.081850782703,
+        "rx": 9.660089580952086,
+        "ry": 7.430838139193912,
+        "fill": "$dryLo",
+        "clipTo": "p_soil",
+        "shade": 0.5,
+        "lumpy": 0.4,
+        "seed": 993,
+        "opacity": 0.9
+       },
+       {
+        "shape": "blob",
+        "cx": 484.5470018148947,
+        "cy": 939.0507566491134,
+        "rx": 7.79379249539451,
+        "ry": 5.995224996457315,
+        "fill": "$dryHi",
+        "clipTo": "p_soil",
+        "shade": 0.5,
+        "lumpy": 0.4,
+        "seed": 962,
+        "opacity": 0.9
+       },
+       {
+        "shape": "blob",
+        "cx": 537.0183158638777,
+        "cy": 1072.9033993689677,
+        "rx": 7.901138536029516,
+        "ry": 6.077798873868859,
+        "fill": "$dryLo",
+        "clipTo": "p_soil",
+        "shade": 0.5,
+        "lumpy": 0.4,
+        "seed": 780,
+        "opacity": 0.9
+       },
+       {
+        "shape": "blob",
+        "cx": 511.2376676052663,
+        "cy": 1110.0967391713584,
+        "rx": 5.451429551611134,
+        "ry": 4.19340734739318,
+        "fill": "$clayLo",
+        "clipTo": "p_soil",
+        "shade": 0.5,
+        "lumpy": 0.4,
+        "seed": 945,
+        "opacity": 0.9
+       },
+       {
+        "shape": "blob",
+        "cx": 641.3135864079013,
+        "cy": 1041.9545104269348,
+        "rx": 16.812757922459962,
+        "ry": 12.932890709584585,
+        "fill": "$dryHi",
+        "clipTo": "p_soil",
+        "shade": 0.5,
+        "lumpy": 0.4,
+        "seed": 124,
+        "opacity": 0.9
+       },
+       {
+        "shape": "blob",
+        "cx": 713.1204222208185,
+        "cy": 1507.4974588848186,
+        "rx": 16.587051407403823,
+        "ry": 12.759270313387557,
+        "fill": "$clayLo",
+        "clipTo": "p_soil",
+        "shade": 0.5,
+        "lumpy": 0.4,
+        "seed": 959,
+        "opacity": 0.9
+       },
+       {
+        "shape": "blob",
+        "cx": 872.6537148098661,
+        "cy": 1253.0625163354234,
+        "rx": 15.849165189583415,
+        "ry": 12.19166553044878,
+        "fill": "$dryLo",
+        "clipTo": "p_soil",
+        "shade": 0.5,
+        "lumpy": 0.4,
+        "seed": 311,
+        "opacity": 0.9
+       },
+       {
+        "shape": "blob",
+        "cx": 386.32146908609104,
+        "cy": 1558.5841216065453,
+        "rx": 11.042536076162081,
+        "ry": 8.494258520124678,
+        "fill": "$clayLo",
+        "clipTo": "p_soil",
+        "shade": 0.5,
+        "lumpy": 0.4,
+        "seed": 403,
+        "opacity": 0.9
+       },
+       {
+        "shape": "blob",
+        "cx": 603.3696076835768,
+        "cy": 942.64894457928,
+        "rx": 8.040057690453892,
+        "ry": 6.184659761887609,
+        "fill": "$dryHi",
+        "clipTo": "p_soil",
+        "shade": 0.5,
+        "lumpy": 0.4,
+        "seed": 425,
+        "opacity": 0.9
+       },
+       {
+        "shape": "blob",
+        "cx": 657.2973873852288,
+        "cy": 1160.8332334161698,
+        "rx": 15.52796468157751,
+        "ry": 11.944588216598085,
+        "fill": "$clayLo",
+        "clipTo": "p_soil",
+        "shade": 0.5,
+        "lumpy": 0.4,
+        "seed": 756,
+        "opacity": 0.9
+       },
+       {
+        "shape": "blob",
+        "cx": 450.7885505971679,
+        "cy": 1207.9588293092334,
+        "rx": 11.148589912524786,
+        "ry": 8.575838394249836,
+        "fill": "$dryLo",
+        "clipTo": "p_soil",
+        "shade": 0.5,
+        "lumpy": 0.4,
+        "seed": 534,
+        "opacity": 0.9
+       },
+       {
+        "shape": "blob",
+        "cx": 782.0454968213858,
+        "cy": 1163.06286931961,
+        "rx": 13.773359964385833,
+        "ry": 10.594892280296794,
+        "fill": "$dryHi",
+        "clipTo": "p_soil",
+        "shade": 0.5,
+        "lumpy": 0.4,
+        "seed": 45,
+        "opacity": 0.9
+       },
+       {
+        "shape": "blob",
+        "cx": 403.67295197254447,
+        "cy": 1476.4858328474397,
+        "rx": 12.39328538954444,
+        "ry": 9.533296453495723,
+        "fill": "$clayLo",
+        "clipTo": "p_soil",
+        "shade": 0.5,
+        "lumpy": 0.4,
+        "seed": 404,
+        "opacity": 0.9
+       },
+       {
+        "shape": "blob",
+        "cx": 644.7751897073435,
+        "cy": 1030.5978588571288,
+        "rx": 7.855166948514406,
+        "ry": 6.042436114241851,
+        "fill": "$dryLo",
+        "clipTo": "p_soil",
+        "shade": 0.5,
+        "lumpy": 0.4,
+        "seed": 790,
+        "opacity": 0.9
+       },
+       {
+        "shape": "blob",
+        "cx": 326.055653633234,
+        "cy": 1523.5767013158656,
+        "rx": 11.615560065332508,
+        "ry": 8.935046204101928,
+        "fill": "$dryHi",
+        "clipTo": "p_soil",
+        "shade": 0.5,
+        "lumpy": 0.4,
+        "seed": 527,
+        "opacity": 0.9
+       },
+       {
+        "shape": "blob",
+        "cx": 428.80403457698804,
+        "cy": 1475.9344091045364,
+        "rx": 9.333307701884516,
+        "ry": 7.1794674629880895,
+        "fill": "$dryHi",
+        "clipTo": "p_soil",
+        "shade": 0.5,
+        "lumpy": 0.4,
+        "seed": 676,
+        "opacity": 0.9
+       },
+       {
+        "shape": "blob",
+        "cx": 574.1733723399692,
+        "cy": 1547.8682806379088,
+        "rx": 5.266796814569598,
+        "ry": 4.051382165053536,
+        "fill": "$clayLo",
+        "clipTo": "p_soil",
+        "shade": 0.5,
+        "lumpy": 0.4,
+        "seed": 525,
+        "opacity": 0.9
+       },
+       {
+        "shape": "blob",
+        "cx": 760.1076094212054,
+        "cy": 1260.2529539910893,
+        "rx": 11.767887017907034,
+        "ry": 9.05222078300541,
+        "fill": "$dryHi",
+        "clipTo": "p_soil",
+        "shade": 0.5,
+        "lumpy": 0.4,
+        "seed": 973,
+        "opacity": 0.9
+       },
+       {
+        "shape": "blob",
+        "cx": 223.95978783476716,
+        "cy": 1490.7266617958758,
+        "rx": 11.86899220635365,
+        "ry": 9.129994004887422,
+        "fill": "$dryLo",
+        "clipTo": "p_soil",
+        "shade": 0.5,
+        "lumpy": 0.4,
+        "seed": 964,
+        "opacity": 0.9
+       },
+       {
+        "shape": "blob",
+        "cx": 543.3609728093506,
+        "cy": 1238.1108736213937,
+        "rx": 9.374442585175983,
+        "ry": 7.211109680904602,
+        "fill": "$dryHi",
+        "clipTo": "p_soil",
+        "shade": 0.5,
+        "lumpy": 0.4,
+        "seed": 2,
+        "opacity": 0.9
+       },
+       {
+        "shape": "blob",
+        "cx": 567.3969025653452,
+        "cy": 1329.0090810351635,
+        "rx": 12.36569383795789,
+        "ry": 9.51207218304453,
+        "fill": "$dryHi",
+        "clipTo": "p_soil",
+        "shade": 0.5,
+        "lumpy": 0.4,
+        "seed": 615,
+        "opacity": 0.9
+       },
+       {
+        "shape": "blob",
+        "cx": 203.91818866769574,
+        "cy": 1070.6209005177277,
+        "rx": 7.273371729581418,
+        "ry": 5.594901330447245,
+        "fill": "$clayLo",
+        "clipTo": "p_soil",
+        "shade": 0.5,
+        "lumpy": 0.4,
+        "seed": 186,
+        "opacity": 0.9
+       },
+       {
+        "shape": "blob",
+        "cx": 797.0383089275673,
+        "cy": 1443.7759450187914,
+        "rx": 14.526041482835307,
+        "ry": 11.173878063719467,
+        "fill": "$dryHi",
+        "clipTo": "p_soil",
+        "shade": 0.5,
+        "lumpy": 0.4,
+        "seed": 34,
+        "opacity": 0.9
+       },
+       {
+        "shape": "blob",
+        "cx": 783.3223205791563,
+        "cy": 1361.5624726877918,
+        "rx": 6.173839412305606,
+        "ry": 4.749107240235081,
+        "fill": "$dryLo",
+        "clipTo": "p_soil",
+        "shade": 0.5,
+        "lumpy": 0.4,
+        "seed": 464,
+        "opacity": 0.9
+       },
+       {
+        "shape": "blob",
+        "cx": 194.36670214646637,
+        "cy": 1415.664924565442,
+        "rx": 8.119842940145046,
+        "ry": 6.246033030880805,
+        "fill": "$dryLo",
+        "clipTo": "p_soil",
+        "shade": 0.5,
+        "lumpy": 0.4,
+        "seed": 817,
+        "opacity": 0.9
+       },
+       {
+        "shape": "blob",
+        "cx": 628.8590839165631,
+        "cy": 1145.9413988473007,
+        "rx": 6.013329928810914,
+        "ry": 4.625638406777626,
+        "fill": "$dryLo",
+        "clipTo": "p_soil",
+        "shade": 0.5,
+        "lumpy": 0.4,
+        "seed": 262,
+        "opacity": 0.9
+       },
+       {
+        "shape": "blob",
+        "cx": 559.4948441221851,
+        "cy": 1030.303084721913,
+        "rx": 8.393098910778557,
+        "ry": 6.456229931368121,
+        "fill": "$clayLo",
+        "clipTo": "p_soil",
+        "shade": 0.5,
+        "lumpy": 0.4,
+        "seed": 302,
+        "opacity": 0.9
+       },
+       {
+        "shape": "path",
+        "d": "M164 890 L916 890 L916 1344 L832 1372 L749 1303 L665 1305 L582 1348 L498 1340 L415 1292 L331 1328 L248 1348 L164 1332 Z",
+        "fill": {
+         "stops": [
+          [
+           0,
+           "$wetLo"
+          ],
+          [
+           0.85,
+           "$wet"
+          ],
+          [
+           1,
+           "$wetHi"
+          ]
+         ],
+         "angle": 90,
+         "steps": 3
+        },
+        "clipTo": "p_soil",
+        "origin": [
+         540,
+         890.0
+        ],
+        "animate": {
+         "keys": [
+          {
+           "t": 0,
+           "sy": 0.001
+          },
+          {
+           "t": 0,
+           "sy": 0.001
+          },
+          {
+           "t": 0.01,
+           "sy": 1,
+           "ease": "out"
+          }
+         ]
+        },
+        "grain": 0.1,
+        "texture": {
+         "style": "stipple",
+         "amount": 0.6
+        },
+        "shade": 0
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          510.0,
+          906.0
+         ],
+         [
+          410.0,
+          1050.92
+         ],
+         [
+          350.0,
+          1182.975
+         ],
+         [
+          330.0,
+          1277.3
+         ]
+        ],
+        "smooth": true,
+        "stroke": "$root",
+        "weight": [
+         3.15,
+         7.0
+        ],
+        "clipTo": "p_soil",
+        "taper": 1,
+        "fill": "none"
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          350.0,
+          1182.975
+         ],
+         [
+          300.0,
+          1222.975
+         ],
+         [
+          280.0,
+          1272.975
+         ]
+        ],
+        "smooth": true,
+        "stroke": "$root",
+        "weight": [
+         1.35,
+         3.0
+        ],
+        "clipTo": "p_soil",
+        "fill": "none",
+        "taper": 1
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          521.0,
+          906.0
+         ],
+         [
+          519.5,
+          1092.08
+         ],
+         [
+          420.0,
+          1260.15
+         ],
+         [
+          440.0,
+          1380.2
+         ]
+        ],
+        "smooth": true,
+        "stroke": "$root",
+        "weight": [
+         2.9250000000000003,
+         6.5
+        ],
+        "clipTo": "p_soil",
+        "taper": 1,
+        "fill": "none"
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          420.0,
+          1260.15
+         ],
+         [
+          470.0,
+          1300.15
+         ],
+         [
+          490.0,
+          1350.15
+         ]
+        ],
+        "smooth": true,
+        "stroke": "$root",
+        "weight": [
+         1.35,
+         3.0
+        ],
+        "clipTo": "p_soil",
+        "fill": "none",
+        "taper": 1
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          530.0,
+          906.0
+         ],
+         [
+          500.0,
+          1070.128
+         ],
+         [
+          550.0,
+          1218.99
+         ],
+         [
+          530.0,
+          1325.32
+         ]
+        ],
+        "smooth": true,
+        "stroke": "$root",
+        "weight": [
+         2.7,
+         6.0
+        ],
+        "clipTo": "p_soil",
+        "taper": 1,
+        "fill": "none"
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          550.0,
+          1218.99
+         ],
+         [
+          500.0,
+          1258.99
+         ],
+         [
+          480.0,
+          1308.99
+         ]
+        ],
+        "smooth": true,
+        "stroke": "$root",
+        "weight": [
+         1.35,
+         3.0
+        ],
+        "clipTo": "p_soil",
+        "fill": "none",
+        "taper": 1
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          538.0,
+          906.0
+         ],
+         [
+          596.0,
+          1081.104
+         ],
+         [
+          590.0,
+          1239.57
+         ],
+         [
+          610.0,
+          1352.76
+         ]
+        ],
+        "smooth": true,
+        "stroke": "$root",
+        "weight": [
+         2.475,
+         5.5
+        ],
+        "clipTo": "p_soil",
+        "taper": 1,
+        "fill": "none"
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          590.0,
+          1239.57
+         ],
+         [
+          640.0,
+          1279.57
+         ],
+         [
+          660.0,
+          1329.57
+         ]
+        ],
+        "smooth": true,
+        "stroke": "$root",
+        "weight": [
+         1.35,
+         3.0
+        ],
+        "clipTo": "p_soil",
+        "fill": "none",
+        "taper": 1
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          549.0,
+          906.0
+         ],
+         [
+          645.5,
+          1037.2
+         ],
+         [
+          700.0,
+          1157.25
+         ],
+         [
+          720.0,
+          1243.0
+         ]
+        ],
+        "smooth": true,
+        "stroke": "$root",
+        "weight": [
+         2.25,
+         5.0
+        ],
+        "clipTo": "p_soil",
+        "taper": 1,
+        "fill": "none"
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          700.0,
+          1157.25
+         ],
+         [
+          750.0,
+          1197.25
+         ],
+         [
+          770.0,
+          1247.25
+         ]
+        ],
+        "smooth": true,
+        "stroke": "$root",
+        "weight": [
+         1.35,
+         3.0
+        ],
+        "clipTo": "p_soil",
+        "fill": "none",
+        "taper": 1
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          527.0,
+          906.0
+         ],
+         [
+          546.5,
+          1023.48
+         ],
+         [
+          480.0,
+          1131.525
+         ],
+         [
+          500.0,
+          1208.7
+         ]
+        ],
+        "smooth": true,
+        "stroke": "$root",
+        "weight": [
+         2.025,
+         4.5
+        ],
+        "clipTo": "p_soil",
+        "taper": 1,
+        "fill": "none"
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          480.0,
+          1131.525
+         ],
+         [
+          530.0,
+          1171.525
+         ],
+         [
+          550.0,
+          1221.525
+         ]
+        ],
+        "smooth": true,
+        "stroke": "$root",
+        "weight": [
+         1.35,
+         3.0
+        ],
+        "clipTo": "p_soil",
+        "fill": "none",
+        "taper": 1
+       },
+       {
+        "shape": "rect",
+        "x": 182.0,
+        "y": 1322.32,
+        "w": 716.0,
+        "h": 6.0,
+        "fill": "$water",
+        "shade": 0,
+        "corners": "sharp",
+        "name": "p_line"
+       },
+       {
+        "shape": "rect",
+        "cx": 201.75652631578947,
+        "cy": 1325.32,
+        "w": 40.0,
+        "h": 10.0,
+        "fill": "$water",
+        "shade": 0
+       },
+       {
+        "shape": "rect",
+        "cx": 878.2434736842106,
+        "cy": 1325.32,
+        "w": 40.0,
+        "h": 10.0,
+        "fill": "$water",
+        "shade": 0
+       },
+       {
+        "shape": "rect",
+        "x": 811.0,
+        "y": 820.0,
+        "w": 18.0,
+        "h": 300.0,
+        "radius": 8.0,
+        "fill": "$sensorLo",
+        "group": "p_sens",
+        "shade": 0.4
+       },
+       {
+        "shape": "rect",
+        "x": 774.0,
+        "y": 740.0,
+        "w": 92.0,
+        "h": 110.0,
+        "radius": 34.0,
+        "fill": "$sensor",
+        "group": "p_sens",
+        "shade": {
+         "amount": 0.7,
+         "offset": 0.18
+        },
+        "shadow": {
+         "dx": 18.0,
+         "dy": 10.0,
+         "opacity": 0.45
+        }
+       },
+       {
+        "shape": "circle",
+        "cx": 820.0,
+        "cy": 786.0,
+        "r": 12.0,
+        "fill": "$water",
+        "group": "p_sens",
+        "shade": 0,
+        "animate": {
+         "keys": [
+          {
+           "t": 0,
+           "opacity": 0
+          },
+          {
+           "t": -0.6,
+           "opacity": 0
+          },
+          {
+           "t": -0.5,
+           "opacity": 1
+          }
+         ]
+        }
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          516.0,
+          830.0
+         ],
+         [
+          404.90003700962757,
+          752.0
+         ],
+         [
+          292.3167345176505,
+          687.0
+         ]
+        ],
+        "smooth": true,
+        "stroke": "$stem",
+        "weight": [
+         4.05,
+         9.0
+        ],
+        "fill": "none",
+        "group": "p_plant",
+        "taper": 0.4
+       },
+       {
+        "shape": "path",
+        "d": "M292 687 C272 516 105 513 17 597 C38 718 175 813 292 687 Z",
+        "fill": "$leaf",
+        "group": "p_plant",
+        "shade": {
+         "amount": 0.75,
+         "offset": 0.14
+        },
+        "outline": true,
+        "texture": {
+         "style": "contour",
+         "amount": 0.25
+        },
+        "lag": 0.0
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          292.3167345176505,
+          687.0
+         ],
+         [
+          158.41353965485325,
+          638.1925358156326
+         ],
+         [
+          16.510344792056003,
+          597.3850716312652
+         ]
+        ],
+        "smooth": true,
+        "stroke": "$leafLo",
+        "weight": [
+         1.35,
+         3.0
+        ],
+        "fill": "none",
+        "group": "p_plant",
+        "lag": 0.0
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          522.0,
+          830.0
+         ],
+         [
+          478.43637420137964,
+          660.8553282585365
+         ],
+         [
+          427.13335270252935,
+          519.9014351406502
+         ]
+        ],
+        "smooth": true,
+        "stroke": "$stem",
+        "weight": [
+         4.05,
+         9.0
+        ],
+        "fill": "none",
+        "group": "p_plant",
+        "taper": 0.4
+       },
+       {
+        "shape": "path",
+        "d": "M427 520 C514 389 401 291 289 299 C233 396 271 541 427 520 Z",
+        "fill": "$leafLo",
+        "group": "p_plant",
+        "shade": {
+         "amount": 0.75,
+         "offset": 0.14
+        },
+        "outline": true,
+        "texture": {
+         "style": "contour",
+         "amount": 0.25
+        },
+        "lag": 0.04
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          427.13335270252935,
+          519.9014351406502
+         ],
+         [
+          362.2438483522127,
+          405.65518264031476
+         ],
+         [
+          289.3543440018961,
+          299.40893013997936
+         ]
+        ],
+        "smooth": true,
+        "stroke": "$leafLo",
+        "weight": [
+         1.35,
+         3.0
+        ],
+        "fill": "none",
+        "group": "p_plant",
+        "lag": 0.04
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          528.0,
+          830.0
+         ],
+         [
+          636.0,
+          663.7231224733878
+         ],
+         [
+          716.0,
+          525.1590578678777
+         ]
+        ],
+        "smooth": true,
+        "stroke": "$stem",
+        "weight": [
+         4.05,
+         9.0
+        ],
+        "fill": "none",
+        "group": "p_plant",
+        "taper": 0.4
+       },
+       {
+        "shape": "path",
+        "d": "M716 525 C892 583 964 425 917 302 C790 269 641 356 716 525 Z",
+        "fill": "$leaf",
+        "group": "p_plant",
+        "shade": {
+         "amount": 0.75,
+         "offset": 0.14
+        },
+        "outline": true,
+        "texture": {
+         "style": "contour",
+         "amount": 0.25
+        },
+        "lag": 0.08
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          716.0,
+          525.1590578678777
+         ],
+         [
+          820.3695909538287,
+          409.6873340462685
+         ],
+         [
+          916.7391819076574,
+          302.2156102246594
+         ]
+        ],
+        "smooth": true,
+        "stroke": "$leafLo",
+        "weight": [
+         1.35,
+         3.0
+        ],
+        "fill": "none",
+        "group": "p_plant",
+        "lag": 0.08
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          534.0,
+          830.0
+         ],
+         [
+          730.3246352776964,
+          741.2501650344532
+         ],
+         [
+          888.9284980091102,
+          667.2919692298307
+         ]
+        ],
+        "smooth": true,
+        "stroke": "$stem",
+        "weight": [
+         4.05,
+         9.0
+        ],
+        "fill": "none",
+        "group": "p_plant",
+        "taper": 0.4
+       },
+       {
+        "shape": "path",
+        "d": "M889 667 C990 804 1124 724 1152 607 C1075 513 920 500 889 667 Z",
+        "fill": "$leafHi",
+        "group": "p_plant",
+        "shade": {
+         "amount": 0.75,
+         "offset": 0.14
+        },
+        "outline": true,
+        "texture": {
+         "style": "contour",
+         "amount": 0.25
+        },
+        "lag": 0.12
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          888.9284980091102,
+          667.2919692298307
+         ],
+         [
+          1024.468456755117,
+          632.9235768934088
+         ],
+         [
+          1152.0084155011236,
+          606.5551845569871
+         ]
+        ],
+        "smooth": true,
+        "stroke": "$leafLo",
+        "weight": [
+         1.35,
+         3.0
+        ],
+        "fill": "none",
+        "group": "p_plant",
+        "lag": 0.12
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          540.0,
+          830.0
+         ],
+         [
+          697.8683602920325,
+          887.4593840787123
+         ],
+         [
+          829.4253272020599,
+          935.3422041443059
+         ]
+        ],
+        "smooth": true,
+        "stroke": "$stem",
+        "weight": [
+         4.05,
+         9.0
+        ],
+        "fill": "none",
+        "group": "p_plant",
+        "taper": 0.4
+       },
+       {
+        "shape": "path",
+        "d": "M829 935 C806 1105 962 1146 1067 1084 C1077 962 971 840 829 935 Z",
+        "fill": "$leaf",
+        "group": "p_plant",
+        "shade": {
+         "amount": 0.75,
+         "offset": 0.14
+        },
+        "outline": true,
+        "texture": {
+         "style": "contour",
+         "amount": 0.25
+        },
+        "lag": 0.16
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          829.4253272020599,
+          935.3422041443059
+         ],
+         [
+          952.1520606639594,
+          1005.5309011369546
+         ],
+         [
+          1066.878794125859,
+          1083.7195981296034
+         ]
+        ],
+        "smooth": true,
+        "stroke": "$leafLo",
+        "weight": [
+         1.35,
+         3.0
+        ],
+        "fill": "none",
+        "group": "p_plant",
+        "lag": 0.16
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          546.0,
+          830.0
+         ],
+         [
+          633.0,
+          991.0807251039056
+         ],
+         [
+          710.5,
+          1125.3146626904936
+         ]
+        ],
+        "smooth": true,
+        "stroke": "$stem",
+        "weight": [
+         4.05,
+         9.0
+        ],
+        "fill": "none",
+        "group": "p_plant",
+        "taper": 0.4
+       },
+       {
+        "shape": "path",
+        "d": "M710 1125 C588 1233 676 1355 791 1373 C873 1291 873 1141 710 1125 Z",
+        "fill": "$leafLo",
+        "group": "p_plant",
+        "shade": {
+         "amount": 0.75,
+         "offset": 0.14
+        },
+        "outline": true,
+        "texture": {
+         "style": "contour",
+         "amount": 0.25
+        },
+        "lag": 0.2
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          710.5,
+          1125.3146626904936
+         ],
+         [
+          754.6722092687432,
+          1244.9520098088635
+         ],
+         [
+          790.8444185374864,
+          1372.5893569272334
+         ]
+        ],
+        "smooth": true,
+        "stroke": "$leafLo",
+        "weight": [
+         1.35,
+         3.0
+        ],
+        "fill": "none",
+        "group": "p_plant",
+        "lag": 0.2
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          552.0,
+          830.0
+         ],
+         [
+          561.8796703860332,
+          705.9142231204618
+         ],
+         [
+          580.1127290410609,
+          602.50940905418
+         ]
+        ],
+        "smooth": true,
+        "stroke": "$stem",
+        "weight": [
+         4.05,
+         9.0
+        ],
+        "fill": "none",
+        "group": "p_plant",
+        "taper": 0.4
+       },
+       {
+        "shape": "path",
+        "d": "M580 603 C723 596 735 458 670 380 C569 391 482 498 580 603 Z",
+        "fill": "$leaf",
+        "group": "p_plant",
+        "shade": {
+         "amount": 0.75,
+         "offset": 0.14
+        },
+        "outline": true,
+        "texture": {
+         "style": "contour",
+         "amount": 0.25
+        },
+        "lag": 0.24
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          580.1127290410609,
+          602.50940905418
+         ],
+         [
+          629.0655202509704,
+          487.2473465061655
+         ],
+         [
+          670.0183114608798,
+          379.985283958151
+         ]
+        ],
+        "smooth": true,
+        "stroke": "$leafLo",
+        "weight": [
+         1.35,
+         3.0
+        ],
+        "fill": "none",
+        "group": "p_plant",
+        "lag": 0.24
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          558.0,
+          830.0
+         ],
+         [
+          478.053744874087,
+          741.5315792167889
+         ],
+         [
+          426.43186560249285,
+          667.8078952307796
+         ]
+        ],
+        "smooth": true,
+        "stroke": "$stem",
+        "weight": [
+         4.05,
+         9.0
+        ],
+        "fill": "none",
+        "group": "p_plant",
+        "taper": 0.4
+       },
+       {
+        "shape": "path",
+        "d": "M426 668 C470 540 356 485 266 518 C239 610 302 721 426 668 Z",
+        "fill": "$leafHi",
+        "group": "p_plant",
+        "shade": {
+         "amount": 0.75,
+         "offset": 0.14
+        },
+        "outline": true,
+        "texture": {
+         "style": "contour",
+         "amount": 0.25
+        },
+        "lag": 0.28
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          426.43186560249285,
+          667.8078952307796
+         ],
+         [
+          349.9829584243841,
+          588.7880756239048
+         ],
+         [
+          265.53405124627534,
+          517.7682560170299
+         ]
+        ],
+        "smooth": true,
+        "stroke": "$leafLo",
+        "weight": [
+         1.35,
+         3.0
+        ],
+        "fill": "none",
+        "group": "p_plant",
+        "lag": 0.28
+       }
+      ]
+     }
+    },
+    {
+     "text": "this much.",
+     "font": "Fraunces",
+     "axes": {
+      "wght": 760,
+      "SOFT": 100,
+      "opsz": 144
+     },
+     "size": 118,
+     "x": 540,
+     "y": 1210,
+     "anchor": "center",
+     "color": "#57B6E8"
+    }
+   ]
+  },
+  {
+   "duration": 1,
+   "background": "#1E1614",
+   "layers": [
+    {
+     "component": "illo",
+     "props": {
+      "view": [
+       1080,
+       1920
+      ],
+      "palette": {
+       "wall": "#8E9A8C",
+       "wallLo": "#5F6B62",
+       "sun": "#C9D3C7",
+       "sunDeep": "#D98E45",
+       "shelf": "#5C3B27",
+       "shelfLo": "#2C1A12",
+       "shelfHi": "#7A5034",
+       "glaze": "#2F5D57",
+       "glazeHi": "#4C8A7E",
+       "clay": "#CDB89B",
+       "clayLo": "#9E8466",
+       "dry": "#BE9A6C",
+       "dryHi": "#D6B788",
+       "dryLo": "#8E6E4A",
+       "wet": "#3E2719",
+       "wetLo": "#24160F",
+       "wetHi": "#5A3A24",
+       "root": "#EBDDBF",
+       "rootLo": "#B9A27C",
+       "leaf": "#2F7D52",
+       "leafHi": "#62B06C",
+       "leafLo": "#1C4E3E",
+       "stem": "#3E7A45",
+       "water": "#57B6E8",
+       "waterHi": "#A9DDF5",
+       "waterLo": "#2C7FB8",
+       "sensor": "#ECE7DD",
+       "sensorLo": "#A9A296",
+       "ink": "#140E0C"
+      },
+      "light": {
+       "angle": 300,
+       "rim": 150,
+       "color": "#E4F0F2",
+       "shadow": "#3A4650",
+       "strength": 0.8
+      },
+      "hand": {
+       "weight": [
+        0.6,
+        3.6
+       ],
+       "wobble": 1.2,
+       "rough": 0.6,
+       "boil": 8,
+       "gaps": 0.2
+      },
+      "corners": "soft",
+      "misregister": [
+       1.5,
+       1
+      ],
+      "grain": 0.05,
+      "groups": [
+       {
+        "name": "p_sens",
+        "animate": {
+         "keys": [
+          {
+           "t": 0,
+           "y": -260.0
+          },
+          {
+           "t": -1,
+           "y": -260.0
+          },
+          {
+           "t": -0.65,
+           "y": 0,
+           "ease": "outBack"
+          }
+         ]
+        }
+       },
+       {
+        "name": "p_plant",
+        "pivot": [
+         540,
+         830.0
+        ],
+        "sway": {
+         "rotate": 1.2,
+         "period": 3.2,
+         "phase": 0.7
+        }
+       }
+      ],
+      "shapes": [
+       {
+        "shape": "rect",
+        "x": 0,
+        "y": 0,
+        "w": 1080,
+        "h": 1920,
+        "fill": {
+         "stops": [
+          [
+           0,
+           "$wall"
+          ],
+          [
+           1,
+           "$wallLo"
+          ]
+         ],
+         "angle": 80,
+         "steps": 4,
+         "dither": 0.18
+        },
+        "wobble": 0,
+        "rough": 0,
+        "grain": 0.07,
+        "corners": "sharp",
+        "shade": 0
+       },
+       {
+        "shape": "polygon",
+        "name": "mullV",
+        "points": [
+         [
+          300,
+          150
+         ],
+         [
+          350,
+          156
+         ],
+         [
+          330,
+          1560
+         ],
+         [
+          282,
+          1560
+         ]
+        ],
+        "visible": false
+       },
+       {
+        "shape": "polygon",
+        "name": "mullH",
+        "points": [
+         [
+          -60,
+          760
+         ],
+         [
+          720,
+          800
+         ],
+         [
+          718,
+          846
+         ],
+         [
+          -60,
+          806
+         ]
+        ],
+        "visible": false
+       },
+       {
+        "shape": "polygon",
+        "points": [
+         [
+          -40,
+          180
+         ],
+         [
+          700,
+          260
+         ],
+         [
+          640,
+          1500
+         ],
+         [
+          -40,
+          1460
+         ]
+        ],
+        "fill": "$sun",
+        "opacity": 0.9,
+        "cut": [
+         "mullV",
+         "mullH"
+        ],
+        "grain": 0.09,
+        "texture": {
+         "style": "paper",
+         "amount": 0.6
+        },
+        "corners": 8,
+        "shade": 0
+       },
+       {
+        "shape": "rect",
+        "x": -20,
+        "y": 1600,
+        "w": 1120,
+        "h": 360,
+        "fill": {
+         "stops": [
+          [
+           0,
+           "$shelfHi"
+          ],
+          [
+           0.08,
+           "$shelf"
+          ],
+          [
+           1,
+           "$shelfLo"
+          ]
+         ],
+         "angle": 90,
+         "steps": 5,
+         "dither": 0.15
+        },
+        "grain": 0.08,
+        "texture": {
+         "style": "contour",
+         "amount": 0.25
+        },
+        "corners": "sharp",
+        "shade": 0
+       },
+       {
+        "shape": "rect",
+        "x": -20,
+        "y": 1590,
+        "w": 1120,
+        "h": 18,
+        "fill": "$shelfHi",
+        "shade": 0,
+        "corners": "sharp"
+       },
+       {
+        "shape": "polygon",
+        "points": [
+         [
+          144.0,
+          834.0
+         ],
+         [
+          936.0,
+          834.0
+         ],
+         [
+          852.0,
+          1620.0
+         ],
+         [
+          228.0,
+          1620.0
+         ]
+        ],
+        "fill": "$glaze",
+        "name": "p_body",
+        "shade": {
+         "amount": 0.7,
+         "offset": 0.1
+        },
+        "shadow": {
+         "dx": 70.0,
+         "dy": 18.0,
+         "flatten": 0.15,
+         "opacity": 0.5
+        },
+        "texture": {
+         "style": "halftone",
+         "amount": 0.35,
+         "scale": 0.9
+        },
+        "grain": 0.05
+       },
+       {
+        "shape": "polygon",
+        "points": [
+         [
+          150.0,
+          860
+         ],
+         [
+          930.0,
+          860
+         ],
+         [
+          848.0,
+          1616.0
+         ],
+         [
+          232.0,
+          1616.0
+         ]
+        ],
+        "fill": "$clay",
+        "shade": {
+         "amount": 0.35,
+         "offset": 0.05
+        },
+        "grain": 0.08,
+        "texture": {
+         "style": "stipple",
+         "amount": 0.35
+        }
+       },
+       {
+        "shape": "rect",
+        "x": 134.0,
+        "y": 826.0,
+        "w": 812.0,
+        "h": 58.0,
+        "radius": 10.0,
+        "fill": "$glazeHi",
+        "shade": {
+         "amount": 0.6,
+         "offset": 0.2
+        },
+        "grain": 0.05
+       },
+       {
+        "shape": "rect",
+        "x": 146.0,
+        "y": 852.0,
+        "w": 788.0,
+        "h": 40.0,
+        "fill": "$clay",
+        "shade": 0.2,
+        "grain": 0.06
+       },
+       {
+        "shape": "polygon",
+        "name": "p_soil",
+        "points": [
+         [
+          184.0,
+          900.0
+         ],
+         [
+          896.0,
+          900.0
+         ],
+         [
+          821.4,
+          1586.0
+         ],
+         [
+          258.6,
+          1586.0
+         ]
+        ],
+        "fill": {
+         "stops": [
+          [
+           0,
+           "$dryHi"
+          ],
+          [
+           0.4,
+           "$dry"
+          ],
+          [
+           1,
+           "$dryLo"
+          ]
+         ],
+         "angle": 90,
+         "steps": 4,
+         "dither": 0.2
+        },
+        "texture": {
+         "style": "stipple",
+         "amount": 0.9,
+         "scale": 1.1
+        },
+        "grain": 0.12,
+        "shade": 0
+       },
+       {
+        "shape": "blob",
+        "cx": 279.6673418080297,
+        "cy": 1475.9165314308248,
+        "rx": 14.136163042026382,
+        "ry": 10.873971570789525,
+        "fill": "$dryHi",
+        "clipTo": "p_soil",
+        "shade": 0.5,
+        "lumpy": 0.4,
+        "seed": 121,
+        "opacity": 0.9
+       },
+       {
+        "shape": "blob",
+        "cx": 536.749782009462,
+        "cy": 1214.8661385014123,
+        "rx": 12.823637780856325,
+        "ry": 9.864336754504865,
+        "fill": "$dryLo",
+        "clipTo": "p_soil",
+        "shade": 0.5,
+        "lumpy": 0.4,
+        "seed": 97,
+        "opacity": 0.9
+       },
+       {
+        "shape": "blob",
+        "cx": 531.3539394451931,
+        "cy": 1506.0159799178086,
+        "rx": 9.76076304214727,
+        "ry": 7.508279263190206,
+        "fill": "$clayLo",
+        "clipTo": "p_soil",
+        "shade": 0.5,
+        "lumpy": 0.4,
+        "seed": 781,
+        "opacity": 0.9
+       },
+       {
+        "shape": "blob",
+        "cx": 730.2162319533489,
+        "cy": 1376.466360600099,
+        "rx": 8.316067557349937,
+        "ry": 6.396975044115337,
+        "fill": "$dryLo",
+        "clipTo": "p_soil",
+        "shade": 0.5,
+        "lumpy": 0.4,
+        "seed": 606,
+        "opacity": 0.9
+       },
+       {
+        "shape": "blob",
+        "cx": 857.0327352343927,
+        "cy": 1511.3364121931331,
+        "rx": 5.557902801492576,
+        "ry": 4.2753098473019815,
+        "fill": "$dryLo",
+        "clipTo": "p_soil",
+        "shade": 0.5,
+        "lumpy": 0.4,
+        "seed": 666,
+        "opacity": 0.9
+       },
+       {
+        "shape": "blob",
+        "cx": 569.4856806289696,
+        "cy": 1536.081850782703,
+        "rx": 9.660089580952086,
+        "ry": 7.430838139193912,
+        "fill": "$dryLo",
+        "clipTo": "p_soil",
+        "shade": 0.5,
+        "lumpy": 0.4,
+        "seed": 993,
+        "opacity": 0.9
+       },
+       {
+        "shape": "blob",
+        "cx": 484.5470018148947,
+        "cy": 939.0507566491134,
+        "rx": 7.79379249539451,
+        "ry": 5.995224996457315,
+        "fill": "$dryHi",
+        "clipTo": "p_soil",
+        "shade": 0.5,
+        "lumpy": 0.4,
+        "seed": 962,
+        "opacity": 0.9
+       },
+       {
+        "shape": "blob",
+        "cx": 537.0183158638777,
+        "cy": 1072.9033993689677,
+        "rx": 7.901138536029516,
+        "ry": 6.077798873868859,
+        "fill": "$dryLo",
+        "clipTo": "p_soil",
+        "shade": 0.5,
+        "lumpy": 0.4,
+        "seed": 780,
+        "opacity": 0.9
+       },
+       {
+        "shape": "blob",
+        "cx": 511.2376676052663,
+        "cy": 1110.0967391713584,
+        "rx": 5.451429551611134,
+        "ry": 4.19340734739318,
+        "fill": "$clayLo",
+        "clipTo": "p_soil",
+        "shade": 0.5,
+        "lumpy": 0.4,
+        "seed": 945,
+        "opacity": 0.9
+       },
+       {
+        "shape": "blob",
+        "cx": 641.3135864079013,
+        "cy": 1041.9545104269348,
+        "rx": 16.812757922459962,
+        "ry": 12.932890709584585,
+        "fill": "$dryHi",
+        "clipTo": "p_soil",
+        "shade": 0.5,
+        "lumpy": 0.4,
+        "seed": 124,
+        "opacity": 0.9
+       },
+       {
+        "shape": "blob",
+        "cx": 713.1204222208185,
+        "cy": 1507.4974588848186,
+        "rx": 16.587051407403823,
+        "ry": 12.759270313387557,
+        "fill": "$clayLo",
+        "clipTo": "p_soil",
+        "shade": 0.5,
+        "lumpy": 0.4,
+        "seed": 959,
+        "opacity": 0.9
+       },
+       {
+        "shape": "blob",
+        "cx": 872.6537148098661,
+        "cy": 1253.0625163354234,
+        "rx": 15.849165189583415,
+        "ry": 12.19166553044878,
+        "fill": "$dryLo",
+        "clipTo": "p_soil",
+        "shade": 0.5,
+        "lumpy": 0.4,
+        "seed": 311,
+        "opacity": 0.9
+       },
+       {
+        "shape": "blob",
+        "cx": 386.32146908609104,
+        "cy": 1558.5841216065453,
+        "rx": 11.042536076162081,
+        "ry": 8.494258520124678,
+        "fill": "$clayLo",
+        "clipTo": "p_soil",
+        "shade": 0.5,
+        "lumpy": 0.4,
+        "seed": 403,
+        "opacity": 0.9
+       },
+       {
+        "shape": "blob",
+        "cx": 603.3696076835768,
+        "cy": 942.64894457928,
+        "rx": 8.040057690453892,
+        "ry": 6.184659761887609,
+        "fill": "$dryHi",
+        "clipTo": "p_soil",
+        "shade": 0.5,
+        "lumpy": 0.4,
+        "seed": 425,
+        "opacity": 0.9
+       },
+       {
+        "shape": "blob",
+        "cx": 657.2973873852288,
+        "cy": 1160.8332334161698,
+        "rx": 15.52796468157751,
+        "ry": 11.944588216598085,
+        "fill": "$clayLo",
+        "clipTo": "p_soil",
+        "shade": 0.5,
+        "lumpy": 0.4,
+        "seed": 756,
+        "opacity": 0.9
+       },
+       {
+        "shape": "blob",
+        "cx": 450.7885505971679,
+        "cy": 1207.9588293092334,
+        "rx": 11.148589912524786,
+        "ry": 8.575838394249836,
+        "fill": "$dryLo",
+        "clipTo": "p_soil",
+        "shade": 0.5,
+        "lumpy": 0.4,
+        "seed": 534,
+        "opacity": 0.9
+       },
+       {
+        "shape": "blob",
+        "cx": 782.0454968213858,
+        "cy": 1163.06286931961,
+        "rx": 13.773359964385833,
+        "ry": 10.594892280296794,
+        "fill": "$dryHi",
+        "clipTo": "p_soil",
+        "shade": 0.5,
+        "lumpy": 0.4,
+        "seed": 45,
+        "opacity": 0.9
+       },
+       {
+        "shape": "blob",
+        "cx": 403.67295197254447,
+        "cy": 1476.4858328474397,
+        "rx": 12.39328538954444,
+        "ry": 9.533296453495723,
+        "fill": "$clayLo",
+        "clipTo": "p_soil",
+        "shade": 0.5,
+        "lumpy": 0.4,
+        "seed": 404,
+        "opacity": 0.9
+       },
+       {
+        "shape": "blob",
+        "cx": 644.7751897073435,
+        "cy": 1030.5978588571288,
+        "rx": 7.855166948514406,
+        "ry": 6.042436114241851,
+        "fill": "$dryLo",
+        "clipTo": "p_soil",
+        "shade": 0.5,
+        "lumpy": 0.4,
+        "seed": 790,
+        "opacity": 0.9
+       },
+       {
+        "shape": "blob",
+        "cx": 326.055653633234,
+        "cy": 1523.5767013158656,
+        "rx": 11.615560065332508,
+        "ry": 8.935046204101928,
+        "fill": "$dryHi",
+        "clipTo": "p_soil",
+        "shade": 0.5,
+        "lumpy": 0.4,
+        "seed": 527,
+        "opacity": 0.9
+       },
+       {
+        "shape": "blob",
+        "cx": 428.80403457698804,
+        "cy": 1475.9344091045364,
+        "rx": 9.333307701884516,
+        "ry": 7.1794674629880895,
+        "fill": "$dryHi",
+        "clipTo": "p_soil",
+        "shade": 0.5,
+        "lumpy": 0.4,
+        "seed": 676,
+        "opacity": 0.9
+       },
+       {
+        "shape": "blob",
+        "cx": 574.1733723399692,
+        "cy": 1547.8682806379088,
+        "rx": 5.266796814569598,
+        "ry": 4.051382165053536,
+        "fill": "$clayLo",
+        "clipTo": "p_soil",
+        "shade": 0.5,
+        "lumpy": 0.4,
+        "seed": 525,
+        "opacity": 0.9
+       },
+       {
+        "shape": "blob",
+        "cx": 760.1076094212054,
+        "cy": 1260.2529539910893,
+        "rx": 11.767887017907034,
+        "ry": 9.05222078300541,
+        "fill": "$dryHi",
+        "clipTo": "p_soil",
+        "shade": 0.5,
+        "lumpy": 0.4,
+        "seed": 973,
+        "opacity": 0.9
+       },
+       {
+        "shape": "blob",
+        "cx": 223.95978783476716,
+        "cy": 1490.7266617958758,
+        "rx": 11.86899220635365,
+        "ry": 9.129994004887422,
+        "fill": "$dryLo",
+        "clipTo": "p_soil",
+        "shade": 0.5,
+        "lumpy": 0.4,
+        "seed": 964,
+        "opacity": 0.9
+       },
+       {
+        "shape": "blob",
+        "cx": 543.3609728093506,
+        "cy": 1238.1108736213937,
+        "rx": 9.374442585175983,
+        "ry": 7.211109680904602,
+        "fill": "$dryHi",
+        "clipTo": "p_soil",
+        "shade": 0.5,
+        "lumpy": 0.4,
+        "seed": 2,
+        "opacity": 0.9
+       },
+       {
+        "shape": "blob",
+        "cx": 567.3969025653452,
+        "cy": 1329.0090810351635,
+        "rx": 12.36569383795789,
+        "ry": 9.51207218304453,
+        "fill": "$dryHi",
+        "clipTo": "p_soil",
+        "shade": 0.5,
+        "lumpy": 0.4,
+        "seed": 615,
+        "opacity": 0.9
+       },
+       {
+        "shape": "blob",
+        "cx": 203.91818866769574,
+        "cy": 1070.6209005177277,
+        "rx": 7.273371729581418,
+        "ry": 5.594901330447245,
+        "fill": "$clayLo",
+        "clipTo": "p_soil",
+        "shade": 0.5,
+        "lumpy": 0.4,
+        "seed": 186,
+        "opacity": 0.9
+       },
+       {
+        "shape": "blob",
+        "cx": 797.0383089275673,
+        "cy": 1443.7759450187914,
+        "rx": 14.526041482835307,
+        "ry": 11.173878063719467,
+        "fill": "$dryHi",
+        "clipTo": "p_soil",
+        "shade": 0.5,
+        "lumpy": 0.4,
+        "seed": 34,
+        "opacity": 0.9
+       },
+       {
+        "shape": "blob",
+        "cx": 783.3223205791563,
+        "cy": 1361.5624726877918,
+        "rx": 6.173839412305606,
+        "ry": 4.749107240235081,
+        "fill": "$dryLo",
+        "clipTo": "p_soil",
+        "shade": 0.5,
+        "lumpy": 0.4,
+        "seed": 464,
+        "opacity": 0.9
+       },
+       {
+        "shape": "blob",
+        "cx": 194.36670214646637,
+        "cy": 1415.664924565442,
+        "rx": 8.119842940145046,
+        "ry": 6.246033030880805,
+        "fill": "$dryLo",
+        "clipTo": "p_soil",
+        "shade": 0.5,
+        "lumpy": 0.4,
+        "seed": 817,
+        "opacity": 0.9
+       },
+       {
+        "shape": "blob",
+        "cx": 628.8590839165631,
+        "cy": 1145.9413988473007,
+        "rx": 6.013329928810914,
+        "ry": 4.625638406777626,
+        "fill": "$dryLo",
+        "clipTo": "p_soil",
+        "shade": 0.5,
+        "lumpy": 0.4,
+        "seed": 262,
+        "opacity": 0.9
+       },
+       {
+        "shape": "blob",
+        "cx": 559.4948441221851,
+        "cy": 1030.303084721913,
+        "rx": 8.393098910778557,
+        "ry": 6.456229931368121,
+        "fill": "$clayLo",
+        "clipTo": "p_soil",
+        "shade": 0.5,
+        "lumpy": 0.4,
+        "seed": 302,
+        "opacity": 0.9
+       },
+       {
+        "shape": "path",
+        "d": "M164 890 L916 890 L916 1344 L832 1372 L749 1303 L665 1305 L582 1348 L498 1340 L415 1292 L331 1328 L248 1348 L164 1332 Z",
+        "fill": {
+         "stops": [
+          [
+           0,
+           "$wetLo"
+          ],
+          [
+           0.85,
+           "$wet"
+          ],
+          [
+           1,
+           "$wetHi"
+          ]
+         ],
+         "angle": 90,
+         "steps": 3
+        },
+        "clipTo": "p_soil",
+        "origin": [
+         540,
+         890.0
+        ],
+        "animate": {
+         "keys": [
+          {
+           "t": 0,
+           "sy": 0.001
+          },
+          {
+           "t": 0,
+           "sy": 0.001
+          },
+          {
+           "t": 0.01,
+           "sy": 1,
+           "ease": "out"
+          }
+         ]
+        },
+        "grain": 0.1,
+        "texture": {
+         "style": "stipple",
+         "amount": 0.6
+        },
+        "shade": 0
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          510.0,
+          906.0
+         ],
+         [
+          410.0,
+          1050.92
+         ],
+         [
+          350.0,
+          1182.975
+         ],
+         [
+          330.0,
+          1277.3
+         ]
+        ],
+        "smooth": true,
+        "stroke": "$root",
+        "weight": [
+         3.15,
+         7.0
+        ],
+        "clipTo": "p_soil",
+        "taper": 1,
+        "fill": "none"
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          350.0,
+          1182.975
+         ],
+         [
+          300.0,
+          1222.975
+         ],
+         [
+          280.0,
+          1272.975
+         ]
+        ],
+        "smooth": true,
+        "stroke": "$root",
+        "weight": [
+         1.35,
+         3.0
+        ],
+        "clipTo": "p_soil",
+        "fill": "none",
+        "taper": 1
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          521.0,
+          906.0
+         ],
+         [
+          519.5,
+          1092.08
+         ],
+         [
+          420.0,
+          1260.15
+         ],
+         [
+          440.0,
+          1380.2
+         ]
+        ],
+        "smooth": true,
+        "stroke": "$root",
+        "weight": [
+         2.9250000000000003,
+         6.5
+        ],
+        "clipTo": "p_soil",
+        "taper": 1,
+        "fill": "none"
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          420.0,
+          1260.15
+         ],
+         [
+          470.0,
+          1300.15
+         ],
+         [
+          490.0,
+          1350.15
+         ]
+        ],
+        "smooth": true,
+        "stroke": "$root",
+        "weight": [
+         1.35,
+         3.0
+        ],
+        "clipTo": "p_soil",
+        "fill": "none",
+        "taper": 1
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          530.0,
+          906.0
+         ],
+         [
+          500.0,
+          1070.128
+         ],
+         [
+          550.0,
+          1218.99
+         ],
+         [
+          530.0,
+          1325.32
+         ]
+        ],
+        "smooth": true,
+        "stroke": "$root",
+        "weight": [
+         2.7,
+         6.0
+        ],
+        "clipTo": "p_soil",
+        "taper": 1,
+        "fill": "none"
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          550.0,
+          1218.99
+         ],
+         [
+          500.0,
+          1258.99
+         ],
+         [
+          480.0,
+          1308.99
+         ]
+        ],
+        "smooth": true,
+        "stroke": "$root",
+        "weight": [
+         1.35,
+         3.0
+        ],
+        "clipTo": "p_soil",
+        "fill": "none",
+        "taper": 1
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          538.0,
+          906.0
+         ],
+         [
+          596.0,
+          1081.104
+         ],
+         [
+          590.0,
+          1239.57
+         ],
+         [
+          610.0,
+          1352.76
+         ]
+        ],
+        "smooth": true,
+        "stroke": "$root",
+        "weight": [
+         2.475,
+         5.5
+        ],
+        "clipTo": "p_soil",
+        "taper": 1,
+        "fill": "none"
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          590.0,
+          1239.57
+         ],
+         [
+          640.0,
+          1279.57
+         ],
+         [
+          660.0,
+          1329.57
+         ]
+        ],
+        "smooth": true,
+        "stroke": "$root",
+        "weight": [
+         1.35,
+         3.0
+        ],
+        "clipTo": "p_soil",
+        "fill": "none",
+        "taper": 1
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          549.0,
+          906.0
+         ],
+         [
+          645.5,
+          1037.2
+         ],
+         [
+          700.0,
+          1157.25
+         ],
+         [
+          720.0,
+          1243.0
+         ]
+        ],
+        "smooth": true,
+        "stroke": "$root",
+        "weight": [
+         2.25,
+         5.0
+        ],
+        "clipTo": "p_soil",
+        "taper": 1,
+        "fill": "none"
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          700.0,
+          1157.25
+         ],
+         [
+          750.0,
+          1197.25
+         ],
+         [
+          770.0,
+          1247.25
+         ]
+        ],
+        "smooth": true,
+        "stroke": "$root",
+        "weight": [
+         1.35,
+         3.0
+        ],
+        "clipTo": "p_soil",
+        "fill": "none",
+        "taper": 1
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          527.0,
+          906.0
+         ],
+         [
+          546.5,
+          1023.48
+         ],
+         [
+          480.0,
+          1131.525
+         ],
+         [
+          500.0,
+          1208.7
+         ]
+        ],
+        "smooth": true,
+        "stroke": "$root",
+        "weight": [
+         2.025,
+         4.5
+        ],
+        "clipTo": "p_soil",
+        "taper": 1,
+        "fill": "none"
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          480.0,
+          1131.525
+         ],
+         [
+          530.0,
+          1171.525
+         ],
+         [
+          550.0,
+          1221.525
+         ]
+        ],
+        "smooth": true,
+        "stroke": "$root",
+        "weight": [
+         1.35,
+         3.0
+        ],
+        "clipTo": "p_soil",
+        "fill": "none",
+        "taper": 1
+       },
+       {
+        "shape": "rect",
+        "x": 182.0,
+        "y": 1322.32,
+        "w": 716.0,
+        "h": 6.0,
+        "fill": "$water",
+        "shade": 0,
+        "corners": "sharp",
+        "name": "p_line"
+       },
+       {
+        "shape": "rect",
+        "cx": 201.75652631578947,
+        "cy": 1325.32,
+        "w": 40.0,
+        "h": 10.0,
+        "fill": "$water",
+        "shade": 0
+       },
+       {
+        "shape": "rect",
+        "cx": 878.2434736842106,
+        "cy": 1325.32,
+        "w": 40.0,
+        "h": 10.0,
+        "fill": "$water",
+        "shade": 0
+       },
+       {
+        "shape": "rect",
+        "x": 811.0,
+        "y": 820.0,
+        "w": 18.0,
+        "h": 300.0,
+        "radius": 8.0,
+        "fill": "$sensorLo",
+        "group": "p_sens",
+        "shade": 0.4
+       },
+       {
+        "shape": "rect",
+        "x": 774.0,
+        "y": 740.0,
+        "w": 92.0,
+        "h": 110.0,
+        "radius": 34.0,
+        "fill": "$sensor",
+        "group": "p_sens",
+        "shade": {
+         "amount": 0.7,
+         "offset": 0.18
+        },
+        "shadow": {
+         "dx": 18.0,
+         "dy": 10.0,
+         "opacity": 0.45
+        }
+       },
+       {
+        "shape": "circle",
+        "cx": 820.0,
+        "cy": 786.0,
+        "r": 12.0,
+        "fill": "$water",
+        "group": "p_sens",
+        "shade": 0,
+        "animate": {
+         "keys": [
+          {
+           "t": 0,
+           "opacity": 0
+          },
+          {
+           "t": -0.6,
+           "opacity": 0
+          },
+          {
+           "t": -0.5,
+           "opacity": 1
+          }
+         ]
+        }
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          516.0,
+          830.0
+         ],
+         [
+          404.90003700962757,
+          752.0
+         ],
+         [
+          292.3167345176505,
+          687.0
+         ]
+        ],
+        "smooth": true,
+        "stroke": "$stem",
+        "weight": [
+         4.05,
+         9.0
+        ],
+        "fill": "none",
+        "group": "p_plant",
+        "taper": 0.4
+       },
+       {
+        "shape": "path",
+        "d": "M292 687 C272 516 105 513 17 597 C38 718 175 813 292 687 Z",
+        "fill": "$leaf",
+        "group": "p_plant",
+        "shade": {
+         "amount": 0.75,
+         "offset": 0.14
+        },
+        "outline": true,
+        "texture": {
+         "style": "contour",
+         "amount": 0.25
+        },
+        "lag": 0.0
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          292.3167345176505,
+          687.0
+         ],
+         [
+          158.41353965485325,
+          638.1925358156326
+         ],
+         [
+          16.510344792056003,
+          597.3850716312652
+         ]
+        ],
+        "smooth": true,
+        "stroke": "$leafLo",
+        "weight": [
+         1.35,
+         3.0
+        ],
+        "fill": "none",
+        "group": "p_plant",
+        "lag": 0.0
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          522.0,
+          830.0
+         ],
+         [
+          478.43637420137964,
+          660.8553282585365
+         ],
+         [
+          427.13335270252935,
+          519.9014351406502
+         ]
+        ],
+        "smooth": true,
+        "stroke": "$stem",
+        "weight": [
+         4.05,
+         9.0
+        ],
+        "fill": "none",
+        "group": "p_plant",
+        "taper": 0.4
+       },
+       {
+        "shape": "path",
+        "d": "M427 520 C514 389 401 291 289 299 C233 396 271 541 427 520 Z",
+        "fill": "$leafLo",
+        "group": "p_plant",
+        "shade": {
+         "amount": 0.75,
+         "offset": 0.14
+        },
+        "outline": true,
+        "texture": {
+         "style": "contour",
+         "amount": 0.25
+        },
+        "lag": 0.04
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          427.13335270252935,
+          519.9014351406502
+         ],
+         [
+          362.2438483522127,
+          405.65518264031476
+         ],
+         [
+          289.3543440018961,
+          299.40893013997936
+         ]
+        ],
+        "smooth": true,
+        "stroke": "$leafLo",
+        "weight": [
+         1.35,
+         3.0
+        ],
+        "fill": "none",
+        "group": "p_plant",
+        "lag": 0.04
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          528.0,
+          830.0
+         ],
+         [
+          636.0,
+          663.7231224733878
+         ],
+         [
+          716.0,
+          525.1590578678777
+         ]
+        ],
+        "smooth": true,
+        "stroke": "$stem",
+        "weight": [
+         4.05,
+         9.0
+        ],
+        "fill": "none",
+        "group": "p_plant",
+        "taper": 0.4
+       },
+       {
+        "shape": "path",
+        "d": "M716 525 C892 583 964 425 917 302 C790 269 641 356 716 525 Z",
+        "fill": "$leaf",
+        "group": "p_plant",
+        "shade": {
+         "amount": 0.75,
+         "offset": 0.14
+        },
+        "outline": true,
+        "texture": {
+         "style": "contour",
+         "amount": 0.25
+        },
+        "lag": 0.08
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          716.0,
+          525.1590578678777
+         ],
+         [
+          820.3695909538287,
+          409.6873340462685
+         ],
+         [
+          916.7391819076574,
+          302.2156102246594
+         ]
+        ],
+        "smooth": true,
+        "stroke": "$leafLo",
+        "weight": [
+         1.35,
+         3.0
+        ],
+        "fill": "none",
+        "group": "p_plant",
+        "lag": 0.08
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          534.0,
+          830.0
+         ],
+         [
+          730.3246352776964,
+          741.2501650344532
+         ],
+         [
+          888.9284980091102,
+          667.2919692298307
+         ]
+        ],
+        "smooth": true,
+        "stroke": "$stem",
+        "weight": [
+         4.05,
+         9.0
+        ],
+        "fill": "none",
+        "group": "p_plant",
+        "taper": 0.4
+       },
+       {
+        "shape": "path",
+        "d": "M889 667 C990 804 1124 724 1152 607 C1075 513 920 500 889 667 Z",
+        "fill": "$leafHi",
+        "group": "p_plant",
+        "shade": {
+         "amount": 0.75,
+         "offset": 0.14
+        },
+        "outline": true,
+        "texture": {
+         "style": "contour",
+         "amount": 0.25
+        },
+        "lag": 0.12
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          888.9284980091102,
+          667.2919692298307
+         ],
+         [
+          1024.468456755117,
+          632.9235768934088
+         ],
+         [
+          1152.0084155011236,
+          606.5551845569871
+         ]
+        ],
+        "smooth": true,
+        "stroke": "$leafLo",
+        "weight": [
+         1.35,
+         3.0
+        ],
+        "fill": "none",
+        "group": "p_plant",
+        "lag": 0.12
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          540.0,
+          830.0
+         ],
+         [
+          697.8683602920325,
+          887.4593840787123
+         ],
+         [
+          829.4253272020599,
+          935.3422041443059
+         ]
+        ],
+        "smooth": true,
+        "stroke": "$stem",
+        "weight": [
+         4.05,
+         9.0
+        ],
+        "fill": "none",
+        "group": "p_plant",
+        "taper": 0.4
+       },
+       {
+        "shape": "path",
+        "d": "M829 935 C806 1105 962 1146 1067 1084 C1077 962 971 840 829 935 Z",
+        "fill": "$leaf",
+        "group": "p_plant",
+        "shade": {
+         "amount": 0.75,
+         "offset": 0.14
+        },
+        "outline": true,
+        "texture": {
+         "style": "contour",
+         "amount": 0.25
+        },
+        "lag": 0.16
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          829.4253272020599,
+          935.3422041443059
+         ],
+         [
+          952.1520606639594,
+          1005.5309011369546
+         ],
+         [
+          1066.878794125859,
+          1083.7195981296034
+         ]
+        ],
+        "smooth": true,
+        "stroke": "$leafLo",
+        "weight": [
+         1.35,
+         3.0
+        ],
+        "fill": "none",
+        "group": "p_plant",
+        "lag": 0.16
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          546.0,
+          830.0
+         ],
+         [
+          633.0,
+          991.0807251039056
+         ],
+         [
+          710.5,
+          1125.3146626904936
+         ]
+        ],
+        "smooth": true,
+        "stroke": "$stem",
+        "weight": [
+         4.05,
+         9.0
+        ],
+        "fill": "none",
+        "group": "p_plant",
+        "taper": 0.4
+       },
+       {
+        "shape": "path",
+        "d": "M710 1125 C588 1233 676 1355 791 1373 C873 1291 873 1141 710 1125 Z",
+        "fill": "$leafLo",
+        "group": "p_plant",
+        "shade": {
+         "amount": 0.75,
+         "offset": 0.14
+        },
+        "outline": true,
+        "texture": {
+         "style": "contour",
+         "amount": 0.25
+        },
+        "lag": 0.2
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          710.5,
+          1125.3146626904936
+         ],
+         [
+          754.6722092687432,
+          1244.9520098088635
+         ],
+         [
+          790.8444185374864,
+          1372.5893569272334
+         ]
+        ],
+        "smooth": true,
+        "stroke": "$leafLo",
+        "weight": [
+         1.35,
+         3.0
+        ],
+        "fill": "none",
+        "group": "p_plant",
+        "lag": 0.2
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          552.0,
+          830.0
+         ],
+         [
+          561.8796703860332,
+          705.9142231204618
+         ],
+         [
+          580.1127290410609,
+          602.50940905418
+         ]
+        ],
+        "smooth": true,
+        "stroke": "$stem",
+        "weight": [
+         4.05,
+         9.0
+        ],
+        "fill": "none",
+        "group": "p_plant",
+        "taper": 0.4
+       },
+       {
+        "shape": "path",
+        "d": "M580 603 C723 596 735 458 670 380 C569 391 482 498 580 603 Z",
+        "fill": "$leaf",
+        "group": "p_plant",
+        "shade": {
+         "amount": 0.75,
+         "offset": 0.14
+        },
+        "outline": true,
+        "texture": {
+         "style": "contour",
+         "amount": 0.25
+        },
+        "lag": 0.24
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          580.1127290410609,
+          602.50940905418
+         ],
+         [
+          629.0655202509704,
+          487.2473465061655
+         ],
+         [
+          670.0183114608798,
+          379.985283958151
+         ]
+        ],
+        "smooth": true,
+        "stroke": "$leafLo",
+        "weight": [
+         1.35,
+         3.0
+        ],
+        "fill": "none",
+        "group": "p_plant",
+        "lag": 0.24
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          558.0,
+          830.0
+         ],
+         [
+          478.053744874087,
+          741.5315792167889
+         ],
+         [
+          426.43186560249285,
+          667.8078952307796
+         ]
+        ],
+        "smooth": true,
+        "stroke": "$stem",
+        "weight": [
+         4.05,
+         9.0
+        ],
+        "fill": "none",
+        "group": "p_plant",
+        "taper": 0.4
+       },
+       {
+        "shape": "path",
+        "d": "M426 668 C470 540 356 485 266 518 C239 610 302 721 426 668 Z",
+        "fill": "$leafHi",
+        "group": "p_plant",
+        "shade": {
+         "amount": 0.75,
+         "offset": 0.14
+        },
+        "outline": true,
+        "texture": {
+         "style": "contour",
+         "amount": 0.25
+        },
+        "lag": 0.28
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          426.43186560249285,
+          667.8078952307796
+         ],
+         [
+          349.9829584243841,
+          588.7880756239048
+         ],
+         [
+          265.53405124627534,
+          517.7682560170299
+         ]
+        ],
+        "smooth": true,
+        "stroke": "$leafLo",
+        "weight": [
+         1.35,
+         3.0
+        ],
+        "fill": "none",
+        "group": "p_plant",
+        "lag": 0.28
+       }
+      ]
+     }
+    },
+    {
+     "text": "this much.",
+     "font": "Fraunces",
+     "axes": {
+      "wght": 760,
+      "SOFT": 100,
+      "opsz": 144
+     },
+     "size": 118,
+     "x": 540,
+     "y": 1210,
+     "anchor": "center",
+     "color": "#57B6E8"
+    }
+   ]
+  },
+  {
+   "duration": 1,
+   "background": "#1E1614",
+   "layers": [
+    {
+     "component": "illo",
+     "props": {
+      "view": [
+       1080,
+       1920
+      ],
+      "palette": {
+       "wall": "#1B2033",
+       "wallLo": "#0D0F18",
+       "sun": "#F2B566",
+       "sunDeep": "#D98E45",
+       "shelf": "#5C3B27",
+       "shelfLo": "#2C1A12",
+       "shelfHi": "#7A5034",
+       "glaze": "#2F5D57",
+       "glazeHi": "#4C8A7E",
+       "clay": "#CDB89B",
+       "clayLo": "#9E8466",
+       "dry": "#BE9A6C",
+       "dryHi": "#D6B788",
+       "dryLo": "#8E6E4A",
+       "wet": "#3E2719",
+       "wetLo": "#24160F",
+       "wetHi": "#5A3A24",
+       "root": "#EBDDBF",
+       "rootLo": "#B9A27C",
+       "leaf": "#2F7D52",
+       "leafHi": "#62B06C",
+       "leafLo": "#1C4E3E",
+       "stem": "#3E7A45",
+       "water": "#57B6E8",
+       "waterHi": "#A9DDF5",
+       "waterLo": "#2C7FB8",
+       "sensor": "#ECE7DD",
+       "sensorLo": "#A9A296",
+       "ink": "#140E0C"
+      },
+      "light": {
+       "angle": 330,
+       "rim": 200,
+       "color": "#FFC77A",
+       "shadow": "#120F2E",
+       "strength": 1.1
+      },
+      "hand": {
+       "weight": [
+        0.6,
+        3.6
+       ],
+       "wobble": 1.2,
+       "rough": 0.6,
+       "boil": 8,
+       "gaps": 0.2
+      },
+      "corners": "soft",
+      "misregister": [
+       1.5,
+       1
+      ],
+      "grain": 0.05,
+      "groups": [
+       {
+        "name": "p_sens",
+        "animate": {
+         "keys": [
+          {
+           "t": 0,
+           "y": -260.0
+          },
+          {
+           "t": -1,
+           "y": -260.0
+          },
+          {
+           "t": -0.65,
+           "y": 0,
+           "ease": "outBack"
+          }
+         ]
+        }
+       },
+       {
+        "name": "p_plant",
+        "pivot": [
+         540,
+         830.0
+        ],
+        "sway": {
+         "rotate": 1.2,
+         "period": 3.2,
+         "phase": 0.7
+        }
+       }
+      ],
+      "shapes": [
+       {
+        "shape": "rect",
+        "x": 0,
+        "y": 0,
+        "w": 1080,
+        "h": 1920,
+        "fill": {
+         "stops": [
+          [
+           0,
+           "$wall"
+          ],
+          [
+           1,
+           "$wallLo"
+          ]
+         ],
+         "angle": 80,
+         "steps": 4,
+         "dither": 0.18
+        },
+        "wobble": 0,
+        "rough": 0,
+        "grain": 0.07,
+        "corners": "sharp",
+        "shade": 0
+       },
+       {
+        "shape": "circle",
+        "cx": 1000,
+        "cy": 380,
+        "r": 520,
+        "fill": {
+         "stops": [
+          [
+           0,
+           "#FFB861"
+          ],
+          [
+           1,
+           "#1B2033"
+          ]
+         ],
+         "gradient": "radial",
+         "steps": 5,
+         "dither": 0.2
+        },
+        "opacity": 0.55,
+        "shade": 0
+       },
+       {
+        "shape": "rect",
+        "x": -20,
+        "y": 1600,
+        "w": 1120,
+        "h": 360,
+        "fill": {
+         "stops": [
+          [
+           0,
+           "$shelfHi"
+          ],
+          [
+           0.08,
+           "$shelf"
+          ],
+          [
+           1,
+           "$shelfLo"
+          ]
+         ],
+         "angle": 90,
+         "steps": 5,
+         "dither": 0.15
+        },
+        "grain": 0.08,
+        "texture": {
+         "style": "contour",
+         "amount": 0.25
+        },
+        "corners": "sharp",
+        "shade": 0
+       },
+       {
+        "shape": "rect",
+        "x": -20,
+        "y": 1590,
+        "w": 1120,
+        "h": 18,
+        "fill": "$shelfHi",
+        "shade": 0,
+        "corners": "sharp"
+       },
+       {
+        "shape": "polygon",
+        "points": [
+         [
+          144.0,
+          834.0
+         ],
+         [
+          936.0,
+          834.0
+         ],
+         [
+          852.0,
+          1620.0
+         ],
+         [
+          228.0,
+          1620.0
+         ]
+        ],
+        "fill": "$glaze",
+        "name": "p_body",
+        "shade": {
+         "amount": 0.7,
+         "offset": 0.1
+        },
+        "shadow": {
+         "dx": 70.0,
+         "dy": 18.0,
+         "flatten": 0.15,
+         "opacity": 0.5
+        },
+        "texture": {
+         "style": "halftone",
+         "amount": 0.35,
+         "scale": 0.9
+        },
+        "grain": 0.05
+       },
+       {
+        "shape": "polygon",
+        "points": [
+         [
+          150.0,
+          860
+         ],
+         [
+          930.0,
+          860
+         ],
+         [
+          848.0,
+          1616.0
+         ],
+         [
+          232.0,
+          1616.0
+         ]
+        ],
+        "fill": "$clay",
+        "shade": {
+         "amount": 0.35,
+         "offset": 0.05
+        },
+        "grain": 0.08,
+        "texture": {
+         "style": "stipple",
+         "amount": 0.35
+        }
+       },
+       {
+        "shape": "rect",
+        "x": 134.0,
+        "y": 826.0,
+        "w": 812.0,
+        "h": 58.0,
+        "radius": 10.0,
+        "fill": "$glazeHi",
+        "shade": {
+         "amount": 0.6,
+         "offset": 0.2
+        },
+        "grain": 0.05
+       },
+       {
+        "shape": "rect",
+        "x": 146.0,
+        "y": 852.0,
+        "w": 788.0,
+        "h": 40.0,
+        "fill": "$clay",
+        "shade": 0.2,
+        "grain": 0.06
+       },
+       {
+        "shape": "polygon",
+        "name": "p_soil",
+        "points": [
+         [
+          184.0,
+          900.0
+         ],
+         [
+          896.0,
+          900.0
+         ],
+         [
+          821.4,
+          1586.0
+         ],
+         [
+          258.6,
+          1586.0
+         ]
+        ],
+        "fill": {
+         "stops": [
+          [
+           0,
+           "$dryHi"
+          ],
+          [
+           0.4,
+           "$dry"
+          ],
+          [
+           1,
+           "$dryLo"
+          ]
+         ],
+         "angle": 90,
+         "steps": 4,
+         "dither": 0.2
+        },
+        "texture": {
+         "style": "stipple",
+         "amount": 0.9,
+         "scale": 1.1
+        },
+        "grain": 0.12,
+        "shade": 0
+       },
+       {
+        "shape": "blob",
+        "cx": 279.6673418080297,
+        "cy": 1475.9165314308248,
+        "rx": 14.136163042026382,
+        "ry": 10.873971570789525,
+        "fill": "$dryHi",
+        "clipTo": "p_soil",
+        "shade": 0.5,
+        "lumpy": 0.4,
+        "seed": 121,
+        "opacity": 0.9
+       },
+       {
+        "shape": "blob",
+        "cx": 536.749782009462,
+        "cy": 1214.8661385014123,
+        "rx": 12.823637780856325,
+        "ry": 9.864336754504865,
+        "fill": "$dryLo",
+        "clipTo": "p_soil",
+        "shade": 0.5,
+        "lumpy": 0.4,
+        "seed": 97,
+        "opacity": 0.9
+       },
+       {
+        "shape": "blob",
+        "cx": 531.3539394451931,
+        "cy": 1506.0159799178086,
+        "rx": 9.76076304214727,
+        "ry": 7.508279263190206,
+        "fill": "$clayLo",
+        "clipTo": "p_soil",
+        "shade": 0.5,
+        "lumpy": 0.4,
+        "seed": 781,
+        "opacity": 0.9
+       },
+       {
+        "shape": "blob",
+        "cx": 730.2162319533489,
+        "cy": 1376.466360600099,
+        "rx": 8.316067557349937,
+        "ry": 6.396975044115337,
+        "fill": "$dryLo",
+        "clipTo": "p_soil",
+        "shade": 0.5,
+        "lumpy": 0.4,
+        "seed": 606,
+        "opacity": 0.9
+       },
+       {
+        "shape": "blob",
+        "cx": 857.0327352343927,
+        "cy": 1511.3364121931331,
+        "rx": 5.557902801492576,
+        "ry": 4.2753098473019815,
+        "fill": "$dryLo",
+        "clipTo": "p_soil",
+        "shade": 0.5,
+        "lumpy": 0.4,
+        "seed": 666,
+        "opacity": 0.9
+       },
+       {
+        "shape": "blob",
+        "cx": 569.4856806289696,
+        "cy": 1536.081850782703,
+        "rx": 9.660089580952086,
+        "ry": 7.430838139193912,
+        "fill": "$dryLo",
+        "clipTo": "p_soil",
+        "shade": 0.5,
+        "lumpy": 0.4,
+        "seed": 993,
+        "opacity": 0.9
+       },
+       {
+        "shape": "blob",
+        "cx": 484.5470018148947,
+        "cy": 939.0507566491134,
+        "rx": 7.79379249539451,
+        "ry": 5.995224996457315,
+        "fill": "$dryHi",
+        "clipTo": "p_soil",
+        "shade": 0.5,
+        "lumpy": 0.4,
+        "seed": 962,
+        "opacity": 0.9
+       },
+       {
+        "shape": "blob",
+        "cx": 537.0183158638777,
+        "cy": 1072.9033993689677,
+        "rx": 7.901138536029516,
+        "ry": 6.077798873868859,
+        "fill": "$dryLo",
+        "clipTo": "p_soil",
+        "shade": 0.5,
+        "lumpy": 0.4,
+        "seed": 780,
+        "opacity": 0.9
+       },
+       {
+        "shape": "blob",
+        "cx": 511.2376676052663,
+        "cy": 1110.0967391713584,
+        "rx": 5.451429551611134,
+        "ry": 4.19340734739318,
+        "fill": "$clayLo",
+        "clipTo": "p_soil",
+        "shade": 0.5,
+        "lumpy": 0.4,
+        "seed": 945,
+        "opacity": 0.9
+       },
+       {
+        "shape": "blob",
+        "cx": 641.3135864079013,
+        "cy": 1041.9545104269348,
+        "rx": 16.812757922459962,
+        "ry": 12.932890709584585,
+        "fill": "$dryHi",
+        "clipTo": "p_soil",
+        "shade": 0.5,
+        "lumpy": 0.4,
+        "seed": 124,
+        "opacity": 0.9
+       },
+       {
+        "shape": "blob",
+        "cx": 713.1204222208185,
+        "cy": 1507.4974588848186,
+        "rx": 16.587051407403823,
+        "ry": 12.759270313387557,
+        "fill": "$clayLo",
+        "clipTo": "p_soil",
+        "shade": 0.5,
+        "lumpy": 0.4,
+        "seed": 959,
+        "opacity": 0.9
+       },
+       {
+        "shape": "blob",
+        "cx": 872.6537148098661,
+        "cy": 1253.0625163354234,
+        "rx": 15.849165189583415,
+        "ry": 12.19166553044878,
+        "fill": "$dryLo",
+        "clipTo": "p_soil",
+        "shade": 0.5,
+        "lumpy": 0.4,
+        "seed": 311,
+        "opacity": 0.9
+       },
+       {
+        "shape": "blob",
+        "cx": 386.32146908609104,
+        "cy": 1558.5841216065453,
+        "rx": 11.042536076162081,
+        "ry": 8.494258520124678,
+        "fill": "$clayLo",
+        "clipTo": "p_soil",
+        "shade": 0.5,
+        "lumpy": 0.4,
+        "seed": 403,
+        "opacity": 0.9
+       },
+       {
+        "shape": "blob",
+        "cx": 603.3696076835768,
+        "cy": 942.64894457928,
+        "rx": 8.040057690453892,
+        "ry": 6.184659761887609,
+        "fill": "$dryHi",
+        "clipTo": "p_soil",
+        "shade": 0.5,
+        "lumpy": 0.4,
+        "seed": 425,
+        "opacity": 0.9
+       },
+       {
+        "shape": "blob",
+        "cx": 657.2973873852288,
+        "cy": 1160.8332334161698,
+        "rx": 15.52796468157751,
+        "ry": 11.944588216598085,
+        "fill": "$clayLo",
+        "clipTo": "p_soil",
+        "shade": 0.5,
+        "lumpy": 0.4,
+        "seed": 756,
+        "opacity": 0.9
+       },
+       {
+        "shape": "blob",
+        "cx": 450.7885505971679,
+        "cy": 1207.9588293092334,
+        "rx": 11.148589912524786,
+        "ry": 8.575838394249836,
+        "fill": "$dryLo",
+        "clipTo": "p_soil",
+        "shade": 0.5,
+        "lumpy": 0.4,
+        "seed": 534,
+        "opacity": 0.9
+       },
+       {
+        "shape": "blob",
+        "cx": 782.0454968213858,
+        "cy": 1163.06286931961,
+        "rx": 13.773359964385833,
+        "ry": 10.594892280296794,
+        "fill": "$dryHi",
+        "clipTo": "p_soil",
+        "shade": 0.5,
+        "lumpy": 0.4,
+        "seed": 45,
+        "opacity": 0.9
+       },
+       {
+        "shape": "blob",
+        "cx": 403.67295197254447,
+        "cy": 1476.4858328474397,
+        "rx": 12.39328538954444,
+        "ry": 9.533296453495723,
+        "fill": "$clayLo",
+        "clipTo": "p_soil",
+        "shade": 0.5,
+        "lumpy": 0.4,
+        "seed": 404,
+        "opacity": 0.9
+       },
+       {
+        "shape": "blob",
+        "cx": 644.7751897073435,
+        "cy": 1030.5978588571288,
+        "rx": 7.855166948514406,
+        "ry": 6.042436114241851,
+        "fill": "$dryLo",
+        "clipTo": "p_soil",
+        "shade": 0.5,
+        "lumpy": 0.4,
+        "seed": 790,
+        "opacity": 0.9
+       },
+       {
+        "shape": "blob",
+        "cx": 326.055653633234,
+        "cy": 1523.5767013158656,
+        "rx": 11.615560065332508,
+        "ry": 8.935046204101928,
+        "fill": "$dryHi",
+        "clipTo": "p_soil",
+        "shade": 0.5,
+        "lumpy": 0.4,
+        "seed": 527,
+        "opacity": 0.9
+       },
+       {
+        "shape": "blob",
+        "cx": 428.80403457698804,
+        "cy": 1475.9344091045364,
+        "rx": 9.333307701884516,
+        "ry": 7.1794674629880895,
+        "fill": "$dryHi",
+        "clipTo": "p_soil",
+        "shade": 0.5,
+        "lumpy": 0.4,
+        "seed": 676,
+        "opacity": 0.9
+       },
+       {
+        "shape": "blob",
+        "cx": 574.1733723399692,
+        "cy": 1547.8682806379088,
+        "rx": 5.266796814569598,
+        "ry": 4.051382165053536,
+        "fill": "$clayLo",
+        "clipTo": "p_soil",
+        "shade": 0.5,
+        "lumpy": 0.4,
+        "seed": 525,
+        "opacity": 0.9
+       },
+       {
+        "shape": "blob",
+        "cx": 760.1076094212054,
+        "cy": 1260.2529539910893,
+        "rx": 11.767887017907034,
+        "ry": 9.05222078300541,
+        "fill": "$dryHi",
+        "clipTo": "p_soil",
+        "shade": 0.5,
+        "lumpy": 0.4,
+        "seed": 973,
+        "opacity": 0.9
+       },
+       {
+        "shape": "blob",
+        "cx": 223.95978783476716,
+        "cy": 1490.7266617958758,
+        "rx": 11.86899220635365,
+        "ry": 9.129994004887422,
+        "fill": "$dryLo",
+        "clipTo": "p_soil",
+        "shade": 0.5,
+        "lumpy": 0.4,
+        "seed": 964,
+        "opacity": 0.9
+       },
+       {
+        "shape": "blob",
+        "cx": 543.3609728093506,
+        "cy": 1238.1108736213937,
+        "rx": 9.374442585175983,
+        "ry": 7.211109680904602,
+        "fill": "$dryHi",
+        "clipTo": "p_soil",
+        "shade": 0.5,
+        "lumpy": 0.4,
+        "seed": 2,
+        "opacity": 0.9
+       },
+       {
+        "shape": "blob",
+        "cx": 567.3969025653452,
+        "cy": 1329.0090810351635,
+        "rx": 12.36569383795789,
+        "ry": 9.51207218304453,
+        "fill": "$dryHi",
+        "clipTo": "p_soil",
+        "shade": 0.5,
+        "lumpy": 0.4,
+        "seed": 615,
+        "opacity": 0.9
+       },
+       {
+        "shape": "blob",
+        "cx": 203.91818866769574,
+        "cy": 1070.6209005177277,
+        "rx": 7.273371729581418,
+        "ry": 5.594901330447245,
+        "fill": "$clayLo",
+        "clipTo": "p_soil",
+        "shade": 0.5,
+        "lumpy": 0.4,
+        "seed": 186,
+        "opacity": 0.9
+       },
+       {
+        "shape": "blob",
+        "cx": 797.0383089275673,
+        "cy": 1443.7759450187914,
+        "rx": 14.526041482835307,
+        "ry": 11.173878063719467,
+        "fill": "$dryHi",
+        "clipTo": "p_soil",
+        "shade": 0.5,
+        "lumpy": 0.4,
+        "seed": 34,
+        "opacity": 0.9
+       },
+       {
+        "shape": "blob",
+        "cx": 783.3223205791563,
+        "cy": 1361.5624726877918,
+        "rx": 6.173839412305606,
+        "ry": 4.749107240235081,
+        "fill": "$dryLo",
+        "clipTo": "p_soil",
+        "shade": 0.5,
+        "lumpy": 0.4,
+        "seed": 464,
+        "opacity": 0.9
+       },
+       {
+        "shape": "blob",
+        "cx": 194.36670214646637,
+        "cy": 1415.664924565442,
+        "rx": 8.119842940145046,
+        "ry": 6.246033030880805,
+        "fill": "$dryLo",
+        "clipTo": "p_soil",
+        "shade": 0.5,
+        "lumpy": 0.4,
+        "seed": 817,
+        "opacity": 0.9
+       },
+       {
+        "shape": "blob",
+        "cx": 628.8590839165631,
+        "cy": 1145.9413988473007,
+        "rx": 6.013329928810914,
+        "ry": 4.625638406777626,
+        "fill": "$dryLo",
+        "clipTo": "p_soil",
+        "shade": 0.5,
+        "lumpy": 0.4,
+        "seed": 262,
+        "opacity": 0.9
+       },
+       {
+        "shape": "blob",
+        "cx": 559.4948441221851,
+        "cy": 1030.303084721913,
+        "rx": 8.393098910778557,
+        "ry": 6.456229931368121,
+        "fill": "$clayLo",
+        "clipTo": "p_soil",
+        "shade": 0.5,
+        "lumpy": 0.4,
+        "seed": 302,
+        "opacity": 0.9
+       },
+       {
+        "shape": "path",
+        "d": "M164 890 L916 890 L916 1344 L832 1372 L749 1303 L665 1305 L582 1348 L498 1340 L415 1292 L331 1328 L248 1348 L164 1332 Z",
+        "fill": {
+         "stops": [
+          [
+           0,
+           "$wetLo"
+          ],
+          [
+           0.85,
+           "$wet"
+          ],
+          [
+           1,
+           "$wetHi"
+          ]
+         ],
+         "angle": 90,
+         "steps": 3
+        },
+        "clipTo": "p_soil",
+        "origin": [
+         540,
+         890.0
+        ],
+        "animate": {
+         "keys": [
+          {
+           "t": 0,
+           "sy": 0.001
+          },
+          {
+           "t": 0,
+           "sy": 0.001
+          },
+          {
+           "t": 0.01,
+           "sy": 1,
+           "ease": "out"
+          }
+         ]
+        },
+        "grain": 0.1,
+        "texture": {
+         "style": "stipple",
+         "amount": 0.6
+        },
+        "shade": 0
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          510.0,
+          906.0
+         ],
+         [
+          410.0,
+          1050.92
+         ],
+         [
+          350.0,
+          1182.975
+         ],
+         [
+          330.0,
+          1277.3
+         ]
+        ],
+        "smooth": true,
+        "stroke": "$root",
+        "weight": [
+         3.15,
+         7.0
+        ],
+        "clipTo": "p_soil",
+        "taper": 1,
+        "fill": "none"
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          350.0,
+          1182.975
+         ],
+         [
+          300.0,
+          1222.975
+         ],
+         [
+          280.0,
+          1272.975
+         ]
+        ],
+        "smooth": true,
+        "stroke": "$root",
+        "weight": [
+         1.35,
+         3.0
+        ],
+        "clipTo": "p_soil",
+        "fill": "none",
+        "taper": 1
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          521.0,
+          906.0
+         ],
+         [
+          519.5,
+          1092.08
+         ],
+         [
+          420.0,
+          1260.15
+         ],
+         [
+          440.0,
+          1380.2
+         ]
+        ],
+        "smooth": true,
+        "stroke": "$root",
+        "weight": [
+         2.9250000000000003,
+         6.5
+        ],
+        "clipTo": "p_soil",
+        "taper": 1,
+        "fill": "none"
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          420.0,
+          1260.15
+         ],
+         [
+          470.0,
+          1300.15
+         ],
+         [
+          490.0,
+          1350.15
+         ]
+        ],
+        "smooth": true,
+        "stroke": "$root",
+        "weight": [
+         1.35,
+         3.0
+        ],
+        "clipTo": "p_soil",
+        "fill": "none",
+        "taper": 1
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          530.0,
+          906.0
+         ],
+         [
+          500.0,
+          1070.128
+         ],
+         [
+          550.0,
+          1218.99
+         ],
+         [
+          530.0,
+          1325.32
+         ]
+        ],
+        "smooth": true,
+        "stroke": "$root",
+        "weight": [
+         2.7,
+         6.0
+        ],
+        "clipTo": "p_soil",
+        "taper": 1,
+        "fill": "none"
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          550.0,
+          1218.99
+         ],
+         [
+          500.0,
+          1258.99
+         ],
+         [
+          480.0,
+          1308.99
+         ]
+        ],
+        "smooth": true,
+        "stroke": "$root",
+        "weight": [
+         1.35,
+         3.0
+        ],
+        "clipTo": "p_soil",
+        "fill": "none",
+        "taper": 1
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          538.0,
+          906.0
+         ],
+         [
+          596.0,
+          1081.104
+         ],
+         [
+          590.0,
+          1239.57
+         ],
+         [
+          610.0,
+          1352.76
+         ]
+        ],
+        "smooth": true,
+        "stroke": "$root",
+        "weight": [
+         2.475,
+         5.5
+        ],
+        "clipTo": "p_soil",
+        "taper": 1,
+        "fill": "none"
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          590.0,
+          1239.57
+         ],
+         [
+          640.0,
+          1279.57
+         ],
+         [
+          660.0,
+          1329.57
+         ]
+        ],
+        "smooth": true,
+        "stroke": "$root",
+        "weight": [
+         1.35,
+         3.0
+        ],
+        "clipTo": "p_soil",
+        "fill": "none",
+        "taper": 1
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          549.0,
+          906.0
+         ],
+         [
+          645.5,
+          1037.2
+         ],
+         [
+          700.0,
+          1157.25
+         ],
+         [
+          720.0,
+          1243.0
+         ]
+        ],
+        "smooth": true,
+        "stroke": "$root",
+        "weight": [
+         2.25,
+         5.0
+        ],
+        "clipTo": "p_soil",
+        "taper": 1,
+        "fill": "none"
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          700.0,
+          1157.25
+         ],
+         [
+          750.0,
+          1197.25
+         ],
+         [
+          770.0,
+          1247.25
+         ]
+        ],
+        "smooth": true,
+        "stroke": "$root",
+        "weight": [
+         1.35,
+         3.0
+        ],
+        "clipTo": "p_soil",
+        "fill": "none",
+        "taper": 1
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          527.0,
+          906.0
+         ],
+         [
+          546.5,
+          1023.48
+         ],
+         [
+          480.0,
+          1131.525
+         ],
+         [
+          500.0,
+          1208.7
+         ]
+        ],
+        "smooth": true,
+        "stroke": "$root",
+        "weight": [
+         2.025,
+         4.5
+        ],
+        "clipTo": "p_soil",
+        "taper": 1,
+        "fill": "none"
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          480.0,
+          1131.525
+         ],
+         [
+          530.0,
+          1171.525
+         ],
+         [
+          550.0,
+          1221.525
+         ]
+        ],
+        "smooth": true,
+        "stroke": "$root",
+        "weight": [
+         1.35,
+         3.0
+        ],
+        "clipTo": "p_soil",
+        "fill": "none",
+        "taper": 1
+       },
+       {
+        "shape": "rect",
+        "x": 182.0,
+        "y": 1322.32,
+        "w": 716.0,
+        "h": 6.0,
+        "fill": "$water",
+        "shade": 0,
+        "corners": "sharp",
+        "name": "p_line"
+       },
+       {
+        "shape": "rect",
+        "cx": 201.75652631578947,
+        "cy": 1325.32,
+        "w": 40.0,
+        "h": 10.0,
+        "fill": "$water",
+        "shade": 0
+       },
+       {
+        "shape": "rect",
+        "cx": 878.2434736842106,
+        "cy": 1325.32,
+        "w": 40.0,
+        "h": 10.0,
+        "fill": "$water",
+        "shade": 0
+       },
+       {
+        "shape": "rect",
+        "x": 811.0,
+        "y": 820.0,
+        "w": 18.0,
+        "h": 300.0,
+        "radius": 8.0,
+        "fill": "$sensorLo",
+        "group": "p_sens",
+        "shade": 0.4
+       },
+       {
+        "shape": "rect",
+        "x": 774.0,
+        "y": 740.0,
+        "w": 92.0,
+        "h": 110.0,
+        "radius": 34.0,
+        "fill": "$sensor",
+        "group": "p_sens",
+        "shade": {
+         "amount": 0.7,
+         "offset": 0.18
+        },
+        "shadow": {
+         "dx": 18.0,
+         "dy": 10.0,
+         "opacity": 0.45
+        }
+       },
+       {
+        "shape": "circle",
+        "cx": 820.0,
+        "cy": 786.0,
+        "r": 12.0,
+        "fill": "$water",
+        "group": "p_sens",
+        "shade": 0,
+        "animate": {
+         "keys": [
+          {
+           "t": 0,
+           "opacity": 0
+          },
+          {
+           "t": -0.6,
+           "opacity": 0
+          },
+          {
+           "t": -0.5,
+           "opacity": 1
+          }
+         ]
+        }
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          516.0,
+          830.0
+         ],
+         [
+          404.90003700962757,
+          752.0
+         ],
+         [
+          292.3167345176505,
+          687.0
+         ]
+        ],
+        "smooth": true,
+        "stroke": "$stem",
+        "weight": [
+         4.05,
+         9.0
+        ],
+        "fill": "none",
+        "group": "p_plant",
+        "taper": 0.4
+       },
+       {
+        "shape": "path",
+        "d": "M292 687 C272 516 105 513 17 597 C38 718 175 813 292 687 Z",
+        "fill": "$leaf",
+        "group": "p_plant",
+        "shade": {
+         "amount": 0.75,
+         "offset": 0.14
+        },
+        "outline": true,
+        "texture": {
+         "style": "contour",
+         "amount": 0.25
+        },
+        "lag": 0.0
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          292.3167345176505,
+          687.0
+         ],
+         [
+          158.41353965485325,
+          638.1925358156326
+         ],
+         [
+          16.510344792056003,
+          597.3850716312652
+         ]
+        ],
+        "smooth": true,
+        "stroke": "$leafLo",
+        "weight": [
+         1.35,
+         3.0
+        ],
+        "fill": "none",
+        "group": "p_plant",
+        "lag": 0.0
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          522.0,
+          830.0
+         ],
+         [
+          478.43637420137964,
+          660.8553282585365
+         ],
+         [
+          427.13335270252935,
+          519.9014351406502
+         ]
+        ],
+        "smooth": true,
+        "stroke": "$stem",
+        "weight": [
+         4.05,
+         9.0
+        ],
+        "fill": "none",
+        "group": "p_plant",
+        "taper": 0.4
+       },
+       {
+        "shape": "path",
+        "d": "M427 520 C514 389 401 291 289 299 C233 396 271 541 427 520 Z",
+        "fill": "$leafLo",
+        "group": "p_plant",
+        "shade": {
+         "amount": 0.75,
+         "offset": 0.14
+        },
+        "outline": true,
+        "texture": {
+         "style": "contour",
+         "amount": 0.25
+        },
+        "lag": 0.04
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          427.13335270252935,
+          519.9014351406502
+         ],
+         [
+          362.2438483522127,
+          405.65518264031476
+         ],
+         [
+          289.3543440018961,
+          299.40893013997936
+         ]
+        ],
+        "smooth": true,
+        "stroke": "$leafLo",
+        "weight": [
+         1.35,
+         3.0
+        ],
+        "fill": "none",
+        "group": "p_plant",
+        "lag": 0.04
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          528.0,
+          830.0
+         ],
+         [
+          636.0,
+          663.7231224733878
+         ],
+         [
+          716.0,
+          525.1590578678777
+         ]
+        ],
+        "smooth": true,
+        "stroke": "$stem",
+        "weight": [
+         4.05,
+         9.0
+        ],
+        "fill": "none",
+        "group": "p_plant",
+        "taper": 0.4
+       },
+       {
+        "shape": "path",
+        "d": "M716 525 C892 583 964 425 917 302 C790 269 641 356 716 525 Z",
+        "fill": "$leaf",
+        "group": "p_plant",
+        "shade": {
+         "amount": 0.75,
+         "offset": 0.14
+        },
+        "outline": true,
+        "texture": {
+         "style": "contour",
+         "amount": 0.25
+        },
+        "lag": 0.08
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          716.0,
+          525.1590578678777
+         ],
+         [
+          820.3695909538287,
+          409.6873340462685
+         ],
+         [
+          916.7391819076574,
+          302.2156102246594
+         ]
+        ],
+        "smooth": true,
+        "stroke": "$leafLo",
+        "weight": [
+         1.35,
+         3.0
+        ],
+        "fill": "none",
+        "group": "p_plant",
+        "lag": 0.08
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          534.0,
+          830.0
+         ],
+         [
+          730.3246352776964,
+          741.2501650344532
+         ],
+         [
+          888.9284980091102,
+          667.2919692298307
+         ]
+        ],
+        "smooth": true,
+        "stroke": "$stem",
+        "weight": [
+         4.05,
+         9.0
+        ],
+        "fill": "none",
+        "group": "p_plant",
+        "taper": 0.4
+       },
+       {
+        "shape": "path",
+        "d": "M889 667 C990 804 1124 724 1152 607 C1075 513 920 500 889 667 Z",
+        "fill": "$leafHi",
+        "group": "p_plant",
+        "shade": {
+         "amount": 0.75,
+         "offset": 0.14
+        },
+        "outline": true,
+        "texture": {
+         "style": "contour",
+         "amount": 0.25
+        },
+        "lag": 0.12
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          888.9284980091102,
+          667.2919692298307
+         ],
+         [
+          1024.468456755117,
+          632.9235768934088
+         ],
+         [
+          1152.0084155011236,
+          606.5551845569871
+         ]
+        ],
+        "smooth": true,
+        "stroke": "$leafLo",
+        "weight": [
+         1.35,
+         3.0
+        ],
+        "fill": "none",
+        "group": "p_plant",
+        "lag": 0.12
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          540.0,
+          830.0
+         ],
+         [
+          697.8683602920325,
+          887.4593840787123
+         ],
+         [
+          829.4253272020599,
+          935.3422041443059
+         ]
+        ],
+        "smooth": true,
+        "stroke": "$stem",
+        "weight": [
+         4.05,
+         9.0
+        ],
+        "fill": "none",
+        "group": "p_plant",
+        "taper": 0.4
+       },
+       {
+        "shape": "path",
+        "d": "M829 935 C806 1105 962 1146 1067 1084 C1077 962 971 840 829 935 Z",
+        "fill": "$leaf",
+        "group": "p_plant",
+        "shade": {
+         "amount": 0.75,
+         "offset": 0.14
+        },
+        "outline": true,
+        "texture": {
+         "style": "contour",
+         "amount": 0.25
+        },
+        "lag": 0.16
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          829.4253272020599,
+          935.3422041443059
+         ],
+         [
+          952.1520606639594,
+          1005.5309011369546
+         ],
+         [
+          1066.878794125859,
+          1083.7195981296034
+         ]
+        ],
+        "smooth": true,
+        "stroke": "$leafLo",
+        "weight": [
+         1.35,
+         3.0
+        ],
+        "fill": "none",
+        "group": "p_plant",
+        "lag": 0.16
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          546.0,
+          830.0
+         ],
+         [
+          633.0,
+          991.0807251039056
+         ],
+         [
+          710.5,
+          1125.3146626904936
+         ]
+        ],
+        "smooth": true,
+        "stroke": "$stem",
+        "weight": [
+         4.05,
+         9.0
+        ],
+        "fill": "none",
+        "group": "p_plant",
+        "taper": 0.4
+       },
+       {
+        "shape": "path",
+        "d": "M710 1125 C588 1233 676 1355 791 1373 C873 1291 873 1141 710 1125 Z",
+        "fill": "$leafLo",
+        "group": "p_plant",
+        "shade": {
+         "amount": 0.75,
+         "offset": 0.14
+        },
+        "outline": true,
+        "texture": {
+         "style": "contour",
+         "amount": 0.25
+        },
+        "lag": 0.2
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          710.5,
+          1125.3146626904936
+         ],
+         [
+          754.6722092687432,
+          1244.9520098088635
+         ],
+         [
+          790.8444185374864,
+          1372.5893569272334
+         ]
+        ],
+        "smooth": true,
+        "stroke": "$leafLo",
+        "weight": [
+         1.35,
+         3.0
+        ],
+        "fill": "none",
+        "group": "p_plant",
+        "lag": 0.2
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          552.0,
+          830.0
+         ],
+         [
+          561.8796703860332,
+          705.9142231204618
+         ],
+         [
+          580.1127290410609,
+          602.50940905418
+         ]
+        ],
+        "smooth": true,
+        "stroke": "$stem",
+        "weight": [
+         4.05,
+         9.0
+        ],
+        "fill": "none",
+        "group": "p_plant",
+        "taper": 0.4
+       },
+       {
+        "shape": "path",
+        "d": "M580 603 C723 596 735 458 670 380 C569 391 482 498 580 603 Z",
+        "fill": "$leaf",
+        "group": "p_plant",
+        "shade": {
+         "amount": 0.75,
+         "offset": 0.14
+        },
+        "outline": true,
+        "texture": {
+         "style": "contour",
+         "amount": 0.25
+        },
+        "lag": 0.24
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          580.1127290410609,
+          602.50940905418
+         ],
+         [
+          629.0655202509704,
+          487.2473465061655
+         ],
+         [
+          670.0183114608798,
+          379.985283958151
+         ]
+        ],
+        "smooth": true,
+        "stroke": "$leafLo",
+        "weight": [
+         1.35,
+         3.0
+        ],
+        "fill": "none",
+        "group": "p_plant",
+        "lag": 0.24
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          558.0,
+          830.0
+         ],
+         [
+          478.053744874087,
+          741.5315792167889
+         ],
+         [
+          426.43186560249285,
+          667.8078952307796
+         ]
+        ],
+        "smooth": true,
+        "stroke": "$stem",
+        "weight": [
+         4.05,
+         9.0
+        ],
+        "fill": "none",
+        "group": "p_plant",
+        "taper": 0.4
+       },
+       {
+        "shape": "path",
+        "d": "M426 668 C470 540 356 485 266 518 C239 610 302 721 426 668 Z",
+        "fill": "$leafHi",
+        "group": "p_plant",
+        "shade": {
+         "amount": 0.75,
+         "offset": 0.14
+        },
+        "outline": true,
+        "texture": {
+         "style": "contour",
+         "amount": 0.25
+        },
+        "lag": 0.28
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          426.43186560249285,
+          667.8078952307796
+         ],
+         [
+          349.9829584243841,
+          588.7880756239048
+         ],
+         [
+          265.53405124627534,
+          517.7682560170299
+         ]
+        ],
+        "smooth": true,
+        "stroke": "$leafLo",
+        "weight": [
+         1.35,
+         3.0
+        ],
+        "fill": "none",
+        "group": "p_plant",
+        "lag": 0.28
+       }
+      ]
+     }
+    },
+    {
+     "text": "this much.",
+     "font": "Fraunces",
+     "axes": {
+      "wght": 760,
+      "SOFT": 100,
+      "opsz": 144
+     },
+     "size": 118,
+     "x": 540,
+     "y": 1210,
+     "anchor": "center",
+     "color": "#57B6E8"
+    }
+   ]
+  }
+ ]
+}
