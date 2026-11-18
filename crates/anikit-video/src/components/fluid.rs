@@ -984,7 +984,7 @@ impl Component for Fluid {
         let frame = (t * fps).round().max(0.0) as u64;
         let s = self.sim(aspect);
         let key = fnv(&[b"fluid", &self.key().to_le_bytes(), &frame.to_le_bytes(), &fps.to_bits().to_le_bytes(), &(w as u32).to_le_bytes(), &(h as u32).to_le_bytes()]);
-        let image = ctx.assets.image(key, w as u32, h as u32, &mut || {
+        let image = ctx.assets.frame_image(key, w as u32, h as u32, &mut || {
             let fr = self.frame(s, frame, fps);
             self.render(s, &fr, w, h)
         });
