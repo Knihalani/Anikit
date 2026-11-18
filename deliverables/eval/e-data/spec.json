@@ -1,0 +1,84 @@
+{
+  "size": "16:9",
+  "fps": 30,
+  "intent": { "pace": "slow" },
+  "palette": { "ink": "#EEF3F6", "muted": "#8FA9BA", "warm": "#FF7A45", "deep": "#05101B" },
+  "music": {
+    "style": "orchestral",
+    "bpm": 72,
+    "key": "Dm",
+    "mood": "sombre sparse",
+    "hits": ["@10.5", "@21"]
+  },
+  "sound": "auto",
+  "post": { "grain": 0.04 },
+  "scenes": [
+    {
+      "duration": 21,
+      "background": "#05101B",
+      "camera": { "animate": [{ "from": { "zoom": 1.18 }, "to": { "zoom": 1.0 }, "duration": 4.5, "ease": "outCubic" }] },
+      "layers": [
+        { "script": [
+          "let D = [7.05,7.67,7.14,7.30,7.39,6.81,6.70,7.41,7.28,7.37,7.01,6.14,6.47,7.47,6.40,7.14,6.08,7.58,6.69,6.54,6.12,6.25,6.73,5.83,6.12,5.98,5.50,5.86,4.27,4.69,5.26,4.87,4.56,3.57,5.21,5.22,4.62,4.53,4.82,4.79,4.36,4.00,4.95,4.90,4.38,4.35,4.75,4.81];",
+          "let L = \"\"; for v in D { L += \", \" + v; }",
+          "let YR = \"(T<1.6?1979:(T<10.5?1979+33*(T-1.6)/8.9:(T<13.4?2012:(T<17.4?2012+14*(T-13.4)/4.0:2026))))\";",
+          "let K = \"(floor(\" + YR + \")-1979)\";",
+          "let EXT = \"mix(pick(\" + K + L + \"), pick(min(\" + K + \"+1,47)\" + L + \"), smoothstep(0.0,1.0,fract(\" + YR + \")))\";",
+          "let out = [];",
+          "out.push(#{ id: \"ice\", type: \"shader\", src: \"ice.glsl\", uniforms: #{ yr: \"=\" + YR, ghost: \"=clamp((T-5.2)/1.2,0,1)\" } });",
+          "let x0 = 1130.0; let pitch = 15.6; let base = 925.0; let k = 40.0;",
+          "out.push(#{ draw: [ #{ line: [x0 - 14.0, base - 7.05*k, x0 + 47.0*pitch + 14.0, base - 7.05*k], stroke: \"#FFDCB3\", width: 1.5, opacity: 0.55 } ], opacity: \"=clamp((T-5.2)/1.2,0,1)\" });",
+          "out.push(#{ text: \"1979 level\", font: \"IBM Plex Mono\", size: 20, color: \"#FFDCB3\", x: x0 + 47.0*pitch + 10.0, y: base - 7.05*k - 18.0, anchor: \"right\", align: \"right\", width: 300, opacity: \"=clamp((T-5.2)/1.2,0,1)\" });",
+          "for j in 0..48 {",
+          "  let y = 1979 + j; let hgt = D[j] * k;",
+          "  let grow = \"clamp((\" + YR + \"-\" + y + \")*3.0+1.0,0,1)\";",
+          "  let col = if y == 2012 { \"#FF7A45\" } else { \"#9DB8CA\" };",
+          "  out.push(#{ shape: \"rect\", width: 9, height: hgt, anchor: \"bottom\", scaleY: \"=\" + grow, x: x0 + j * pitch, y: base, fill: \"=floor(\" + YR + \")==\" + y + \" ? #FFFFFF : \" + col });",
+          "}",
+          "out.push(#{ text: \"1979\", font: \"IBM Plex Mono\", size: 20, color: \"#8FA9BA\", x: x0 - 4.0, y: base + 28.0, anchor: \"left\" });",
+          "out.push(#{ text: \"2026\", font: \"IBM Plex Mono\", size: 20, color: \"#8FA9BA\", x: x0 + 47.0*pitch + 4.0, y: base + 28.0, anchor: \"right\", opacity: \"=\" + YR + \">=2025.5?1:0.35\" });",
+          "out.push(#{ text: \"{value:0}\", value: \"=floor(\" + YR + \")\", font: \"IBM Plex Mono\", weight: 300, size: \"21vh\", color: \"#EEF3F6\", x: x0 - 10.0, y: 440, anchor: \"left\", align: \"left\", width: 760, letterSpacing: \"-0.04em\" });",
+          "for j in 0..48 { let y = 1979 + j; out.push(#{ text: if D[j] * 100.0 % 10.0 == 0.0 { \"\" + D[j] + \"0\" } else { \"\" + D[j] }, opacity: \"=floor(\" + YR + \")==\" + y + \"?1:0\", font: \"IBM Plex Mono\", size: \"6vh\", color: \"=floor(\" + YR + \")==2012 ? #FF7A45 : #EEF3F6\", x: x0 - 4.0, y: 575, anchor: \"left\", align: \"left\", width: 200 }); }",
+          "out.push(#{ text: \"million km² of ice, September\", font: \"Newsreader\", italic: true, size: \"3vh\", color: \"#8FA9BA\", x: x0 + 170.0, y: 581, anchor: \"left\", align: \"left\", width: 520 });",
+          "out"
+        ] },
+        { "text": "Every September, the Arctic Ocean’s floating ice shrinks to its smallest.", "font": "Newsreader", "size": "4.6vh", "weight": 400, "width": 700, "color": "#EEF3F6", "x": 1120, "y": 215, "anchor": "left", "start": 0.4, "end": 5.6, "enter": "mask by line up", "exit": "fade" },
+        { "text": "The dashed line is where its edge was in *1979*.", "font": "Newsreader", "size": "4.6vh", "width": 700, "color": "#EEF3F6", "x": 1120, "y": 215, "anchor": "left", "start": 5.8, "end": 10.3, "enter": "mask by line up", "exit": "fade" },
+        { "text": "2012: the smallest on record. Half of 1979.", "font": "Newsreader", "size": "4.6vh", "width": 700, "color": "#FF9A70", "x": 1120, "y": 215, "anchor": "left", "start": 10.5, "end": 13.3, "enter": "mask by line up", "exit": "fade" },
+        { "text": "Since 2007, every September has been smaller than every one before it.", "font": "Newsreader", "size": "4.6vh", "width": 720, "color": "#EEF3F6", "x": 1120, "y": 215, "anchor": "left", "start": 13.6, "end": 21, "enter": "mask by line up" },
+        { "text": "Sea ice extent from satellite, NSIDC Sea Ice Index v4", "font": "IBM Plex Mono", "size": 18, "color": "#6F8899", "x": 60, "y": 1040, "anchor": "left", "start": 1.0, "enter": "fade" }
+      ]
+    },
+    {
+      "duration": 9,
+      "background": "#05101B",
+      "layers": [
+        { "type": "shader", "src": "ice.glsl", "uniforms": { "yr": 2026, "fixedExt": 4.81, "ghost": 1, "dim": 0.82 } },
+        { "script": [
+          "let D = [7.05,7.67,7.14,7.30,7.39,6.81,6.70,7.41,7.28,7.37,7.01,6.14,6.47,7.47,6.40,7.14,6.08,7.58,6.69,6.54,6.12,6.25,6.73,5.83,6.12,5.98,5.50,5.86,4.27,4.69,5.26,4.87,4.56,3.57,5.21,5.22,4.62,4.53,4.82,4.79,4.36,4.00,4.95,4.90,4.38,4.35,4.75,4.81];",
+          "let x0 = 150.0; let pitch = 29.0; let base = 900.0; let k = 64.0; let bw = 19.0;",
+          "let out = [];",
+          "for j in 0..48 {",
+          "  let y = 1979 + j; let hgt = D[j] * k;",
+          "  let col = if y == 2012 { \"#FF7A45\" } else if j < 10 || j >= 38 { \"#EEF3F6\" } else { \"#7F9CB0\" };",
+          "  out.push(#{ shape: \"rect\", width: bw, height: hgt, x: x0 + j * pitch, y: base, fill: col, anchor: \"bottom\", animate: [ #{ from: #{ scaleY: 0 }, to: #{ scaleY: 1 }, at: 0.15 + j * 0.022, duration: 0.7, ease: \"outExpo\" } ] });",
+          "}",
+          "let m1 = 7.21; let m2 = 4.61;",
+          "let xa = x0 - bw; let xb = x0 + 9.0 * pitch + bw; let xc = x0 + 38.0 * pitch - bw; let xd = x0 + 47.0 * pitch + bw;",
+          "out.push(#{ draw: [ #{ line: [xa, base - m1*k, xd + 40.0, base - m1*k], stroke: \"#FFDCB3\", width: 2 }, #{ line: [xc - 10.0, base - m2*k, xd + 40.0, base - m2*k], stroke: \"#FFDCB3\", width: 2 }, #{ line: [xd + 40.0, base - m1*k, xd + 40.0, base - m2*k], stroke: \"#FF7A45\", width: 3 } ], enter: \"draw\", start: 1.9 });",
+          "out.push(#{ text: \"−36%\", font: \"IBM Plex Mono\", weight: 500, size: \"9vh\", color: \"#FF7A45\", x: xd + 64.0, y: base - (m1 + m2) / 2.0 * k, anchor: \"left\", start: 2.6, enter: \"mask by line up\" });",
+          "out.push(#{ text: \"1979–88 avg  \" + m1, font: \"IBM Plex Mono\", size: 20, color: \"#FFDCB3\", x: xd + 64.0, y: base - m1*k - 4.0, anchor: \"left\", start: 2.2, enter: \"fade\" });",
+          "out.push(#{ text: \"2017–26 avg  \" + m2, font: \"IBM Plex Mono\", size: 20, color: \"#FFDCB3\", x: xd + 64.0, y: base - m2*k + 4.0, anchor: \"left\", start: 2.4, enter: \"fade\" });",
+          "for yy in [1979, 1990, 2000, 2012, 2026] {",
+          "  let j = yy - 1979;",
+          "  out.push(#{ text: \"\" + yy, font: \"IBM Plex Mono\", size: 20, color: if yy == 2012 { \"#FF9A70\" } else { \"#8FA9BA\" }, x: x0 + j * pitch, y: base + 30.0, start: 0.6, enter: \"fade\" });",
+          "}",
+          "out"
+        ] },
+        { "text": "The September ice is now a third smaller.", "font": "Newsreader", "size": "7vh", "weight": 400, "color": "#EEF3F6", "x": 150, "y": 120, "anchor": "left", "start": 0.5, "enter": "mask by line up" },
+        { "text": "Mean September extent, million km²: the first ten years (1979–88) against the last ten (2017–26).", "font": "Newsreader", "italic": true, "size": "3.1vh", "color": "#9DB8CA", "x": 150, "y": 200, "anchor": "left", "start": 1.2, "enter": "fade" },
+        { "text": "Source: NSIDC Sea Ice Index, Version 4 (G02135), monthly September extent, 1979–2026. noaadata.apps.nsidc.org/NOAA/G02135", "font": "IBM Plex Mono", "size": 19, "color": "#8FA9BA", "x": 150, "y": 1010, "anchor": "left", "start": 2.8, "enter": "fade" }
+      ]
+    }
+  ]
+}

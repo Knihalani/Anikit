@@ -1,0 +1,1 @@
+{"cmd": "anikit-video render deliverables/eval/e-data/spec.json -o deliverables/eval/e-data/final.mp4 --codec h264 --crf 25 --sheet deliverables/eval/e-data/contact.png", "exit": 0, "wall_s": 266.55, "peak_rss_mb": 1234.2}
