@@ -35,3 +35,13 @@ Sources:
 - `*-after.mp4`: the film with sound design. The video is re-encoded at CRF 22 to keep the repo small.
 - `*-spectrogram.png`: before (top) and after (bottom).
 - `cues.txt`: the cue lists.
+
+## Physics: collisions you can hear (`physics/`)
+
+`physics/drop.json`: six chrome balls and five glass cubes rain onto a cyc floor (scene3d physics, draft quality). The only audio key is `"sound"`. Nothing was placed by hand: 17 cues in 60 ms.
+
+- The **material** of every hit comes from the body's surface: chrome is heard as `metal` and glass as `glass`.
+- Each hit is **timed** to its contact.
+- Hits are **panned** through the 3D camera and **sized** by the change in velocity, so bounces fade as the pile settles.
+
+Rendered with the normal command, `anikit-video render drop.json -o drop.mp4`: 4 s in 5.1 s. Audio measures −14.1 LUFS (ffmpeg ebur128).
