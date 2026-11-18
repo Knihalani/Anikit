@@ -1,0 +1,743 @@
+{
+ "size": "16:9",
+ "fps": 30,
+ "intent": {
+  "pace": "calm"
+ },
+ "fonts": {},
+ "defs": {
+  "watch": {
+   "component": "scene3d",
+   "props": {
+    "env": {
+     "hdri": "polyhaven:hdri/studio_small_02",
+     "rotate": 40,
+     "background": false,
+     "exposure": "$envexp"
+    },
+    "rig": "$rig",
+    "exposure": 1.25,
+    "floor": {
+     "color": "#1B2126",
+     "roughness": 0.55,
+     "reflect": 0.18
+    },
+    "camera": "$camera",
+    "materials": {
+     "steel": {
+      "base": "#CDCFD1",
+      "metallic": 1,
+      "roughness": 0.13,
+      "imperfections": 0.15
+     },
+     "polished": {
+      "base": "#E4E5E6",
+      "metallic": 1,
+      "roughness": 0.05
+     },
+     "blued": {
+      "base": "#2C4FA0",
+      "metallic": 1,
+      "roughness": 0.12
+     },
+     "dial": {
+      "texture": "tex/dial",
+      "scale": 0.5,
+      "metallic": 0.4,
+      "normalStrength": 0.45
+     }
+    },
+    "objects": [
+     {
+      "type": "lathe",
+      "name": "case",
+      "segments": 180,
+      "material": "steel",
+      "points": [
+       [
+        0,
+        0.02
+       ],
+       [
+        0.8,
+        0.0
+       ],
+       [
+        0.93,
+        0.02
+       ],
+       [
+        0.985,
+        0.07
+       ],
+       [
+        1.0,
+        0.13
+       ],
+       [
+        0.99,
+        0.19
+       ],
+       [
+        0.965,
+        0.235
+       ],
+       [
+        0.93,
+        0.26
+       ],
+       [
+        0.895,
+        0.27
+       ],
+       [
+        0.875,
+        0.262
+       ],
+       [
+        0.865,
+        0.24
+       ],
+       [
+        0.862,
+        0.19
+       ],
+       [
+        0,
+        0.19
+       ]
+      ]
+     },
+     {
+      "type": "lathe",
+      "name": "dial",
+      "segments": 180,
+      "material": "dial",
+      "points": [
+       [
+        0,
+        0.185
+       ],
+       [
+        0.861,
+        0.185
+       ],
+       [
+        0.861,
+        0.2
+       ],
+       [
+        0,
+        0.2
+       ]
+      ]
+     },
+     {
+      "type": "box",
+      "count": 12,
+      "size": [
+       0.05,
+       0.03,
+       0.14
+      ],
+      "radius": 0.006,
+      "material": "polished",
+      "pos": "=[0.71*sin(i*0.5236), 0.21, -0.71*cos(i*0.5236)]",
+      "rot": [
+       0,
+       "=-i*30",
+       0
+      ]
+     },
+     {
+      "type": "extrude",
+      "name": "hour",
+      "d": "M0 100 L-7 72 L0 0 L7 72 Z",
+      "height": 0.46,
+      "depth": 0.012,
+      "bevel": 0.003,
+      "material": "polished",
+      "pos": [
+       0,
+       0.215,
+       0
+      ],
+      "rot": [
+       -90,
+       "$hour",
+       0
+      ]
+     },
+     {
+      "type": "extrude",
+      "name": "minute",
+      "d": "M0 100 L-5 76 L0 0 L5 76 Z",
+      "height": 0.7,
+      "depth": 0.012,
+      "bevel": 0.003,
+      "material": "polished",
+      "pos": [
+       0,
+       0.232,
+       0
+      ],
+      "rot": [
+       -90,
+       "$minute",
+       0
+      ]
+     },
+     {
+      "type": "cylinder",
+      "radius": 0.025,
+      "height": 0.05,
+      "material": "polished",
+      "pos": [
+       0,
+       0.2,
+       0
+      ]
+     },
+     {
+      "type": "extrude",
+      "name": "reserve",
+      "d": "M0 100 L-6 30 L0 0 L6 30 Z",
+      "height": 0.15,
+      "depth": 0.006,
+      "material": "blued",
+      "pos": [
+       0,
+       0.206,
+       -0.33
+      ],
+      "rot": [
+       -90,
+       "$reserve",
+       0
+      ]
+     },
+     {
+      "type": "cylinder",
+      "radius": 0.014,
+      "height": 0.02,
+      "material": "blued",
+      "pos": [
+       0,
+       0.2,
+       -0.33
+      ]
+     },
+     {
+      "type": "box",
+      "count": 4,
+      "size": [
+       0.17,
+       0.11,
+       0.42
+      ],
+      "radius": 0.03,
+      "material": "steel",
+      "pos": "=[(i%2*2-1)*0.6, 0.085, (floor(i/2)*2-1)*1.0]"
+     },
+     {
+      "type": "cylinder",
+      "name": "crown",
+      "radius": 0.11,
+      "height": 0.13,
+      "material": "steel",
+      "pos": [
+       1.06,
+       0.13,
+       0
+      ],
+      "rot": [
+       0,
+       0,
+       90
+      ]
+     },
+     {
+      "type": "box",
+      "count": 2,
+      "size": [
+       0.98,
+       0.05,
+       2.6
+      ],
+      "radius": 0.02,
+      "material": {
+       "texture": "ambientcg:Leather037",
+       "base": "#2a201c",
+       "roughness": 0.6,
+       "scale": 3
+      },
+      "pos": "=[0, 0.03, (i*2-1)*2.4]"
+     }
+    ]
+   }
+  }
+ },
+ "scenes": [
+  {
+   "duration": 3.0,
+   "background": "#0B0D0F",
+   "layers": [
+    {
+     "use": "watch",
+     "with": {
+      "envexp": -1.0,
+      "hour": -304.5,
+      "minute": -54,
+      "reserve": -100,
+      "rig": {
+       "preset": "product",
+       "animate": "sweep",
+       "duration": 3.2,
+       "key": 0.9
+      },
+      "camera": {
+       "shake": "breath",
+       "keys": [
+        {
+         "t": 0,
+         "pos": [
+          1.35,
+          0.75,
+          1.25
+         ],
+         "target": [
+          0.32,
+          0.2,
+          0.28
+         ],
+         "focal": 100,
+         "fstop": 2.0
+        },
+        {
+         "t": 3,
+         "pos": [
+          1.18,
+          0.68,
+          1.08
+         ],
+         "target": [
+          0.3,
+          0.2,
+          0.26
+         ],
+         "focal": 100,
+         "fstop": 2.0
+        }
+       ]
+      }
+     }
+    },
+    {
+     "text": "Guilloché",
+     "font": "Cormorant Garamond",
+     "weight": 600,
+     "italic": true,
+     "size": "8vh",
+     "color": "#24170F",
+     "x": "50%",
+     "y": "86%",
+     "anchor": "center",
+     "letterSpacing": "0.02em",
+     "enter": {
+      "preset": "blur",
+      "delay": 1.1,
+      "duration": 1.0
+     }
+    }
+   ]
+  },
+  {
+   "duration": 2.5,
+   "background": "#0B0D0F",
+   "layers": [
+    {
+     "use": "watch",
+     "with": {
+      "envexp": -1.5,
+      "hour": -304.5,
+      "minute": -54,
+      "reserve": "=120-240*(1-pow(1-clamp((t-0.2)/1.4,0,1),3))",
+      "rig": {
+       "preset": "rembrandt",
+       "angle": 50,
+       "height": 35,
+       "ratio": 5
+      },
+      "camera": {
+       "shake": "breath",
+       "keys": [
+        {
+         "t": 0,
+         "pos": [
+          0.62,
+          1.0,
+          0.12
+         ],
+         "target": [
+          -0.05,
+          0.2,
+          -0.36
+         ],
+         "focal": 85,
+         "fstop": 2.8
+        },
+        {
+         "t": 2.5,
+         "pos": [
+          0.55,
+          0.95,
+          0.06
+         ],
+         "target": [
+          -0.05,
+          0.2,
+          -0.36
+         ],
+         "focal": 85,
+         "fstop": 2.8
+        }
+       ]
+      }
+     }
+    },
+    {
+     "shape": "rect",
+     "x": 600,
+     "y": 540,
+     "width": 1200,
+     "height": 1080,
+     "fill": "linear-gradient(90deg, #07080AF0, #07080AC0 50%, #07080A00)",
+     "sfx": false
+    },
+    {
+     "text": "{value}",
+     "value": 72,
+     "font": "Cormorant Garamond",
+     "weight": 500,
+     "italic": true,
+     "size": "34vh",
+     "color": "#F4EBE2",
+     "x": "9%",
+     "y": "40%",
+     "anchor": "left",
+     "animate": [
+      {
+       "from": {
+        "value": 0
+       },
+       "to": {
+        "value": 72
+       },
+       "at": 0.2,
+       "duration": 1.4,
+       "ease": "outCubic"
+      }
+     ],
+     "sfx": {
+      "land": "metal"
+     }
+    },
+    {
+     "text": "hours of power reserve",
+     "font": "Cormorant Garamond",
+     "weight": 500,
+     "size": "5vh",
+     "color": "#E3B49C",
+     "x": "9.6%",
+     "y": "64%",
+     "anchor": "left",
+     "enter": {
+      "preset": "mask by line up",
+      "delay": 0.9,
+      "duration": 0.7
+     }
+    }
+   ]
+  },
+  {
+   "duration": 2.5,
+   "background": "#0B0D0F",
+   "layers": [
+    {
+     "use": "watch",
+     "with": {
+      "envexp": -1,
+      "reserve": -120,
+      "minute": "=-54+720*pow(1-clamp(t/2.1,0,1),3)",
+      "hour": "=-304.5+60*pow(1-clamp(t/2.1,0,1),3)",
+      "rig": {
+       "preset": "product",
+       "animate": "sweep",
+       "duration": 2.5,
+       "key": 0.7
+      },
+      "camera": {
+       "shake": "breath",
+       "keys": [
+        {
+         "t": 0,
+         "pos": [
+          3.0,
+          0.45,
+          1.3
+         ],
+         "target": [
+          0.15,
+          0.32,
+          0
+         ],
+         "focal": 70,
+         "fstop": 4
+        },
+        {
+         "t": 2.5,
+         "pos": [
+          2.5,
+          1.05,
+          2.1
+         ],
+         "target": [
+          0.05,
+          0.38,
+          0
+         ],
+         "focal": 70,
+         "fstop": 4
+        }
+       ]
+      }
+     }
+    },
+    {
+     "text": "38 mm, in steel",
+     "font": "Cormorant Garamond",
+     "weight": 500,
+     "italic": true,
+     "size": "8vh",
+     "color": "#F4EBE2",
+     "x": "8%",
+     "y": "15%",
+     "anchor": "left",
+     "enter": {
+      "preset": "wipe",
+      "delay": 0.35,
+      "duration": 0.6
+     }
+    }
+   ]
+  },
+  {
+   "duration": 4.0,
+   "background": "#0B0D0F",
+   "transition": {
+    "type": "fade",
+    "duration": 0.5
+   },
+   "layers": [
+    {
+     "use": "watch",
+     "with": {
+      "envexp": -1,
+      "reserve": -120,
+      "minute": "=-54-t*1.0",
+      "hour": -304.5,
+      "rig": {
+       "preset": "product",
+       "animate": "sweep",
+       "start": 0.3,
+       "duration": 3.5
+      },
+      "camera": {
+       "shake": "breath",
+       "keys": [
+        {
+         "t": 0,
+         "pos": [
+          -0.95,
+          4.7,
+          1.5
+         ],
+         "target": [
+          -0.95,
+          0.2,
+          0
+         ],
+         "focal": 42,
+         "fstop": 5.6
+        },
+        {
+         "t": 4,
+         "pos": [
+          -0.95,
+          4.45,
+          1.42
+         ],
+         "target": [
+          -0.95,
+          0.2,
+          0
+         ],
+         "focal": 42,
+         "fstop": 5.6
+        }
+       ]
+      }
+     }
+    },
+    {
+     "text": "Calibre 9",
+     "font": "Cormorant Garamond",
+     "weight": 500,
+     "size": "15vh",
+     "color": "#F4EBE2",
+     "x": "9%",
+     "y": "40%",
+     "anchor": "left",
+     "enter": {
+      "preset": "mask by line up",
+      "delay": 0.5,
+      "duration": 0.9
+     }
+    },
+    {
+     "text": "Atelier Vauclair",
+     "font": "Cormorant Garamond",
+     "weight": 500,
+     "italic": true,
+     "size": "5vh",
+     "color": "#E3B49C",
+     "x": "9.4%",
+     "y": "53%",
+     "anchor": "left",
+     "enter": {
+      "preset": "mask by line up",
+      "delay": 0.9
+     }
+    },
+    {
+     "text": "Limited to 150 pieces",
+     "font": "Cormorant Garamond",
+     "weight": 500,
+     "size": "5vh",
+     "color": "#CFC3B8",
+     "x": "9.4%",
+     "y": "62%",
+     "anchor": "left",
+     "enter": {
+      "preset": "fadeUp",
+      "delay": 1.5,
+      "duration": 0.8
+     }
+    }
+   ]
+  }
+ ],
+ "post": {
+  "grain": 0.035,
+  "vignette": 0.25,
+  "bloom": 0.08
+ },
+ "music": {
+  "bpm": 120,
+  "key": "D",
+  "fit": false,
+  "end": "ring",
+  "master": {
+   "reverb": "hall"
+  },
+  "tracks": [
+   {
+    "inst": "drums",
+    "gain": -9,
+    "clips": [
+     {
+      "at": "@bar1",
+      "drums": {
+       "rim": "xoxoxoxoxoxoxoxo"
+      },
+      "bars": 4
+     },
+     {
+      "at": "@bar5",
+      "drums": {
+       "rim": "................"
+      },
+      "bars": 1
+     },
+     {
+      "at": "@bar6",
+      "drums": {
+       "rim": "xoxoxoxoxoxoxoxo"
+      },
+      "bars": 1
+     }
+    ]
+   },
+   {
+    "inst": "celesta",
+    "gain": -5,
+    "reverb": 0.4,
+    "clips": [
+     {
+      "at": "@bar1",
+      "notes": "o5 F#5/4 r/8 A5/8 E5/2 | D5/4 r/8 F#5/8 B4/2 | G5/4 r/8 B5/8 A5/4 F#5/4 | E5/2. r/4"
+     }
+    ]
+   },
+   {
+    "inst": "strings",
+    "gain": -7,
+    "reverb": 0.5,
+    "clips": [
+     {
+      "at": "@bar1",
+      "notes": "[D3 A3 F#4]/1 | [B2 F#3 D4]/1 | [G2 D3 B3]/1 | [A2 E3 C#4 E4]/1 | [D3 A3 D4 F#4]/1 | [D3 A3 D4 F#4]/1"
+     }
+    ]
+   },
+   {
+    "inst": "harp",
+    "gain": -6,
+    "reverb": 0.4,
+    "clips": [
+     {
+      "at": "@bar3",
+      "notes": "o4 G3/16 B3/16 D4/16 G4/16 B4/16 D5/16 G5/16 B5/16 G5/16 D5/16 B4/16 G4/16 D4/16 B3/16 G3/16 D3/16 | A3/16 C#4/16 E4/16 A4/16 C#5/16 E5/16 A5/16 C#6/16 E6/16 A6/16 r/8 r/4"
+     }
+    ]
+   },
+   {
+    "inst": "tubular-bells",
+    "gain": -4,
+    "reverb": 0.6,
+    "clips": [
+     {
+      "at": "@bar5",
+      "notes": "D4/1"
+     }
+    ]
+   },
+   {
+    "inst": "piano",
+    "gain": -5,
+    "reverb": 0.5,
+    "clips": [
+     {
+      "at": "@bar5",
+      "notes": "[D2 A2 F#3 A3 D4]/1 | [D2 A2 E3 F#3 A3]/1"
+     }
+    ]
+   }
+  ]
+ },
+ "sound": {
+  "palette": "luxury",
+  "density": 0.3,
+  "ambience": "room"
+ }
+}
