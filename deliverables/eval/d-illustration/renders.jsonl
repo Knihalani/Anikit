@@ -1,0 +1,1 @@
+{"cmd": "anikit-video render deliverables/eval/d-illustration/spec.json -o deliverables/eval/d-illustration/final.mp4 --sheet deliverables/eval/d-illustration/contact.png", "exit": 0, "wall_s": 22.6, "peak_rss_mb": 1750.9}
