@@ -1,0 +1,527 @@
+{
+  "name": "f-3d",
+  "tags": [
+    "cg-3d",
+    "3d-cg",
+    "luxury",
+    "product-launch"
+  ],
+  "refs": [
+    "morph-studio-xreal-1s-2025",
+    "found-devialet-opera-de-paris-2022",
+    "osko-launch"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 4,
+      "composition": 4,
+      "typography": 3,
+      "colour": 3,
+      "light_texture": 4,
+      "motion": 4,
+      "craft": 3,
+      "originality": 3
+    },
+    "overall": 3.5,
+    "judged_professional": "0/3",
+    "pro_rate": 0.0,
+    "mean_rank": 4,
+    "gaps": [
+      "Real material and light: brushed and polished steel, a sapphire crystal, true guilloch\u00e9 engraving, and macro lighting that reveals texture, at the level of D's materials.",
+      "A typographic system with intent. Replace the default serif-plus-grey-caption end card with deliberate scale, placement and integration.",
+      "An idea and choreography beyond 'light sweeps across a dial': a narrative, a reveal, or a mechanism like D's exposed gears.",
+      "The object has no material truth. It needs modelled case detail, applied indices, real metal and sapphire shading, and motivated studio light like C's",
+      "The typography needs a real layout system: margins, scale contrast, a chosen face, and integration with the image instead of an overlay cropped at the edge",
+      "It needs a concept beyond 'light sweeps over a pattern' and a palette or accent that gives the brand a specific identity",
+      "Give the watch real material truth: brushed and polished case finishes, guilloch\u00e9 depth, lume, and a crystal with reflections. Compare A's material separation.",
+      "Design an end card with intent: correct margins, a chosen typeface pairing, and scale contrast integrated with the image rather than overlaid at the frame edge.",
+      "Find a concept beyond 'wavy dial plus light sweep'. For example, a story about the movement or the craft, as in A's gear reveal or B's material transformation."
+    ],
+    "tells": [
+      "The brand looks invented ('Vauclair', 'Calibre 9', 'Atelier Vauclair \u00b7 150 pieces'), and the end card is the textbook generic-luxury template: a default editorial serif headline with a tiny grey sans caption beneath it, jammed against the top-left edge with no layout idea.",
+      "The caption is barely legible and overlaps the image, which is slide-style placement.",
+      "The dial is a stock primitive: a flat disc, simple bar hands and a procedural sine-wave pattern. The 'guilloch\u00e9' is a displacement effect with no horological detail.",
+      "The palette is grey-on-black with flat studio light. One light sweep is the only event.",
+      "Frames 1\u20132 are nearly the same move, and frames 4\u20135 repeat the same tilted disc, so little actually happens.",
+      "The case has no material read: no metal grain, no bevel detail, no crystal.",
+      "A fictional generic luxury brand ('Vauclair', 'Calibre 9', 'Atelier Vauclair \u00b7 150 pieces') with a stock editorial serif and a tiny grey sans caption, the 'tasteful AI' label-plus-headline formula",
+      "The end card type is jammed against the top-left edge and cropped, overlapping the image with no layout, margin or hierarchy, so it is placed like a slide",
+      "The wavy-line moir\u00e9 dial reads as a procedural shader effect rather than designed guilloch\u00e9. The watch geometry is primitive: a flat disc, plain stick hands, a cylinder pin",
+      "The monochrome grey-on-black with a flat sweeping specular streak is the only lighting idea, with no material storytelling (no metal finish, sapphire or depth)",
+      "Repetitive coverage: three near-identical dial angles, then two near-identical case angles",
+      "The brand 'Vauclair' looks invented and generic. The end card is a default editorial serif ('Calibre 9') jammed against the top edge of the frame, and the small grey caption 'Atelier Vauclair \u00b7 150 pieces' collides with the watch rim. That is slide-style placement with no layout idea.",
+      "The dial is a single procedural wave-line displacement pattern repeated across every shot. It is an effect with little subject.",
+      "The light is flat and grey, with one specular streak doing all the work. The case material reads as untextured CG with no grain, brushing or engraving detail that real horology work would show.",
+      "It uses the classic 'tasteful AI' formula: dark ground, monochrome, serif headline plus a tiny caption, a mostly empty frame.",
+      "The camera moves are generic orbit and dolly passes over the same object, with almost no change in composition or choreography."
+    ]
+  },
+  "refs_summary": {
+    "morph-studio-xreal-1s-2025": {
+      "overall": 6.62,
+      "judged_professional": "3/3",
+      "mean_rank": 1.67
+    },
+    "found-devialet-opera-de-paris-2022": {
+      "overall": 7.5,
+      "judged_professional": "3/3",
+      "mean_rank": 1.33
+    },
+    "osko-launch": {
+      "overall": 6,
+      "judged_professional": "3/3",
+      "mean_rank": 3
+    }
+  },
+  "ref_mean": 6.71,
+  "delta": -3.21,
+  "trials": [
+    {
+      "key": {
+        "A": "osko-launch",
+        "B": "morph-studio-xreal-1s-2025",
+        "C": "candidate",
+        "D": "found-devialet-opera-de-paris-2022"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.7,
+            "scores": {
+              "idea": 7,
+              "composition": 6,
+              "typography": 5,
+              "colour": 6,
+              "light_texture": 6,
+              "motion": 6,
+              "craft": 6,
+              "originality": 6
+            },
+            "tells": [
+              "A real narrative gag runs through it: an 'I.O.U.' sticky note on the tub in the fridge, then revealed when the fridge door opens. That is a specific, witty idea, not a feature diagram.",
+              "The styles are deliberately varied: a moody 3D night scene with the van, a CG fridge shelf, flat character animation of the golfer's swing-and-despair beat, and an emoji-style icon set. This reads as an ad campaign covering several gift scenarios.",
+              "The open fridge has motivated practical light, with a floor reflection that carries the I.O.U. note.",
+              "The golfer sequence shows timing and acting across three poses (address, swing, facepalm). That is real character animation.",
+              "Against it: the icon grid frame and the vector-default golfer look generic, and the styles feel stitched together rather than unified."
+            ],
+            "gaps": [
+              "Unify the visual language. Right now the 3D, flat-vector and emoji frames read as separate jobs rather than one authored world, unlike D's single art direction.",
+              "Lift the flat segments (the golfer and the icon grid) to the material richness of the fridge shot, with texture, shadow and grading.",
+              "Give the type a point of view. The hand-lettered I.O.U. is the only type, so build a typographic system around it instead of leaving it as one prop."
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.75,
+            "scores": {
+              "idea": 6,
+              "composition": 7,
+              "typography": 5,
+              "colour": 6,
+              "light_texture": 8,
+              "motion": 7,
+              "craft": 8,
+              "originality": 5
+            },
+            "tells": [
+              "The product is a real brand (XREAL 1S), and its form is rebuilt as liquid or glass with complex fluid simulation, refraction and caustics. This is high-end CG work.",
+              "The frames progress from an explosive liquid burst, to the product reveal, to the glasses re-formed in water, to a macro surface, to a cellular 'evolution' world. The scale and camera variety imply real choreography.",
+              "Dense, layered frames with real depth of field and chromatic detail.",
+              "Against it: a monochrome electric-blue palette is the default 'tech launch' look, the tracked-out 'E V O L U T I O N' caps is a clich\u00e9, and the 'XREAL \u2026 1S' lockup is placed like a slide over the image."
+            ],
+            "gaps": [
+              "The palette is the stock tech blue. A more deliberate, ownable colour story like D's red/cream/gold would separate it from every other gadget launch.",
+              "The typography is generic, a tracked-caps label and a plain grotesk lockup. It needs a typographic idea that ties into the liquid imagery.",
+              "The concept 'product as water/evolution' is familiar. It needs a sharper, more product-specific metaphor."
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 3,
+              "composition": 4,
+              "typography": 2,
+              "colour": 3,
+              "light_texture": 4,
+              "motion": 3,
+              "craft": 3,
+              "originality": 2
+            },
+            "tells": [
+              "The brand looks invented ('Vauclair', 'Calibre 9', 'Atelier Vauclair \u00b7 150 pieces'), and the end card is the textbook generic-luxury template: a default editorial serif headline with a tiny grey sans caption beneath it, jammed against the top-left edge with no layout idea.",
+              "The caption is barely legible and overlaps the image, which is slide-style placement.",
+              "The dial is a stock primitive: a flat disc, simple bar hands and a procedural sine-wave pattern. The 'guilloch\u00e9' is a displacement effect with no horological detail.",
+              "The palette is grey-on-black with flat studio light. One light sweep is the only event.",
+              "Frames 1\u20132 are nearly the same move, and frames 4\u20135 repeat the same tilted disc, so little actually happens.",
+              "The case has no material read: no metal grain, no bevel detail, no crystal."
+            ],
+            "gaps": [
+              "Real material and light: brushed and polished steel, a sapphire crystal, true guilloch\u00e9 engraving, and macro lighting that reveals texture, at the level of D's materials.",
+              "A typographic system with intent. Replace the default serif-plus-grey-caption end card with deliberate scale, placement and integration.",
+              "An idea and choreography beyond 'light sweeps across a dial': a narrative, a reveal, or a mechanism like D's exposed gears."
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 8,
+              "motion": 7,
+              "craft": 9,
+              "originality": 7
+            },
+            "tells": [
+              "The product is a real brand (Devialet Phantom range), staged in a fully art-directed set: plinths, arches, gold-edged ribbons and fluted glass screens. Every frame is composed like a poster.",
+              "The palette is deliberate and unusual: lacquer red against cream stone and brushed gold, which ties the set to the product's own finish.",
+              "Real material work: stone texture on the plinths, satin white shells, gold inlays, soft bounce light and contact shadows.",
+              "Surprise beat: a top-down shot reveals clockwork gears under the speaker, a mechanical metaphor for precision engineering.",
+              "Choreography across frames: a wide hero, then sweeping ribbons, then an overhead mechanism, then a close-up of the portable, then the re-staged trio. The variety of camera and scale implies purposeful motion.",
+              "Almost no type appears. Only the product logo shows, and the absence suits this luxury still-life approach."
+            ],
+            "gaps": [
+              "Typography is barely present. A considered title or end-card system would complete the piece.",
+              "The pedestal-and-arch product still-life is a known luxury-CGI format. A more singular concept would push it toward award level.",
+              "The motion is implied mostly through camera variety. More kinetic interaction between set and product, such as the ribbons reacting to sound, would add weight and surprise."
+            ]
+          }
+        },
+        "ranking": [
+          "D",
+          "B",
+          "A",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 33.6,
+        "cost_usd": 0.1758716,
+        "tokens": 72204,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "osko-launch",
+        "B": "morph-studio-xreal-1s-2025",
+        "C": "found-devialet-opera-de-paris-2022",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.7,
+            "scores": {
+              "idea": 7,
+              "composition": 6,
+              "typography": 5,
+              "colour": 6,
+              "light_texture": 6,
+              "motion": 6,
+              "craft": 7,
+              "originality": 6
+            },
+            "tells": [
+              "The 'I.O.U.' sticky note on the fridge shelf is a witty narrative beat with a real point of view, not a feature diagram",
+              "The film moves between styles (CG night drive with rim light, cel-animated golfer pose sequence, emoji-like glossy icons, retro fridge with floor reflection), which reads like a planned campaign about social payments and gestures",
+              "The golfer frame shows deliberate key poses and acting (swing, follow-through, facepalm), which is evidence of character animation craft",
+              "The fridge interior light spilling onto a reflective floor is motivated, considered lighting"
+            ],
+            "gaps": [
+              "The style-hopping weakens the piece's identity. Unify the worlds with one shared palette or design system, as C does with its cream/gold/red language",
+              "The icon grid frame is a flat emoji layout on black. Give it staging, depth and light so it reads as a poster rather than a sticker sheet",
+              "No typography carries the idea. A designed title or end-line integrated into the scene (for example, handwritten type that grows out of the I.O.U. note) would tie the concept together"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 6,
+              "composition": 7,
+              "typography": 5,
+              "colour": 6,
+              "light_texture": 8,
+              "motion": 8,
+              "craft": 8,
+              "originality": 5
+            },
+            "tells": [
+              "Heavy, art-directed fluid and particle simulation: the product forms out of liquid, splashes and organic lattice, all with caustics and refraction",
+              "Shot variety with real choreography: macro abstraction, then the product reveal, then a liquid-cast glasses form, then the 'evolution' cell world",
+              "Real material work in transmission, subsurface and chromatic aberration in the first frame",
+              "Weakness: the typography is generic, a bold-sans brand name plus widely tracked thin caps for 'EVOLUTION', and the monochrome electric blue is the safest tech-launch palette there is"
+            ],
+            "gaps": [
+              "The palette is the default tech-launch blue. A less expected second colour or tonal shift would separate it from hundreds of similar launches",
+              "The type is stock tracked caps placed over the image. It needs a typographic idea that lives inside the liquid world (refracted, formed or carried by the fluid)",
+              "The idea is 'liquid becomes product', which is a familiar trope. It needs a concept specific to what this product does to be memorable"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 8,
+              "motion": 7,
+              "craft": 9,
+              "originality": 7
+            },
+            "tells": [
+              "A distinctive palette of ivory, brushed gold and lacquer red, held consistently across every frame as a full art-direction system",
+              "Sculptural set design: concentric arcs, ribbon loops, fluted glass, plinths with inlaid gold seams, and a watch-movement gear reveal under the speaker",
+              "Material fidelity throughout: soft stone or leather plinths, gold edge trims, frosted glass, and soft directional daylight with believable falloff",
+              "The camera varies (wide hero, macro through ribbons, top-down mechanism, frontal portrait, final group), which implies choreographed transitions through one built world",
+              "The type is limited to the product's own branding. Its absence suits a luxury object piece, though it adds nothing"
+            ],
+            "gaps": [
+              "The gear mechanism is the only real surprise. The piece needs a stronger conceptual turn so it is more than a beautiful product diorama",
+              "There is no typographic moment. A crafted title or end card in the same gold-inlay language would complete the system",
+              "Several frames share the 'product on plinth, centred' layout. More dramatic scale contrast or unexpected framing would make every frame a poster"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.75,
+            "scores": {
+              "idea": 4,
+              "composition": 4,
+              "typography": 3,
+              "colour": 3,
+              "light_texture": 4,
+              "motion": 4,
+              "craft": 3,
+              "originality": 3
+            },
+            "tells": [
+              "A fictional generic luxury brand ('Vauclair', 'Calibre 9', 'Atelier Vauclair \u00b7 150 pieces') with a stock editorial serif and a tiny grey sans caption, the 'tasteful AI' label-plus-headline formula",
+              "The end card type is jammed against the top-left edge and cropped, overlapping the image with no layout, margin or hierarchy, so it is placed like a slide",
+              "The wavy-line moir\u00e9 dial reads as a procedural shader effect rather than designed guilloch\u00e9. The watch geometry is primitive: a flat disc, plain stick hands, a cylinder pin",
+              "The monochrome grey-on-black with a flat sweeping specular streak is the only lighting idea, with no material storytelling (no metal finish, sapphire or depth)",
+              "Repetitive coverage: three near-identical dial angles, then two near-identical case angles"
+            ],
+            "gaps": [
+              "The object has no material truth. It needs modelled case detail, applied indices, real metal and sapphire shading, and motivated studio light like C's",
+              "The typography needs a real layout system: margins, scale contrast, a chosen face, and integration with the image instead of an overlay cropped at the edge",
+              "It needs a concept beyond 'light sweeps over a pattern' and a palette or accent that gives the brand a specific identity"
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "B",
+          "A",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 31.5,
+        "cost_usd": 0.1585084,
+        "tokens": 71983,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "found-devialet-opera-de-paris-2022",
+        "B": "morph-studio-xreal-1s-2025",
+        "C": "osko-launch",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.88,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 8,
+              "motion": 7,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "The set is fully art-directed: lacquer-red fluted panels against cream stone and brushed gold, so the palette clearly reflects the brand (Devialet's Op\u00e9ra/gold editions).",
+              "Materials are carefully separated: honed travertine plinths, satin white shells, gold inlay seams and translucent ribbed screens.",
+              "The camera grammar varies: a wide hero lineup, a close-up of the grille wrapped in ribbon arcs, a top-down reveal of a watch-movement gearbox under the plinth, and a frontal portrait of the Mania. That points to a planned camera path.",
+              "The gear mechanism hidden inside the pedestal is a real idea, tying horology and craft to the product.",
+              "There is almost no on-screen type, just the product's own logotype. The restraint suits a luxury product film but leaves the piece without a typographic point of view."
+            ],
+            "gaps": [
+              "Push the gear and mechanism reveal into the spine of the film rather than one moment. Right now it reads as a beautiful set tour more than a story.",
+              "The lighting is soft and even across every shot. Add one dramatic lighting moment (a hard key, a shadow sweep, the red bouncing onto the white shells) for contrast in weight.",
+              "Add a typographic or graphic signature (an end card, a title treatment) that could only belong to this piece, the way B integrates its wordmark into the liquid."
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 7,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 9,
+              "craft": 9,
+              "originality": 8
+            },
+            "tells": [
+              "High-end fluid and particle simulation: the glasses form from and dissolve into liquid, with caustics, droplet refraction and fibrous filaments. Doing this well takes expensive, skilled FX work.",
+              "There is a clear transformation arc across the frames: an explosive spiral of debris, the product resolving in a splash, a sculpted glass-water version of the frame, macro liquid surfaces, then a cellular 'EVOLUTION' world.",
+              "The monochrome cobalt palette is committed. It works because value and specular range carry the image, not hue.",
+              "The type is integrated rather than stuck on top. The 'XREAL' and '1S' lockup sits split around the product in the splash, and 'EVOLUTION' is set wide-tracked inside the organic network.",
+              "Depth of field, chromatic fringing and backlit translucency give real optical depth."
+            ],
+            "gaps": [
+              "The all-blue liquid-tech look is a well-worn category trope. One unexpected colour or material beat would make it more distinctive.",
+              "The typography is competent but plain (a bold grotesk wordmark, tracked caps). A more ownable typographic system would lift it.",
+              "The idea of 'evolution' is shown in the visuals but never sharpened into one memorable conceptual turn."
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.62,
+            "scores": {
+              "idea": 7,
+              "composition": 6,
+              "typography": 5,
+              "colour": 6,
+              "light_texture": 6,
+              "motion": 7,
+              "craft": 6,
+              "originality": 6
+            },
+            "tells": [
+              "It has a real narrative and comic idea: an 'I.O.U.' sticky note left in place of food on a fridge shelf, then shown in the fridge door. It is a gag about owing someone that a viewer would remember and share.",
+              "The golfer frames are a three-pose action sequence (swing, follow-through, facepalm), which shows character animation timing rather than static illustration.",
+              "The icon set (coffee, beer, money with wings, heart, gift) hints at a gifting or payment app. The styles shift across 3D, flat vector and emoji, which suggests a multi-vignette campaign.",
+              "The night VW bus shot has controlled rim light and a moonlit atmosphere.",
+              "Weaker points: the golfer is generic flat vector with a default gradient shirt, the emoji grid is near-template, and the whole film lacks one unifying style."
+            ],
+            "gaps": [
+              "Unify the vignettes under one visual language. The jumps between 3D, flat vector and emoji read as assembled rather than designed.",
+              "The flat golfer and the emoji grid are close to stock illustration. Bring them up to the material richness of the fridge shot.",
+              "There is no considered typography beyond the handwritten note. Build a type system that carries the joke and the brand."
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 4,
+              "composition": 4,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 4,
+              "motion": 4,
+              "craft": 3,
+              "originality": 4
+            },
+            "tells": [
+              "The brand 'Vauclair' looks invented and generic. The end card is a default editorial serif ('Calibre 9') jammed against the top edge of the frame, and the small grey caption 'Atelier Vauclair \u00b7 150 pieces' collides with the watch rim. That is slide-style placement with no layout idea.",
+              "The dial is a single procedural wave-line displacement pattern repeated across every shot. It is an effect with little subject.",
+              "The light is flat and grey, with one specular streak doing all the work. The case material reads as untextured CG with no grain, brushing or engraving detail that real horology work would show.",
+              "It uses the classic 'tasteful AI' formula: dark ground, monochrome, serif headline plus a tiny caption, a mostly empty frame.",
+              "The camera moves are generic orbit and dolly passes over the same object, with almost no change in composition or choreography."
+            ],
+            "gaps": [
+              "Give the watch real material truth: brushed and polished case finishes, guilloch\u00e9 depth, lume, and a crystal with reflections. Compare A's material separation.",
+              "Design an end card with intent: correct margins, a chosen typeface pairing, and scale contrast integrated with the image rather than overlaid at the frame edge.",
+              "Find a concept beyond 'wavy dial plus light sweep'. For example, a story about the movement or the craft, as in A's gear reveal or B's material transformation."
+            ]
+          }
+        },
+        "ranking": [
+          "B",
+          "A",
+          "C",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 33.6,
+        "cost_usd": 0.1625168,
+        "tokens": 72189,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "critic": {
+    "answer": {
+      "scores": {
+        "motion": 5,
+        "sound": 4,
+        "craft": 6
+      },
+      "checks": {
+        "idea": false,
+        "invariant": true,
+        "arc": true,
+        "type_meaning": false,
+        "freeze_frame": false,
+        "ending": true,
+        "restraint": true,
+        "material": true,
+        "sync": false
+      },
+      "defects": [
+        "Shots 1\u20133 are near-static: in the 1/6 s pairs, only a light band moves across the dial and the camera barely drifts, so 3\u20133.5 s shots read as dead air",
+        "The macro transition shot (frame 4) is mostly defocused black and blown highlights; it cannot be read as an image and only works as a wipe",
+        "The wave guilloche shimmers and aliases into moir\u00e9 at mid distance (frames 2\u20133), where the line spacing comes close to pixel pitch",
+        "Supers ('72-hour power reserve', 'Atelier Vauclair \u00b7 150 pieces') are set very small and light; the end-card subline sits on the bezel and loses contrast",
+        "'72 HEURES' dial text is soft and partly hidden behind the hand in the close-ups",
+        "Audio riser is flat broadband white noise with a brick-wall cut near 20 kHz and an abrupt stop around 9.2 s, which reads as generated rather than designed",
+        "The tick track is a metronomic grid at about 0.67 s with identical transients; it is never varied or used to drive the picture"
+      ],
+      "gaps": [
+        "Choreography: a slow push-in and a sweeping light band repeat across three shots with no change of scale, direction or speed. Top work would let the hand tick or the wave pattern itself animate and hand off between shots, and would cut on the ticks instead of holding 3 s or more",
+        "Sound design: thin layered pad, generic noise riser and stock ticks. It needs mechanical foley (escapement, crown, case), tonal shaping of the build and a designed hit on the reveal instead of a hard noise cutoff",
+        "Concept and finish: the 72-hour reserve is never shown as anything; it appears only as a caption. The wave dial could have carried that idea. Finish also needs moir\u00e9 control on the guilloche and a real typographic hierarchy for the supers and end card"
+      ]
+    },
+    "meta": {
+      "seconds": 23.3,
+      "cost_usd": 0.16487020000000002,
+      "tokens": 72247,
+      "models": [
+        "claude-opus-5-5"
+      ]
+    },
+    "pace": "final.mp4: 12.0s, 4 shots, median 3.00s, longest 3.50s\nper-second change: [14.8, 13.4, 8.6, 32.6, 14.7, 15.4, 80.1, 34.5, 55.4, 6.1, 2.0]\nPACE: FAIL \u2014 longest shot 3.5s > 2.5s; median shot 3.0s > 1.5s"
+  },
+  "full_scores": {
+    "idea": 4,
+    "composition": 4,
+    "typography": 3,
+    "colour": 3,
+    "light_texture": 4,
+    "motion": 4.5,
+    "craft": 4.5,
+    "originality": 3,
+    "sound": 4
+  },
+  "full_overall": 3.78,
+  "cost_usd": 0.662,
+  "judge_seconds": 122.0,
+  "verdict": "FAIL"
+}

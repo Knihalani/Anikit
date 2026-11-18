@@ -229,9 +229,9 @@
       {
        "t": 0,
        "pos": [
-        0.5,
-        0.62,
-        0.95
+        0.75,
+        0.7,
+        1.15
        ],
        "target": [
         0.05,
@@ -243,9 +243,9 @@
       {
        "t": 3.5,
        "pos": [
-        0.38,
-        0.6,
-        0.9
+        0.3,
+        0.55,
+        0.85
        ],
        "target": [
         0.04,
@@ -321,7 +321,7 @@
        "base": "#E2E4E8",
        "roughness": 0.3,
        "pattern": "guilloche",
-       "patternScale": 0.011,
+       "patternScale": 0.016,
        "patternReveal": "=clamp(t/3.5,0,1)*0.55"
       }
      },
@@ -371,8 +371,8 @@
        0.25
       ],
       "radius": 0.003,
-      "pos": "=[0.125*sin((60+t*3)*0.017453), 0.093, 0.125*cos((60+t*3)*0.017453)]",
-      "rot": "=[0, 60+t*3, 0]",
+      "pos": "=[0.125*sin((60+6*(floor(t)+easeOut(clamp((t-floor(t))*5,0,1))))*0.017453), 0.093, 0.125*cos((60+6*(floor(t)+easeOut(clamp((t-floor(t))*5,0,1))))*0.017453)]",
+      "rot": "=[0, (60+6*(floor(t)+easeOut(clamp((t-floor(t))*5,0,1)))), 0]",
       "material": {
        "extends": "black",
        "roughness": 0.15
@@ -466,7 +466,7 @@
       {
        "t": 0,
        "pos": [
-        0.0,
+        -0.35,
         1.35,
         1.25
        ],
@@ -481,7 +481,7 @@
       {
        "t": 1.0,
        "pos": [
-        0.0,
+        -0.2,
         1.32,
         1.2
        ],
@@ -496,7 +496,7 @@
       {
        "t": 2.0,
        "pos": [
-        0.0,
+        0.05,
         1.3,
         1.15
        ],
@@ -512,7 +512,7 @@
       {
        "t": 3,
        "pos": [
-        0.0,
+        0.2,
         1.28,
         1.12
        ],
@@ -590,7 +590,7 @@
        "base": "#E2E4E8",
        "roughness": 0.3,
        "pattern": "guilloche",
-       "patternScale": 0.011,
+       "patternScale": 0.016,
        "patternReveal": "=0.55+clamp(t/2.4,0,1)*0.45"
       }
      },
@@ -640,8 +640,8 @@
        0.25
       ],
       "radius": 0.003,
-      "pos": "=[0.125*sin((60+t*3)*0.017453), 0.093, 0.125*cos((60+t*3)*0.017453)]",
-      "rot": "=[0, 60+t*3, 0]",
+      "pos": "=[0.125*sin((60+6*(floor(t)+easeOut(clamp((t-floor(t))*5,0,1))))*0.017453), 0.093, 0.125*cos((60+6*(floor(t)+easeOut(clamp((t-floor(t))*5,0,1))))*0.017453)]",
+      "rot": "=[0, (60+6*(floor(t)+easeOut(clamp((t-floor(t))*5,0,1)))), 0]",
       "material": {
        "extends": "black",
        "roughness": 0.15
@@ -718,10 +718,10 @@
      "x": "7%",
      "y": "88%",
      "anchor": "bottomLeft",
-     "size": 34,
+     "size": 46,
      "font": "Inter",
      "weight": 400,
-     "color": "#E9E6DF",
+     "color": "#FFFFFF",
      "animate": [
       {
        "from": {
@@ -737,14 +737,14 @@
    ]
   },
   {
-   "duration": 2.5,
+   "duration": 2.0,
    "transition": "cut",
    "scene3d": {
     "env": "studio",
     "rig": {
      "preset": "product",
      "animate": "sweep",
-     "duration": 2.5
+     "duration": 2.0
     },
     "floor": {
      "color": "#0E0E10",
@@ -752,38 +752,38 @@
      "reflect": 0.7
     },
     "camera": {
-     "lens": "macro100",
+     "lens": "portrait85",
      "shake": "breath",
      "keys": [
       {
        "t": 0,
        "pos": [
-        -0.55,
-        0.16,
-        -0.98
+        -0.9,
+        0.35,
+        -1.5
        ],
        "target": [
         0,
         0.05,
-        -0.38
+        -0.3
        ],
        "focus": "crown",
-       "fstop": 2.8
+       "fstop": 5.6
       },
       {
-       "t": 2.5,
+       "t": 2.0,
        "pos": [
-        -0.4,
-        0.15,
-        -1.02
+        -0.65,
+        0.3,
+        -1.55
        ],
        "target": [
         0,
         0.05,
-        -0.38
+        -0.3
        ],
        "focus": "crown",
-       "fstop": 2.8,
+       "fstop": 5.6,
        "ease": "settle"
       }
      ]
@@ -852,7 +852,7 @@
        "base": "#E2E4E8",
        "roughness": 0.3,
        "pattern": "guilloche",
-       "patternScale": 0.011,
+       "patternScale": 0.016,
        "patternReveal": 1.0
       }
      },
@@ -902,8 +902,8 @@
        0.25
       ],
       "radius": 0.003,
-      "pos": "=[0.125*sin((60+t*3)*0.017453), 0.093, 0.125*cos((60+t*3)*0.017453)]",
-      "rot": "=[0, 60+t*3, 0]",
+      "pos": "=[0.125*sin((60+6*(floor(t)+easeOut(clamp((t-floor(t))*5,0,1))))*0.017453), 0.093, 0.125*cos((60+6*(floor(t)+easeOut(clamp((t-floor(t))*5,0,1))))*0.017453)]",
+      "rot": "=[0, (60+6*(floor(t)+easeOut(clamp((t-floor(t))*5,0,1)))), 0]",
       "material": {
        "extends": "black",
        "roughness": 0.15
@@ -980,10 +980,10 @@
      "x": "93%",
      "y": "88%",
      "anchor": "bottomRight",
-     "size": 34,
+     "size": 46,
      "font": "Inter",
      "weight": 400,
-     "color": "#E9E6DF",
+     "color": "#FFFFFF",
      "animate": [
       {
        "from": {
@@ -999,7 +999,7 @@
    ]
   },
   {
-   "duration": 3,
+   "duration": 3.5,
    "transition": "cut",
    "scene3d": {
     "env": "night",
@@ -1109,7 +1109,7 @@
        "base": "#E2E4E8",
        "roughness": 0.3,
        "pattern": "guilloche",
-       "patternScale": 0.011,
+       "patternScale": 0.016,
        "patternReveal": 1.0
       }
      },
@@ -1159,8 +1159,8 @@
        0.25
       ],
       "radius": 0.003,
-      "pos": "=[0.125*sin((60+t*3)*0.017453), 0.093, 0.125*cos((60+t*3)*0.017453)]",
-      "rot": "=[0, 60+t*3, 0]",
+      "pos": "=[0.125*sin((60+6*(floor(t)+easeOut(clamp((t-floor(t))*5,0,1))))*0.017453), 0.093, 0.125*cos((60+6*(floor(t)+easeOut(clamp((t-floor(t))*5,0,1))))*0.017453)]",
+      "rot": "=[0, (60+6*(floor(t)+easeOut(clamp((t-floor(t))*5,0,1)))), 0]",
       "material": {
        "extends": "black",
        "roughness": 0.15
@@ -1257,10 +1257,10 @@
      "x": "7.4%",
      "y": "33%",
      "anchor": "topLeft",
-     "size": 30,
+     "size": 40,
      "font": "Inter",
      "weight": 400,
-     "color": "#B9B5AC",
+     "color": "#E2DED6",
      "animate": [
       {
        "from": {
