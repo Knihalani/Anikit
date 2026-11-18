@@ -1,0 +1,1 @@
+{"cmd": "anikit-video render deliverables/eval/i-explainer/spec.json -o deliverables/eval/i-explainer/final.mp4 --sheet deliverables/eval/i-explainer/contact.png", "exit": 0, "wall_s": 3.12, "peak_rss_mb": 318.7}
