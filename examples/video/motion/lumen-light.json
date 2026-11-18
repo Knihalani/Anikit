@@ -1,0 +1,529 @@
+{
+ "size": "16:9",
+ "fps": 30,
+ "background": "#050505",
+ "intent": "fast",
+ "theme": {
+  "colors": {
+   "night": "#050505",
+   "warm": "#ffd9a0",
+   "ember": "#ff6b2c",
+   "paper": "#f3ede2",
+   "ash": "#6d665c"
+  }
+ },
+ "transition": "cut",
+ "scenes": [
+  {
+   "id": "slit",
+   "duration": 1.0,
+   "camera": {
+    "zoom": "=1 + 0.1*t"
+   },
+   "notes": "black; a door of light cracks open in the dark and widens: the whole piece is about light through openings",
+   "layers": [
+    {
+     "shader": "light-shafts",
+     "uniforms": {
+      "angle": 8,
+      "spread": 0.55,
+      "panes": 1,
+      "intensity": 1.6,
+      "haze": 1.4
+     },
+     "matte": "door",
+     "supersample": false
+    },
+    {
+     "id": "door",
+     "shape": "rect",
+     "x": 960,
+     "y": 540,
+     "width": 30,
+     "height": 1300,
+     "fill": "#fff",
+     "inertia": "heavy",
+     "animate": {
+      "from": {
+       "scaleX": 0.05
+      },
+      "to": {
+       "scaleX": 9
+      },
+      "at": 0.15,
+      "duration": 0.6,
+      "ease": "snap"
+     }
+    },
+    {
+     "text": "A FESTIVAL OF LIGHT",
+     "font": "JetBrains Mono",
+     "size": 22,
+     "letterSpacing": 10,
+     "color": "$warm",
+     "x": 120,
+     "y": 980,
+     "anchor": "left",
+     "start": 0.35,
+     "animator": {
+      "opacity": 0,
+      "duration": 0.45,
+      "smooth": 0.3,
+      "ease": "glide"
+     }
+    }
+   ]
+  },
+  {
+   "id": "window",
+   "duration": 1.1,
+   "transition": {
+    "type": "reveal",
+    "shape": "square",
+    "origin": [
+     960,
+     540
+    ],
+    "duration": 0.35
+   },
+   "notes": "the light is now inside one giant cropped letter; type as architecture, a window, pushing in",
+   "layers": [
+    {
+     "shader": "light-shafts",
+     "uniforms": {
+      "angle": 28,
+      "spread": 0.3,
+      "panes": 3,
+      "intensity": 1.4
+     },
+     "matte": "L",
+     "supersample": false
+    },
+    {
+     "id": "L",
+     "text": "L",
+     "size": 1500,
+     "weight": 900,
+     "x": 760,
+     "y": 600,
+     "inertia": "tight",
+     "animate": {
+      "from": {
+       "scale": 1.18,
+       "x": "+120"
+      },
+      "duration": 1.1,
+      "ease": "glide"
+     }
+    },
+    {
+     "text": "18\u201424.03",
+     "size": 150,
+     "weight": 300,
+     "letterSpacing": -4,
+     "color": "$paper",
+     "x": 1780,
+     "y": 760,
+     "anchor": "right",
+     "animator": {
+      "by": "char",
+      "y": 40,
+      "opacity": 0,
+      "delay": 0.2,
+      "duration": 0.5,
+      "smooth": 0.3,
+      "ease": "glide"
+     }
+    },
+    {
+     "text": "BRISTOL HARBOURSIDE",
+     "font": "JetBrains Mono",
+     "size": 24,
+     "letterSpacing": 10,
+     "color": "$ash",
+     "x": 1780,
+     "y": 860,
+     "anchor": "right",
+     "start": 0.4,
+     "animator": {
+      "opacity": 0,
+      "duration": 0.4,
+      "smooth": 0.3
+     }
+    }
+   ]
+  },
+  {
+   "id": "beams",
+   "duration": 1.2,
+   "background": "#050505",
+   "transition": {
+    "type": "whip",
+    "direction": "left"
+   },
+   "notes": "searchlights sweep up from the quay (a repeater of additive blurred beams); the name traces on as hollow outlines in the light",
+   "layers": [
+    {
+     "shape": "rect",
+     "x": 960,
+     "y": 1200,
+     "width": 70,
+     "height": 1700,
+     "fill": {
+      "type": "linear",
+      "angle": 0,
+      "stops": [
+       [
+        "0",
+        "#ffd9a000"
+       ],
+       [
+        1,
+        "#ffd9a0"
+       ]
+      ]
+     },
+     "anchor": [
+      0.5,
+      1
+     ],
+     "blend": "add",
+     "blur": 14,
+     "opacity": 0.55,
+     "rotation": "=-38 + 14*sin(t*1.7)",
+     "repeat": {
+      "count": 7,
+      "offset": {
+       "rotate": 12.5
+      },
+      "stagger": 0.05
+     },
+     "animate": {
+      "from": {
+       "scaleY": 0
+      },
+      "duration": 0.45,
+      "ease": "glide"
+     }
+    },
+    {
+     "id": "word",
+     "text": "LUMEN",
+     "size": 430,
+     "weight": 900,
+     "letterSpacing": 10,
+     "color": "#0a0908",
+     "stroke": {
+      "color": "$paper",
+      "width": 3
+     },
+     "x": 960,
+     "y": 520,
+     "animate": {
+      "from": {
+       "scale": 0.92
+      },
+      "duration": 1.2,
+      "ease": "land"
+     }
+    }
+   ]
+  },
+  {
+   "id": "programme",
+   "duration": 1.3,
+   "transition": {
+    "type": "zoomThrough",
+    "layer": "word",
+    "duration": 0.5
+   },
+   "notes": "through the letters into the water-light of the harbour: the programme set on a grid, left-aligned, each title landing in order",
+   "layers": [
+    {
+     "shader": "caustics",
+     "uniforms": {
+      "speed": 0.8,
+      "depth": 1.2,
+      "tint": [
+       0.95,
+       0.62,
+       0.32
+      ]
+     },
+     "opacity": 0.85,
+     "supersample": false
+    },
+    {
+     "shape": "rect",
+     "x": 960,
+     "y": 540,
+     "width": 1920,
+     "height": 1080,
+     "fill": {
+      "type": "linear",
+      "angle": 90,
+      "stops": [
+       [
+        "0",
+        "#050505f2"
+       ],
+       [
+        0.55,
+        "#05050599"
+       ],
+       [
+        1,
+        "#05050500"
+       ]
+      ]
+     }
+    },
+    {
+     "type": "group",
+     "stagger": 0.08,
+     "layers": [
+      {
+       "text": "01  Tidal Rooms",
+       "size": 76,
+       "weight": 500,
+       "letterSpacing": -2,
+       "color": "$paper",
+       "x": 140,
+       "y": 300,
+       "anchor": "left",
+       "inertia": "tight",
+       "animate": {
+        "from": {
+         "x": "+60",
+         "opacity": 0
+        },
+        "duration": 0.35,
+        "ease": "glide"
+       }
+      },
+      {
+       "text": "02  The Long Exposure",
+       "size": 76,
+       "weight": 500,
+       "letterSpacing": -2,
+       "color": "$paper",
+       "x": 140,
+       "y": 420,
+       "anchor": "left",
+       "inertia": "tight",
+       "animate": {
+        "from": {
+         "x": "+60",
+         "opacity": 0
+        },
+        "duration": 0.35,
+        "ease": "glide"
+       }
+      },
+      {
+       "text": "03  Sodium Hours",
+       "size": 76,
+       "weight": 500,
+       "letterSpacing": -2,
+       "color": "$warm",
+       "x": 140,
+       "y": 540,
+       "anchor": "left",
+       "inertia": "tight",
+       "animate": {
+        "from": {
+         "x": "+60",
+         "opacity": 0
+        },
+        "duration": 0.35,
+        "ease": "glide"
+       }
+      },
+      {
+       "text": "04  Night Swimmers",
+       "size": 76,
+       "weight": 500,
+       "letterSpacing": -2,
+       "color": "$paper",
+       "x": 140,
+       "y": 660,
+       "anchor": "left",
+       "inertia": "tight",
+       "animate": {
+        "from": {
+         "x": "+60",
+         "opacity": 0
+        },
+        "duration": 0.35,
+        "ease": "glide"
+       }
+      }
+     ]
+    },
+    {
+     "type": "group",
+     "stagger": 0.08,
+     "layers": [
+      {
+       "text": "ANNA VOSS",
+       "font": "JetBrains Mono",
+       "size": 22,
+       "letterSpacing": 6,
+       "color": "$ash",
+       "x": 960,
+       "y": 300,
+       "anchor": "left",
+       "enter": {
+        "preset": "fadeIn",
+        "delay": 0.2
+       }
+      },
+      {
+       "text": "KAITO MORI",
+       "font": "JetBrains Mono",
+       "size": 22,
+       "letterSpacing": 6,
+       "color": "$ash",
+       "x": 960,
+       "y": 420,
+       "anchor": "left",
+       "enter": {
+        "preset": "fadeIn",
+        "delay": 0.2
+       }
+      },
+      {
+       "text": "RUTH ADEYEMI",
+       "font": "JetBrains Mono",
+       "size": 22,
+       "letterSpacing": 6,
+       "color": "$warm",
+       "x": 960,
+       "y": 540,
+       "anchor": "left",
+       "enter": {
+        "preset": "fadeIn",
+        "delay": 0.2
+       }
+      },
+      {
+       "text": "OLE BRANDT",
+       "font": "JetBrains Mono",
+       "size": 22,
+       "letterSpacing": 6,
+       "color": "$ash",
+       "x": 960,
+       "y": 660,
+       "anchor": "left",
+       "enter": {
+        "preset": "fadeIn",
+        "delay": 0.2
+       }
+      }
+     ]
+    },
+    {
+     "shape": "rect",
+     "x": 140,
+     "y": 780,
+     "width": 1100,
+     "height": 2,
+     "fill": "$warm",
+     "anchor": [
+      0,
+      0.5
+     ],
+     "animate": {
+      "from": {
+       "scaleX": 0
+      },
+      "at": 0.3,
+      "duration": 0.6,
+      "ease": "snap"
+     }
+    }
+   ]
+  },
+  {
+   "id": "lockup",
+   "duration": 1.6,
+   "camera": {
+    "zoom": "=1.04 - 0.04*t"
+   },
+   "transition": {
+    "type": "split",
+    "direction": "up",
+    "duration": 0.4
+   },
+   "notes": "button: the name is a window again; the light inside sweeps across as the beam angle turns",
+   "layers": [
+    {
+     "shader": "light-shafts",
+     "uniforms": {
+      "angle": "=-30 + 40*t",
+      "spread": 0.4,
+      "panes": 5,
+      "intensity": 1.5,
+      "haze": 1.2
+     },
+     "matte": "name",
+     "supersample": false
+    },
+    {
+     "id": "name",
+     "text": "LUMEN",
+     "size": 470,
+     "weight": 900,
+     "letterSpacing": -10,
+     "x": 960,
+     "y": 500,
+     "animator": {
+      "by": "char",
+      "y": 140,
+      "opacity": 0,
+      "duration": 0.5,
+      "smooth": 0.3,
+      "ease": "glide"
+     }
+    },
+    {
+     "text": "LUMEN",
+     "size": 470,
+     "weight": 900,
+     "letterSpacing": -10,
+     "x": 960,
+     "y": 500,
+     "color": "none",
+     "stroke": {
+      "color": "#ffd9a055",
+      "width": 2
+     }
+    },
+    {
+     "text": "18\u201424 MARCH \u00b7 BRISTOL \u00b7 LUMEN.FEST",
+     "font": "JetBrains Mono",
+     "size": 26,
+     "letterSpacing": 10,
+     "color": "$warm",
+     "x": 960,
+     "y": 860,
+     "start": 0.5,
+     "animator": {
+      "opacity": 0,
+      "duration": 0.5,
+      "smooth": 0.3
+     }
+    }
+   ]
+  }
+ ],
+ "post": {
+  "preset": "cinematic",
+  "bloom": 0.5,
+  "halation": 0.4,
+  "grain": 0.035,
+  "vignette": 0.35,
+  "lut": "anikit:lut/warm-negative",
+  "lutMix": 0.6
+ }
+}

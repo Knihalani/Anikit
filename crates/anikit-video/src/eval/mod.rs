@@ -376,6 +376,8 @@ pub(crate) struct TransC {
     /// `reveal` shape (0 circle, 1 diamond, 2 square, 3 star, 4 blob); `blinds` bar count.
     pub shape: u8,
     pub count: u32,
+    /// Shared elements: layer ids carried from the old scene's layout to the new one's.
+    pub carry: Vec<String>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -434,6 +436,11 @@ thread_local! {
 /// Whether this is the scale-collecting pass (shader layers emit nothing).
 pub(crate) fn collecting_scales() -> bool {
     COMP_SCALE.with(|c| matches!(&*c.borrow(), Some((true, _))))
+}
+
+thread_local! {
+    /// Layer ids to leave out while emitting scenes (shared elements during a transition).
+    static SKIP: std::cell::RefCell<Vec<String>> = const { std::cell::RefCell::new(Vec::new()) };
 }
 
 thread_local! {
@@ -759,7 +766,11 @@ impl Evaluator {
         let (cam, v, panning) = self.scene_cam(s, t, xf);
         let (cxp, cyp, rot, zoom) = (v[0], v[1], v[2], v[3]);
         let (focus, aperture) = (v[4], v[5]);
+        let skip = SKIP.with(|s| !s.borrow().is_empty());
         for (li, n) in s.layers.iter().enumerate() {
+            if skip && n.id.as_deref().is_some_and(|id| SKIP.with(|s| s.borrow().iter().any(|x| x == id))) {
+                continue;
+            }
             let is_bg = li < s.bg_layers;
             if (is_bg && part & PART_BG == 0) || (!is_bg && part & PART_FG == 0) {
                 continue;
@@ -825,6 +836,58 @@ impl Evaluator {
     }
 
     fn emit_transition(&self, a: &SceneC, b: &SceneC, t: f32, p: f32, e: f32, out: &mut Vec<Op>) {
+        if b.trans.carry.is_empty() {
+            return self.emit_transition_inner(a, b, t, p, e, out);
+        }
+        SKIP.with(|s| *s.borrow_mut() = b.trans.carry.clone());
+        self.emit_transition_inner(a, b, t, p, e, out);
+        SKIP.with(|s| s.borrow_mut().clear());
+        for id in &b.trans.carry {
+            self.emit_carried(a, b, id, t, e, out);
+        }
+    }
+
+    /// Frame-space centre and size of a top-level layer of `s` at time `t`.
+    fn layer_frame(&self, s: &SceneC, n: &Node, t: f32) -> ([f32; 2], f32) {
+        let (cam, _, _) = self.scene_cam(s, t, &dl::IDENTITY);
+        let cx = Cx { ev: self, scene_t: t - s.start, gt: t, dof: 0.0, amul: 1.0 };
+        let mut v = [0.0f32; prop::N];
+        self.props(n, &cx, (t - s.start - n.start).max(0.0), &mut v);
+        let (w, h) = (v[prop::W].max(1.0), v[prop::H].max(1.0));
+        let f = dl::mul(&cam, &local_xf(&v, n.anchor, w, h));
+        let c = [f[0] * w * 0.5 + f[2] * h * 0.5 + f[4], f[1] * w * 0.5 + f[3] * h * 0.5 + f[5]];
+        (c, (f[0] * f[3] - f[1] * f[2]).abs().sqrt() * (w * w + h * h).sqrt())
+    }
+
+    /// A shared element: the old scene's copy travels to the new layout while fading out, the new
+    /// scene's copy travels from the old layout while fading in.
+    fn emit_carried(&self, a: &SceneC, b: &SceneC, id: &str, t: f32, e: f32, out: &mut Vec<Op>) {
+        fn find<'a>(s: &'a SceneC, id: &str) -> Option<&'a Node> {
+            s.layers.iter().find(|n| n.id.as_deref() == Some(id))
+        }
+        let (Some(na), Some(nb)) = (find(a, id), find(b, id)) else { return };
+        let (ca, sa) = self.layer_frame(a, na, t);
+        let (cb, sb) = self.layer_frame(b, nb, t);
+        let c = [ca[0] + (cb[0] - ca[0]) * e, ca[1] + (cb[1] - ca[1]) * e];
+        let sz = sa + (sb - sa) * e;
+        // Move a scene's copy (centre `c0`, size `s0`) to the interpolated centre and size.
+        let to = |c0: [f32; 2], s0: f32| {
+            let k = sz / s0.max(1e-3);
+            dl::mul(&translate(c[0], c[1]), &dl::mul(&scale(k, k), &translate(-c0[0], -c0[1])))
+        };
+        // The old copy stays solid until halfway while the new one fades in on top: the element never goes see-through.
+        let (aa, ab) = ((2.0 - 2.0 * e).clamp(0.0, 1.0), (2.0 * e).clamp(0.0, 1.0));
+        for (s, n, c0, s0, alpha) in [(a, na, ca, sa, aa), (b, nb, cb, sb, ab)] {
+            if alpha <= 0.002 {
+                continue;
+            }
+            let (cam, _, _) = self.scene_cam(s, t, &to(c0, s0));
+            let cx = Cx { ev: self, scene_t: t - s.start, gt: t, dof: 0.0, amul: alpha };
+            self.emit_node(n, &cx, &cam, [self.width as f32, self.height as f32], 1.0, out);
+        }
+    }
+
+    fn emit_transition_inner(&self, a: &SceneC, b: &SceneC, t: f32, p: f32, e: f32, out: &mut Vec<Op>) {
         let (w, h) = (self.width as f32, self.height as f32);
         let tr = &b.trans;
         let id = dl::IDENTITY;

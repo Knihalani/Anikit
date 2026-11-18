@@ -770,6 +770,16 @@
           "format": "uint32",
           "minimum": 0
         },
+        "carry": {
+          "description": "Shared elements (any transition): ids of layers present in both scenes. Each travels from its place and size\nin the old scene to its place and size in the new one during the transition (a match move), cross-fading between the two.",
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
         "uniforms": {
           "description": "Uniforms for a shader transition.",
           "type": [
