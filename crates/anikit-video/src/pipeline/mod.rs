@@ -637,8 +637,7 @@ pub fn still_key(ev: &Evaluator, t: f32, scale: f32) -> Option<String> {
     if std::env::var_os("ANIKIT_RENDER_CACHE").is_some_and(|v| v == "0") {
         return None;
     }
-    let mut dl = ev.eval(t);
-    scale_list(&mut dl, scale);
+    let mut dl = eval_scaled(ev, t, scale);
     let mut keys = Vec::new();
     let mut ok = true;
     let mut id_key = |id: &mut dl::ImageId| {
@@ -709,18 +708,38 @@ pub fn frame_look(ev: &Evaluator, q: Quality, i: u32) -> (Option<crate::render::
 /// Render frame `i` with motion blur into `yuv` (a full frame), leaving the
 /// renderer ready for a full incremental render next.
 fn render_blurred(ev: &Evaluator, r: &mut Renderer, i: u32, scale: f32, yuv: &mut YuvFrame) {
-    let mut eval = |t: f32| {
-        let mut d = ev.eval(t);
-        scale_list(&mut d, scale);
-        d
-    };
+    let mut eval = |t: f32| eval_scaled(ev, t, scale);
     r.render_yuv_motion_blur(&mut eval, frame_time(ev, i), ev.shutter, yuv);
     r.invalidate();
 }
 
+/// Run `f` with shaders rendering at output `scale` (their preview scale),
+/// so a scaled render shades only the pixels it shows; faithful shaders still
+/// see final-size coordinates. Restores full size afterwards.
+fn at_scale<R>(scale: f32, f: impl FnOnce() -> R) -> R {
+    struct Reset;
+    impl Drop for Reset {
+        fn drop(&mut self) {
+            crate::eval::set_preview_scale(1.0);
+        }
+    }
+    let _reset = Reset;
+    crate::eval::set_preview_scale(scale);
+    f()
+}
+
+/// The display list at `t`, at output `scale`.
+fn eval_scaled(ev: &Evaluator, t: f32, scale: f32) -> DisplayList {
+    at_scale(scale, || {
+        let mut dl = ev.eval(t);
+        scale_list(&mut dl, scale);
+        dl
+    })
+}
+
 /// Evaluate frame `i` into `out` at `scale`.
 pub fn eval_frame(ev: &Evaluator, i: u32, scale: f32, out: &mut DisplayList) {
-    ev.eval_into(frame_time(ev, i), out);
+    at_scale(scale, || ev.eval_into(frame_time(ev, i), out));
     scale_list(out, scale);
 }
 
@@ -1320,8 +1339,7 @@ pub fn estimate(ev: &Evaluator, opts: &RenderOptions, heavy_after: f64) -> Estim
     // Quick look first: one full frame in the middle. Most renders stop here (a few ms).
     let mid = f0 + n / 2;
     let t = Instant::now();
-    let mut dl = ev.eval(frame_time(ev, mid));
-    scale_list(&mut dl, opts.scale);
+    let dl = eval_scaled(ev, frame_time(ev, mid), opts.scale);
     with_renderer(ev, |r, _| {
         r.set_quality(render_quality(opts.quality));
         r.render(&dl);
@@ -1344,8 +1362,7 @@ pub fn estimate(ev: &Evaluator, opts: &RenderOptions, heavy_after: f64) -> Estim
             // the second is the typical cost of a changing frame.
             let next = (i + 1).min(f1.saturating_sub(1));
             with_worker(|w| {
-                let mut dl = ev.eval(frame_time(ev, i));
-                scale_list(&mut dl, opts.scale);
+                let dl = eval_scaled(ev, frame_time(ev, i), opts.scale);
                 ensure_renderer(ev, w);
                 let Worker { renderer, yuv, map, .. } = w;
                 let r = renderer.as_mut().unwrap();
@@ -1353,8 +1370,7 @@ pub fn estimate(ev: &Evaluator, opts: &RenderOptions, heavy_after: f64) -> Estim
                 r.invalidate();
                 r.render_yuv_incremental(&dl, yuv, map);
                 let t = Instant::now();
-                let mut dl = ev.eval(frame_time(ev, next));
-                scale_list(&mut dl, opts.scale);
+                let dl = eval_scaled(ev, frame_time(ev, next), opts.scale);
                 ensure_renderer(ev, w);
                 let Worker { renderer, yuv, map, last, .. } = w;
                 renderer.as_mut().unwrap().render_yuv_incremental(&dl, yuv, map);
