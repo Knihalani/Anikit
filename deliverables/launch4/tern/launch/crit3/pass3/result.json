@@ -1,0 +1,385 @@
+{
+  "name": "pass3",
+  "tags": [
+    "product-launch",
+    "kinetic-type"
+  ],
+  "refs": [
+    "vertigo",
+    "da-vincis-demons",
+    "the-boxtrolls-end-titles"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 6.0,
+      "composition": 4.0,
+      "typography": 4.0,
+      "colour": 5.0,
+      "light_texture": 3.0,
+      "motion": 3.0,
+      "craft": 4.0,
+      "originality": 5.0
+    },
+    "overall": 4.25,
+    "judged_professional": "0/2",
+    "pro_rate": 0.0,
+    "mean_rank": 4,
+    "gaps": [
+      "It needs a visual concept beyond the copy. B turns its idea into image and motion; here the image never transforms, so make the sheet physical (pen in hand, pages torn and flipped, light raking across carbon)",
+      "Replace the font-based handwriting with real lettering or performed ink that shows pressure, hesitation and speed, so the writing itself carries the emotion of 'got the top'",
+      "Build choreography and scale contrast: at present every frame is the same table at different crops, so introduce cuts, rhythm and a payoff frame designed as a poster",
+      "Make the physical artefact real: actual handwriting with pen pressure and ink bleed, carbon transfer, paper tooth, a desk and raking light, and a hand in frame, so the analogue idea earns its texture",
+      "Choreograph beyond crops of one sheet. Use cuts in scale, sheets peeling between carbon layers, or the sounds of each take visualised, so each frame is a distinct poster rather than the same layout reframed",
+      "Give the type a point of view: a designed form with real hierarchy, plus a typographic payoff for 'Tern' that is more than a circled word, so the ending lands as a memorable, shareable moment"
+    ],
+    "tells": [
+      "The whole piece is one flat document. It reads as a single static layout panned and cropped across six frames (the same composition repeated with different zoom levels) with very little happening",
+      "The 'handwriting' looks like a handwriting font: letterforms are mechanically consistent and checkmarks are identical stamps, with no pressure, ink pooling or variation",
+      "The form furniture is a default grotesk in small tracked caps, a slide-like, template typographic system with no scale idea beyond the 'SOUND REPORT' header",
+      "Flat, unmotivated light; the pink carbon paper has a tint but no real fibre, shadow or depth, and the only material gesture is the stacked carbon copies in one frame",
+      "The idea (a sound report whose crossed-out recorder is replaced by the product name 'Tern') is a neat copywriting conceit, but it amounts to the product name plus a literal reveal, typical of automated product-ad output",
+      "A clever literal premise: a pink carbon sound-report sheet where the failed takes give way to circled 'got the top / no clip' for a recorder called 'Tern'. But it reads as a product-name-plus-feature diagram written out as a form",
+      "The same flat document plane in every frame, shown only by cropping and zooming into one layout. This is slide-deck structure with very little happening and no shift in scale or space beyond a single pull-out showing stacked carbons",
+      "The 'handwriting' is a uniform script font: identical letterforms repeat ('missed the top' looks the same each time), with no pressure, ink variation or human irregularity, so the central craft conceit fails",
+      "Flat, unmotivated light and a near-uniform paper texture: no shadow, curl, carbon smudge, or impression from the pen. The form text is a default tracked-caps grotesk",
+      "A single-accent palette (blue ink on pink) on a mostly empty ground matches the generic tasteful-template look"
+    ]
+  },
+  "refs_summary": {
+    "vertigo": {
+      "overall": 9.5,
+      "judged_professional": "2/2",
+      "mean_rank": 1
+    },
+    "da-vincis-demons": {
+      "overall": 6.94,
+      "judged_professional": "2/2",
+      "mean_rank": 3
+    },
+    "the-boxtrolls-end-titles": {
+      "overall": 8.25,
+      "judged_professional": "2/2",
+      "mean_rank": 2
+    }
+  },
+  "ref_mean": 8.23,
+  "delta": -3.98,
+  "trials": [
+    {
+      "key": {
+        "A": "the-boxtrolls-end-titles",
+        "B": "vertigo",
+        "C": "candidate",
+        "D": "da-vincis-demons"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.93,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 9,
+              "originality": 8
+            },
+            "tells": [
+              "The credits are part of the story world: a name is lettered on the side of a pram, and characters climb and swing around the text blocks",
+              "Hand-drawn ink line over painted washes; the paper and pencil texture and the motivated glow from hanging bulbs show real authored light",
+              "Custom condensed display lettering with quirky proportions that match the world's Victorian-grotesque tone, plus small 'p.g.a.' scale contrast",
+              "Every frame has a different setting, viewpoint and staging (low-angle machinery, cobbled stairs, vignetted forest, a cliff-top silhouette), which implies a choreographed sequence",
+              "Asymmetric, characterful drawing with no vector defaults; the palette moves from ochre to cyan to sepia grey to apricot"
+            ],
+            "gaps": [
+              "The credit-roll layout falls back to centred name stacks in several frames; B makes type and image a single graphic event every time",
+              "Its charm is illustrative rather than conceptual, with no single unifying graphic idea as strong as B's spiral as a metaphor for obsession",
+              "Palette shifts frame to frame are pleasing but less disciplined than B's two-colour system; tighter colour scripting would sharpen it"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 10,
+              "composition": 10,
+              "typography": 9,
+              "colour": 10,
+              "light_texture": 8,
+              "motion": 9,
+              "craft": 9,
+              "originality": 10
+            },
+            "tells": [
+              "A single, specific idea that only this film could have: the eye leads into the spiral, which leads into vertigo and obsession, and it doesn't need any explanation",
+              "Extreme close-up of a real eye washed in monochrome red, cut against black fields of Lissajous and spirograph forms; the contrast between photography and pure geometry is the concept",
+              "Slab-serif outlined title type with a strong point of view, then tight right-justified credit blocks that hug the curve of the figure, so type and image share one composition",
+              "A deliberate, unusual palette: blood red, then violet, then acid green on black, with the colour shifting as the figures transform",
+              "The frames show choreography: the title sits in the eye, the spiral emerges from the pupil, the forms rotate and morph, and the film returns to the eye for the director credit, a bookended structure"
+            ],
+            "gaps": [
+              "Benchmark entry; the only gap is that the spirograph segments repeat a similar centred-figure layout across several cards",
+              "The type treatment on the dense credit stack is functional rather than expressive compared with the title card",
+              "Texture is limited to the photographic plates; the graphic sections are flat by design, so there is little material depth"
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.68,
+            "scores": {
+              "idea": 6,
+              "composition": 4,
+              "typography": 4,
+              "colour": 5,
+              "light_texture": 3,
+              "motion": 3,
+              "craft": 4,
+              "originality": 5
+            },
+            "tells": [
+              "The whole piece is one flat document. It reads as a single static layout panned and cropped across six frames (the same composition repeated with different zoom levels) with very little happening",
+              "The 'handwriting' looks like a handwriting font: letterforms are mechanically consistent and checkmarks are identical stamps, with no pressure, ink pooling or variation",
+              "The form furniture is a default grotesk in small tracked caps, a slide-like, template typographic system with no scale idea beyond the 'SOUND REPORT' header",
+              "Flat, unmotivated light; the pink carbon paper has a tint but no real fibre, shadow or depth, and the only material gesture is the stacked carbon copies in one frame",
+              "The idea (a sound report whose crossed-out recorder is replaced by the product name 'Tern') is a neat copywriting conceit, but it amounts to the product name plus a literal reveal, typical of automated product-ad output"
+            ],
+            "gaps": [
+              "It needs a visual concept beyond the copy. B turns its idea into image and motion; here the image never transforms, so make the sheet physical (pen in hand, pages torn and flipped, light raking across carbon)",
+              "Replace the font-based handwriting with real lettering or performed ink that shows pressure, hesitation and speed, so the writing itself carries the emotion of 'got the top'",
+              "Build choreography and scale contrast: at present every frame is the same table at different crops, so introduce cuts, rhythm and a payoff frame designed as a poster"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 6,
+              "colour": 7,
+              "light_texture": 8,
+              "motion": 7,
+              "craft": 7,
+              "originality": 6
+            },
+            "tells": [
+              "A coherent world built from the subject's own notebooks: Vitruvian Man, the Mona Lisa, machine drawings and mirror script are layered with painted figures",
+              "Rich, layered texture of ink spatter, parchment grain and atmospheric cloud; the restrained violet-sepia palette is deliberate",
+              "There is real variety of viewpoint across frames (aerial cloud-scape, architectural perspective lines, macro on a quill nib, an upward-gazing portrait, silhouette on a horizon), which implies choreographed camera moves",
+              "Credits are set in a classical small-caps serif, appropriate to the period but conventional, and simply placed on the image"
+            ],
+            "gaps": [
+              "The idea is the expected one (Leonardo plus his sketches) and lacks B's single, ownable graphic metaphor, so it needs one transforming conceit rather than a montage of famous artworks",
+              "The typography is placed rather than integrated: names float in centred small caps over the image, while B's and A's type is built into the composition",
+              "The heavy grunge-texture overlay and murky grading flatten the frames, so push the contrast and give each frame a clearer focal hierarchy so every frame works as a poster"
+            ]
+          }
+        },
+        "ranking": [
+          "B",
+          "A",
+          "D",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 35.1,
+        "cost_usd": 0.16378979999999999,
+        "tokens": 72224,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "the-boxtrolls-end-titles",
+        "B": "vertigo",
+        "C": "da-vincis-demons",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 9,
+              "originality": 8
+            },
+            "tells": [
+              "Hand-drawn credit lettering matches the film's world: a slightly wobbly, condensed display face with small-cap 'p.g.a.' marks, set to sit on props (the pram's front, the sky) instead of floating as captions",
+              "Every frame is a full illustrated set with its own lighting: warm sepia shafts through a window grid, hanging bulbs with bloom, a vignetted forest clearing, an orange-dusk silhouette on a box tower",
+              "Loose ink linework over painted watercolour washes gives real texture and depth; the compositions are asymmetric and built around the characters",
+              "The camera and staging change every time (an interior with a hanging rig, a street with a staircase, a dynamic falling diagonal, an iris vignette, a low-angle summit), so the sequence clearly has choreography and travels",
+              "Credits are paired with characters as small gags (Character Designer and Sculptor over the hero holding a box troll aloft), which shows a specific idea at work"
+            ],
+            "gaps": [
+              "The type stays in one family and one weight throughout. It could gain the graphic punch of B by varying scale more boldly or letting the type play a part in the action",
+              "The palette changes scene by scene (sepia, grey-white, green, orange) without a controlling system, so as a single graphic piece it reads less unified than B's red/black/neon",
+              "The concept is a charming extension of the feature's world rather than a single distilled visual metaphor. It illustrates more than it abstracts"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.98,
+            "scores": {
+              "idea": 10,
+              "composition": 10,
+              "typography": 9,
+              "colour": 10,
+              "light_texture": 9,
+              "motion": 10,
+              "craft": 9,
+              "originality": 10
+            },
+            "tells": [
+              "One specific idea that only this film could have: an extreme close-up of an eye, and spirals growing out of the pupil. The image itself is the vertigo and the obsession",
+              "A bold, unusual palette: a monochrome red wash on a photographic face cut against black fields and neon violet and green Lissajous spirograph forms",
+              "Strong typographic scale contrast: a huge outlined slab-serif title against small tracked caps for roles and bold slab caps for names, with credit blocks ranged right and pushed into tension against the spirals",
+              "Clear choreography: the eye, then a spiral emerging from the pupil, then the spirals evolving and rotating through colour, then back to the eye for the director credit. The film has a symmetrical, closed structure",
+              "Every frame works as a poster, and the generative geometry has a subject and a meaning rather than being decoration"
+            ],
+            "gaps": [
+              "It is the benchmark here; in absolute terms the middle spiral passages hold one layout logic (spiral plus type block) for a long stretch",
+              "The type is set over busy spiral linework in places (the music credit cuts across the green form), which slightly costs legibility",
+              "The photographic eye sections have limited tonal range under the red tint; more variety in the framing of the face would add still more surprise"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 6,
+              "colour": 7,
+              "light_texture": 8,
+              "motion": 7,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "A layered collage of Leonardo's own material (the Vitruvian Man, notebook mirror script, machine schematics, the Mona Lisa) blended with the cast drawn in ink and set in painted skies. The material is dense, considered and has real texture",
+              "A muted violet and umber palette with grain, ink spatter and parchment layers gives depth and a sense of history",
+              "The scene changes from frame to frame (a figure in clouds, a perspective-ray architecture study, a pen-nib macro, a rider silhouette on the Mona Lisa, an upward portrait in a compass arc, an inventor with a machine), which shows real sequencing",
+              "The typography is a tasteful small-caps classical serif placed in negative space: competent and period-appropriate, but conventional and slide-like in placement"
+            ],
+            "gaps": [
+              "The type has no point of view: small centred serif small caps in each frame. It could be integrated into the notebook script, the perspective lines or the mirror-writing idea the way B builds type into its spirals",
+              "The concept is the expected one for a Da Vinci show (Vitruvian Man, Mona Lisa, codex sketches). It needs one unexpected, ownable metaphor rather than a montage of iconic references",
+              "The colour treatment flattens everything into similar murky purples. A sharper accent or more value contrast would make individual frames hit as posters"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.65,
+            "scores": {
+              "idea": 6,
+              "composition": 4,
+              "typography": 4,
+              "colour": 5,
+              "light_texture": 3,
+              "motion": 3,
+              "craft": 4,
+              "originality": 5
+            },
+            "tells": [
+              "A clever literal premise: a pink carbon sound-report sheet where the failed takes give way to circled 'got the top / no clip' for a recorder called 'Tern'. But it reads as a product-name-plus-feature diagram written out as a form",
+              "The same flat document plane in every frame, shown only by cropping and zooming into one layout. This is slide-deck structure with very little happening and no shift in scale or space beyond a single pull-out showing stacked carbons",
+              "The 'handwriting' is a uniform script font: identical letterforms repeat ('missed the top' looks the same each time), with no pressure, ink variation or human irregularity, so the central craft conceit fails",
+              "Flat, unmotivated light and a near-uniform paper texture: no shadow, curl, carbon smudge, or impression from the pen. The form text is a default tracked-caps grotesk",
+              "A single-accent palette (blue ink on pink) on a mostly empty ground matches the generic tasteful-template look"
+            ],
+            "gaps": [
+              "Make the physical artefact real: actual handwriting with pen pressure and ink bleed, carbon transfer, paper tooth, a desk and raking light, and a hand in frame, so the analogue idea earns its texture",
+              "Choreograph beyond crops of one sheet. Use cuts in scale, sheets peeling between carbon layers, or the sounds of each take visualised, so each frame is a distinct poster rather than the same layout reframed",
+              "Give the type a point of view: a designed form with real hierarchy, plus a typographic payoff for 'Tern' that is more than a circled word, so the ending lands as a memorable, shareable moment"
+            ]
+          }
+        },
+        "ranking": [
+          "B",
+          "A",
+          "C",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 37.5,
+        "cost_usd": 0.167732,
+        "tokens": 72441,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "critic": {
+    "answer": {
+      "scores": {
+        "motion": 5,
+        "sound": 5,
+        "craft": 7
+      },
+      "checks": {
+        "idea": true,
+        "invariant": true,
+        "arc": false,
+        "type_meaning": true,
+        "freeze_frame": false,
+        "ending": true,
+        "restraint": true,
+        "material": true,
+        "sync": false
+      },
+      "defects": [
+        "One shot runs 11.2s. The camera drifts slowly across a static sheet, and the per-second change drops to 0.8 twice (around 6s and 17-18s), which reads as dead air.",
+        "The pairs show almost no movement 1/6s apart. The camera is a near-linear pan or push with no visible ease-in, settle or weight, and there is no motion blur on the moves.",
+        "The handwriting write-ons don't vary in pressure or speed. Every stroke appears at the same rate, so 'got the top' and 'still no clip' carry no different emotional timing.",
+        "Several sampled frames are tight crops that cut words or columns off mid-line ('every ti', 'rolls the moment you' clipped at the top edge, the 'CARBON' tag cut off). They read as transitional frames, not compositions.",
+        "Between about 5.9s and 7.5s the audio is a flat broadband noise block with the low end removed. It looks like a placeholder 'tape hiss' gag, and the matching picture is static.",
+        "The soundtrack is a uniform grid of percussive transients about every 0.25s from start to finish. The density barely changes, so nothing shapes the music under the pictures.",
+        "At 1:1 the ink circles have uniform stroke width and slightly synthetic closure. The paper grain is fine but even, with no fibre, smudge or carbon-transfer artefacts to sell the carbonless material."
+      ],
+      "gaps": [
+        "Motion vocabulary: the whole piece is slow camera drift over a flat document plus write-ons. Top studio work would give the camera real weight and easing (snap-zooms that settle, rack focus, the sheet lifted or torn to reveal the carbon copies). It would also build the circled takes into a crescendo instead of a steady list.",
+        "Arc and pacing: the strongest beats (the 'Tern' strike-and-circle reveal, '30 hrs, one roll') land at an even tempo with no build or release. The 11s hold and the 0.8 change-per-second stretches need cutting or a reason. The peak should be staged at 60-80%, with a deliberate quiet after it.",
+        "Sound: the concept is a field recordist's log, so the track should be the recordings themselves (dawn chorus, a slammed door, rain on a tin roof, thunder). Each should cut in on its row and clip or not as the notes say. Instead there is a static loop and a noise slab, which wastes the film's best sound-design opportunity and makes sync accidental rather than authored."
+      ]
+    },
+    "meta": {
+      "seconds": 25.8,
+      "cost_usd": 0.1674394,
+      "tokens": 72550,
+      "models": [
+        "claude-opus-5-5"
+      ]
+    },
+    "pace": "pass3.mp4: 30.0s, 8 shots, median 2.25s, longest 11.23s\nper-second change: [8.6, 4.2, 11.2, 5.7, 12.4, 13.4, 0.8, 13.8, 16.5, 14.4, 12.3, 9.0, 10.7, 17.8, 5.7, 13.7, 3.2, 0.8, 13.3, 17.8, 14.6, 15.1, 32.1, 3.0, 35.2, 10.8, 16.0, 11.8, 12.6]\nPACE: FAIL \u2014 longest shot 11.2s > 2.5s; median shot 2.2s > 2.0s; 7/29 seconds look like the previous second"
+  },
+  "full_scores": {
+    "idea": 6.0,
+    "composition": 4.0,
+    "typography": 4.0,
+    "colour": 5.0,
+    "light_texture": 3.0,
+    "motion": 4.0,
+    "craft": 5.5,
+    "originality": 5.0,
+    "sound": 5
+  },
+  "full_overall": 4.61,
+  "cost_usd": 0.499,
+  "judge_seconds": 98.4,
+  "verdict": "FAIL"
+}

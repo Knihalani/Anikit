@@ -1,0 +1,386 @@
+{
+  "name": "pass2",
+  "tags": [
+    "product-launch",
+    "kinetic-type"
+  ],
+  "refs": [
+    "vertigo",
+    "da-vincis-demons",
+    "the-boxtrolls-end-titles"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 6.0,
+      "composition": 4.5,
+      "typography": 4.0,
+      "colour": 5.0,
+      "light_texture": 3.5,
+      "motion": 3.5,
+      "craft": 4.5,
+      "originality": 5.0
+    },
+    "overall": 4.5,
+    "judged_professional": "0/2",
+    "pro_rate": 0.0,
+    "mean_rank": 4,
+    "gaps": [
+      "Make it physical: shoot or simulate a real carbonless sheet with real pen strokes, pressure, smudges and lighting, so the sound-report conceit feels lived-in the way A's ink-and-wash does",
+      "Break the single-layout structure: intercut the sheet with the sounds being logged (dawn chorus, rain on tin roof, thunder) so image and type play against each other as in B",
+      "Give the typography an idea: let the handwriting accelerate, degrade or change hand as the night goes on, and choreograph the circles and checks to audio rather than revealing text line by line",
+      "Make it physical: a real carbon form shot under real light, with a real pen, hand, ink bleed, pressure, and yellow and white copies showing through. Right now it reads as a vector render",
+      "Choreograph the piece instead of panning one static layout. Cut between details, time the handwriting being written to sound, and add a real visual turn like B's eye-to-spiral",
+      "Bring the subject into the image. The recorder, the places and the sounds never appear, so the piece relies entirely on reading text. Give it one memorable image beyond the form"
+    ],
+    "tells": [
+      "One layout repeated across every frame: the same flat pink form, re-cropped and zoomed, which is a slide or camera pan over a single static asset, with almost no new imagery",
+      "The 'handwriting' is plainly a script font: identical glyphs repeat in 'missed the top' and the check marks are identical stamps, so there is no pen pressure, ink bleed or variance",
+      "Form typography is default generic grotesk in tracked small caps, the template label-plus-field pattern",
+      "Flat, unmotivated lighting on a digital paper texture; only the final pull-back shows carbon-copy layers with a soft drop shadow",
+      "The product reveal (crossing out 'the old one', circling 'Tern', 'rolls the moment you lift it') is a literal copy-led payoff; the concept is clever on paper but executed as text animation",
+      "One flat graphic is panned and cropped: all six frames are the same pink sound-report form at different zooms, which is a single layout with the camera moved over it",
+      "The 'handwriting' looks like a handwriting font. Repeated letterforms ('FS \u2013 missed the top', the check marks) look identical with no pen pressure or ink variation, and the circles are clean vector ellipses",
+      "Flat, even, unmotivated light on the paper. There is barely any carbon-copy texture, embossing or shadow, only one stacked-sheets frame adds token depth, and no physical object or hand is ever seen",
+      "The idea is clever but literal and copy-driven: the product name ('Tern') is revealed by circling it on the form, and the punchline is delivered as text",
+      "The form typography (a small tracked grotesk label set, a bold 'SOUND REPORT' heading) is a competent but default-feeling grotesk with no typographic point of view"
+    ]
+  },
+  "refs_summary": {
+    "vertigo": {
+      "overall": 9.5,
+      "judged_professional": "2/2",
+      "mean_rank": 1
+    },
+    "da-vincis-demons": {
+      "overall": 6.81,
+      "judged_professional": "2/2",
+      "mean_rank": 3
+    },
+    "the-boxtrolls-end-titles": {
+      "overall": 8.25,
+      "judged_professional": "2/2",
+      "mean_rank": 2
+    }
+  },
+  "ref_mean": 8.19,
+  "delta": -3.69,
+  "trials": [
+    {
+      "key": {
+        "A": "the-boxtrolls-end-titles",
+        "B": "vertigo",
+        "C": "candidate",
+        "D": "da-vincis-demons"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.93,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 9,
+              "originality": 8
+            },
+            "tells": [
+              "Hand-drawn, ink-and-wash world with a consistent character-design language (box-wearing creatures, wiry protagonist) carried across every frame",
+              "Custom condensed hand-lettered display face that matches the line quality of the illustration; credits sit inside the scene (on the pram, in the vignetted hole in the canopy) rather than on top of it",
+              "Each frame is a different staging: interior with raking window light, warm bulb-lit pram, monochrome architectural stair, dutch-angle chase with wind-blown hair, iris-vignetted forest, silhouette on a crate tower against orange sky",
+              "Palette shifts by scene (amber, desaturated grey-pink, acid green, sunset orange) yet stays one material world with paper and wash texture",
+              "Implied choreography: characters chase, swing and climb through a continuous story while credits are handed off between beats"
+            ],
+            "gaps": [
+              "The title-card logic is more conventional than B: names are placed into scenes rather than becoming the image, so push type-image fusion further",
+              "No single graphic motif that sums up the whole film the way B's spiral does; build a recurring visual device the credits can live on",
+              "Some frames (stair, forest) read as illustrated backgrounds with labels; tighten the scale contrast between credit hierarchy levels"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.98,
+            "scores": {
+              "idea": 10,
+              "composition": 10,
+              "typography": 9,
+              "colour": 10,
+              "light_texture": 9,
+              "motion": 9,
+              "craft": 9,
+              "originality": 10
+            },
+            "tells": [
+              "A single, specific conceptual idea: extreme close-up of an eye that births Lissajous/spirograph spirals, a visual metaphor for vertigo, obsession and the gaze that only this film could own",
+              "Deliberate, unusual palette: monochrome red-tinted flesh against black fields of violet and then mint-green line spirals",
+              "Slab-serif outlined title with real character, and credits set with strong scale contrast (small caps role / large name) in right-aligned stacks that balance the spiral mass",
+              "Clear choreography: title in the eye, then spiral emerges from the pupil, then grows and mutates into increasingly complex forms, then returns to the eye for the director's credit, a bookended structure",
+              "Photographic grain and real skin texture contrasted with mathematically pure line graphics"
+            ],
+            "gaps": [
+              "This is the benchmark entry; the remaining gaps are small: the middle credit stacks are dense and slightly crowded against the spiral",
+              "Some spiral frames sit on flat black with little depth beyond the line work",
+              "Credit typography in the middle section is closer to standard period credit setting than to the expressive title treatment"
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.62,
+            "scores": {
+              "idea": 6,
+              "composition": 5,
+              "typography": 4,
+              "colour": 5,
+              "light_texture": 4,
+              "motion": 4,
+              "craft": 5,
+              "originality": 5
+            },
+            "tells": [
+              "One layout repeated across every frame: the same flat pink form, re-cropped and zoomed, which is a slide or camera pan over a single static asset, with almost no new imagery",
+              "The 'handwriting' is plainly a script font: identical glyphs repeat in 'missed the top' and the check marks are identical stamps, so there is no pen pressure, ink bleed or variance",
+              "Form typography is default generic grotesk in tracked small caps, the template label-plus-field pattern",
+              "Flat, unmotivated lighting on a digital paper texture; only the final pull-back shows carbon-copy layers with a soft drop shadow",
+              "The product reveal (crossing out 'the old one', circling 'Tern', 'rolls the moment you lift it') is a literal copy-led payoff; the concept is clever on paper but executed as text animation"
+            ],
+            "gaps": [
+              "Make it physical: shoot or simulate a real carbonless sheet with real pen strokes, pressure, smudges and lighting, so the sound-report conceit feels lived-in the way A's ink-and-wash does",
+              "Break the single-layout structure: intercut the sheet with the sounds being logged (dawn chorus, rain on tin roof, thunder) so image and type play against each other as in B",
+              "Give the typography an idea: let the handwriting accelerate, degrade or change hand as the night goes on, and choreograph the circles and checks to audio rather than revealing text line by line"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 6,
+              "colour": 7,
+              "light_texture": 8,
+              "motion": 7,
+              "craft": 7,
+              "originality": 6
+            },
+            "tells": [
+              "Layered collage of Leonardo's notebooks, Vitruvian Man, the Mona Lisa, flying-machine sketches and a Florentine dome, composited with painted cloud plates and ink splatter: dense, textured frames",
+              "A consistent violet-sepia grade with grunge and paper texture gives depth and a period feel",
+              "Variety of staging across frames: architectural perspective lines, macro quill nib, rider silhouette over a split Mona Lisa, heroic up-shot portrait, crossbow figure over schematic drawings",
+              "Implied camera moves through layered 2.5D planes, with construction-line motifs carried from frame to frame"
+            ],
+            "gaps": [
+              "Typography is a generic small-caps classical serif dropped into empty sky with no integration or scale idea; make the type part of Leonardo's mirror-writing and diagram language",
+              "The idea leans on familiar Da Vinci iconography (Vitruvian Man, Mona Lisa) instead of one surprising, ownable concept like B's eye-to-spiral",
+              "The heavy grunge and overlay treatment muddies the hierarchy; simplify the palette and give each frame a stronger focal read"
+            ]
+          }
+        },
+        "ranking": [
+          "B",
+          "A",
+          "D",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 32.8,
+        "cost_usd": 0.16238740000000002,
+        "tokens": 72169,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "the-boxtrolls-end-titles",
+        "B": "vertigo",
+        "C": "da-vincis-demons",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 9,
+              "originality": 8
+            },
+            "tells": [
+              "Credits are built into the world: a name is printed on the side of a pram, and others sit inside hand-drawn architecture and light pools instead of floating over it",
+              "Custom condensed display lettering with a hand-cut, storybook feel that matches the line quality of the drawings",
+              "Rough pencil line over watercolour washes, with real paint texture, warm/cool shifts and vignetted light pools",
+              "Every frame is a different set-up: hanging from a chain, a pram ride, a grand staircase, a falling figure, a seesaw in a jungle clearing, a tower of boxes at sunset. The characters perform, so this is choreographed action, not a slideshow",
+              "Character design is asymmetric and full of personality, with an unmistakable studio house style"
+            ],
+            "gaps": [
+              "The type is consistent but stays the same size and conventional in placement. It never becomes part of the action the way the B spirals make the type and image one idea",
+              "Credits are mostly placed in open sky or wall space. The pram frame shows the stronger approach, and more credits could be carried by objects the same way",
+              "The palette changes a lot from scene to scene (sepia, amber, grey, green, orange). A tighter colour arc would give it the graphic punch of B's red/black/green"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.98,
+            "scores": {
+              "idea": 10,
+              "composition": 10,
+              "typography": 9,
+              "colour": 10,
+              "light_texture": 9,
+              "motion": 9,
+              "craft": 9,
+              "originality": 10
+            },
+            "tells": [
+              "One specific idea that only this film could have: the vertigo spiral comes out of an extreme close-up of an eye, so dizziness, obsession and seeing become a single image",
+              "A daring palette: a monochrome red-tinted face, then pure black with magenta and then mint-green Lissajous spirograph forms",
+              "Slab-serif outline type for the title and director, with the title placed right across the eye. Credit blocks are ranged right and flow around the green form, so type and image are composed together",
+              "Clear development across the frames: a human face, then an abstract spiral born in the pupil, then shifting geometric forms, then a return to the eye for the director credit. That is a true structure with a payoff",
+              "The live-action eye has real photographic grain and skin texture, which plays against the cold mathematical line work"
+            ],
+            "gaps": [
+              "The long credit stacks over the spirals are dense and rely on slab caps alone. The scale contrast between role and name could be pushed further",
+              "Some spiral frames sit alone in the middle of black. More layering of eye and spiral could hold the tension through the mid-section",
+              "Very little to fault. A small one: the outline display type sits slightly apart from the generated line work rather than drawn in its language"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 5,
+              "colour": 7,
+              "light_texture": 8,
+              "motion": 7,
+              "craft": 7,
+              "originality": 6
+            },
+            "tells": [
+              "A clear thematic world built from Leonardo's notebook material: the Vitruvian Man, mirror-script pages, machine drawings, the Mona Lisa and perspective lines over St Peter's",
+              "Layered compositing of ink line, cloud plates, ink spatter and grungy parchment textures, with a restrained violet/umber palette",
+              "Varied set-ups that move from icon to architecture to quill to hero portrait to action pose, suggesting camera moves through layers of a sketchbook",
+              "Illustrated portrait with an upward gaze and strong chiaroscuro"
+            ],
+            "gaps": [
+              "The type is a generic classical small-caps serif, small, centred and set apart from the image. It needs a typographic idea of its own, such as handwriting reversed in mirror script or type built from Leonardo's construction lines",
+              "The 'Da Vinci sketch' collage is a familiar look, with grunge overlays and spatter doing a lot of the work. It needs one singular visual device like B's eye-to-spiral",
+              "Colour and texture sit at a similar muted mid-tone in most frames. More contrast and a deliberate colour turn would give it rhythm and a strong ending"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.65,
+            "scores": {
+              "idea": 6,
+              "composition": 4,
+              "typography": 4,
+              "colour": 5,
+              "light_texture": 3,
+              "motion": 3,
+              "craft": 4,
+              "originality": 5
+            },
+            "tells": [
+              "One flat graphic is panned and cropped: all six frames are the same pink sound-report form at different zooms, which is a single layout with the camera moved over it",
+              "The 'handwriting' looks like a handwriting font. Repeated letterforms ('FS \u2013 missed the top', the check marks) look identical with no pen pressure or ink variation, and the circles are clean vector ellipses",
+              "Flat, even, unmotivated light on the paper. There is barely any carbon-copy texture, embossing or shadow, only one stacked-sheets frame adds token depth, and no physical object or hand is ever seen",
+              "The idea is clever but literal and copy-driven: the product name ('Tern') is revealed by circling it on the form, and the punchline is delivered as text",
+              "The form typography (a small tracked grotesk label set, a bold 'SOUND REPORT' heading) is a competent but default-feeling grotesk with no typographic point of view"
+            ],
+            "gaps": [
+              "Make it physical: a real carbon form shot under real light, with a real pen, hand, ink bleed, pressure, and yellow and white copies showing through. Right now it reads as a vector render",
+              "Choreograph the piece instead of panning one static layout. Cut between details, time the handwriting being written to sound, and add a real visual turn like B's eye-to-spiral",
+              "Bring the subject into the image. The recorder, the places and the sounds never appear, so the piece relies entirely on reading text. Give it one memorable image beyond the form"
+            ]
+          }
+        },
+        "ranking": [
+          "B",
+          "A",
+          "C",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 33.8,
+        "cost_usd": 0.1613594,
+        "tokens": 72120,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "critic": {
+    "answer": {
+      "scores": {
+        "motion": 5,
+        "sound": 6,
+        "craft": 7
+      },
+      "checks": {
+        "idea": true,
+        "invariant": true,
+        "arc": false,
+        "type_meaning": true,
+        "freeze_frame": false,
+        "ending": true,
+        "restraint": true,
+        "material": true,
+        "sync": null
+      },
+      "defects": [
+        "The longest shot runs 11.2s. It is a slow camera drift over a static sheet, and 7 of 29 seconds barely change from the second before.",
+        "Most of the movement is the camera panning, cropping and pulling out over one flat document. The objects themselves hardly move, so there is little weight, overlap or follow-through.",
+        "The handwriting reads as a font, not a hand. The checkmarks are near-identical glyphs and the letters keep the same baseline rhythm, which undercuts the premise of hand-filled notes.",
+        "The circles do not sit cleanly on their words. The 'still no clip' ellipse cuts through the TR4 checkmark, and the 'got the top' and '30 hrs, one roll' loops collide with text and run off the edge.",
+        "Several frames are mid-pan crops that cut words in half ('every ti', 'Te', 'rolls the moment you'), so they do not hold up as stills.",
+        "The rain-on-tin-roof row shows a wash of grey light that looks like a soft lighting pass, not designed light. The paper is shaded differently from shot to shot.",
+        "There is a 2s full-band white-noise block (about 5.6\u20137.5s) with a dead-flat top and a hard cutoff. It reads as a placeholder hiss rather than designed sound, and it falls right in the static stretch.",
+        "The 'roll' line ('1') and the right-margin fields are cut off at the frame edge in close-ups."
+      ],
+      "gaps": [
+        "Choreography: one camera move does the whole film. Top studio work would make the marks perform: an ink stroke with real pressure and speed, a circle drawn hard and fast as a hit, a carbon sheet lifted to reveal the next layer. Each event should hand off to the next, not be panned past.",
+        "Pacing and arc: the circled 'got the top / no clip' climax arrives as a gentle reveal with no build or release, and the 11s drift kills the energy. It needs a tighter build through the failed takes (NG, INC, FS), a sharp turn at the switch to 'Tern', and a held, earned settle at the end.",
+        "Sound and finish: the soundtrack is busy and evenly dense, with transients everywhere, so cuts and pen strokes cannot land as accents. The noise block sounds like a placeholder rather than tape or room tone. The lettering needs real hand variation and pen-pressure texture to match the paper's material quality."
+      ]
+    },
+    "meta": {
+      "seconds": 24.0,
+      "cost_usd": 0.16415380000000002,
+      "tokens": 72349,
+      "models": [
+        "claude-opus-5-5"
+      ]
+    },
+    "pace": "pass2.mp4: 30.0s, 8 shots, median 2.25s, longest 11.23s\nper-second change: [8.6, 4.2, 11.2, 5.7, 12.4, 13.4, 0.8, 13.8, 16.5, 14.4, 12.3, 9.0, 10.7, 17.8, 5.7, 13.8, 3.2, 0.8, 13.4, 18.0, 14.8, 15.2, 32.2, 3.0, 35.2, 10.8, 16.0, 11.8, 12.6]\nPACE: FAIL \u2014 longest shot 11.2s > 2.5s; median shot 2.2s > 2.0s; 7/29 seconds look like the previous second"
+  },
+  "full_scores": {
+    "idea": 6.0,
+    "composition": 4.5,
+    "typography": 4.0,
+    "colour": 5.0,
+    "light_texture": 3.5,
+    "motion": 4.25,
+    "craft": 5.75,
+    "originality": 5.0,
+    "sound": 6
+  },
+  "full_overall": 4.89,
+  "cost_usd": 0.488,
+  "judge_seconds": 90.6,
+  "verdict": "FAIL"
+}

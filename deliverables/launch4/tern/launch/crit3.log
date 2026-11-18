@@ -1,0 +1,4 @@
+judging pass3 vs ['vertigo', 'da-vincis-demons', 'the-boxtrolls-end-titles']
+  trial 0: {'A': 'the-boxtrolls-end-titles', 'B': 'vertigo', 'C': 'candidate', 'D': 'da-vincis-demons'}  ranking=['B', 'A', 'D', 'C']  35.1s $0.16378979999999999
+  trial 1: {'A': 'the-boxtrolls-end-titles', 'B': 'vertigo', 'C': 'da-vincis-demons', 'D': 'candidate'}  ranking=['B', 'A', 'C', 'D']  37.5s $0.167732
+{"name": "pass3", "verdict": "FAIL", "ref_mean": 8.23, "delta": -3.98, "cost_usd": 0.499, "cand_overall": 4.25, "judged_pro": "0/2"}
