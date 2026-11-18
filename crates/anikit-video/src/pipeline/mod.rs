@@ -968,6 +968,8 @@ pub fn render_ak264_job_tap(ev: &Evaluator, opts: &RenderOptions, out: &std::pat
         subpel: opts.quality != Quality::Draft,
         // The encoder decides per frame (auto AQ: on for gradient-dominated frames, off on flat UI) unless the spec sets `encode.aq`.
         aq_strength: ev.encode_aq.unwrap_or(ak264::EncoderConfig::default().aq_strength),
+        // One B picture between references (CABAC qualities; the chunk encoder flushes, the muxer reorders).
+        bframes: if opts.quality != Quality::Draft { 1 } else { 0 },
         ..Default::default()
     };
     let prof = Profile::default();
