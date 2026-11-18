@@ -1,0 +1,391 @@
+{
+  "name": "pass1",
+  "tags": [
+    "product-launch",
+    "cg-3d"
+  ],
+  "refs": [
+    "wealthsimple-trade",
+    "tiffany-holiday",
+    "da-vincis-demons"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 4.5,
+      "composition": 5.0,
+      "typography": 2.0,
+      "colour": 4.0,
+      "light_texture": 5.0,
+      "motion": 4.0,
+      "craft": 3.0,
+      "originality": 3.5
+    },
+    "overall": 3.88,
+    "judged_professional": "0/2",
+    "pro_rate": 0.0,
+    "mean_rank": 3,
+    "gaps": [
+      "The type is the weakest part. Set the logo with intent and make it physical (branded, cut or inked into the wood), or let the resonance itself form the wordmark",
+      "There is no choreography. Build a chain reaction where one strike sets off the whole field and shows 'one call, everything settles' through causal motion instead of repeated static macro shots",
+      "The light and materials are inconsistent. Use one coherent light source, believable steel and wood shading, and a palette chosen on purpose beyond grey plus one red accent",
+      "Typography needs a point of view. Custom or carefully chosen letterforms that resonate, vibrate or are cut or branded into the wood would make the type part of the idea.",
+      "Push the metaphor past literal: show sympathetic resonance spreading through the field as visible choreography (fork to fork, wave across the room) with scale and camera variation, not repeated tine close-ups.",
+      "Replace the stock gobo-shadow look with motivated light and real material detail (worn wood, fingerprints, imperfect chrome, varied blocks) so the frames work as posters."
+    ],
+    "tells": [
+      "The metaphor (tuning forks resonating = 'settled instantly') is a reasonable start but obvious, and it never develops past forks on blocks",
+      "Window-blind shadow bands are reused in almost every frame as a stock atmosphere effect, and the shadow direction and shape shift from shot to shot with no motivation",
+      "Repeated near-identical close-ups of fork tines (frames 1 and 5); little happens across the sequence",
+      "Objects are generic CG: plain wooden blocks with a procedural wood texture, a red ball striker, a field of forks with inconsistent scale and placement, which suggests generated or template output",
+      "The end card is default bold grotesk in flat red pasted onto the wood, with a low-contrast tagline that is barely legible. It has no material integration (not engraved, burned or printed) and no typographic idea",
+      "The end card uses a default heavy grotesk in flat red, stamped onto a wooden block like a slide. The tagline 'One API call. Settled instantly.' is generic SaaS copy, and the type has no relationship to the material it sits on.",
+      "The metaphor is literal: tuning forks for 'in sync' or 'resonance'. It is a one-step visual pun, and the frames show little more than forks and blocks.",
+      "Venetian-blind and window-grid gobo shadows on a grey seamless are a stock 'cinematic' clich\u00e9. They repeat in almost every frame and do the work of a real lighting idea.",
+      "The materials are CG-default: tiling wood texture, chrome forks with no handling marks, overlaid noise grain. The field of forks is near-instanced, with the same block over and over.",
+      "Three of the six frames are near-identical close-ups of fork tines against shadow stripes, so little happens and the sequence lacks escalation."
+    ]
+  },
+  "refs_summary": {
+    "wealthsimple-trade": {
+      "overall": 3.19,
+      "judged_professional": "0/2",
+      "mean_rank": 4
+    },
+    "tiffany-holiday": {
+      "overall": 7.25,
+      "judged_professional": "2/2",
+      "mean_rank": 2
+    },
+    "da-vincis-demons": {
+      "overall": 7.69,
+      "judged_professional": "2/2",
+      "mean_rank": 1
+    }
+  },
+  "ref_mean": 6.04,
+  "delta": -2.16,
+  "trials": [
+    {
+      "key": {
+        "A": "da-vincis-demons",
+        "B": "wealthsimple-trade",
+        "C": "candidate",
+        "D": "tiffany-holiday"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 7,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "The title sequence has one specific world: Leonardo's notebook pages (Vitruvian Man, mirror-script, machine sketches, Mona Lisa) blended with painted, ink-lined portraits of the characters",
+              "Heavy, deliberate texture: parchment grain, ink spatter, scratches and cloud mattes are layered in every frame",
+              "The palette is unusual and controlled: bruised violet, sepia and umber, held across the whole piece",
+              "Composition changes every frame: Vitruvian Man centred, a dome with radiating perspective lines, an extreme close-up of a quill, a horizon split, an upward-looking face against a compass arc, a diagonal figure",
+              "Credits use a small-caps classical serif placed to fit each image (inside the compass circle, on the horizon line), not in a fixed position",
+              "Shapes carry across cuts (circles, radiating lines), which suggests planned transitions between shots"
+            ],
+            "gaps": [
+              "Typography is respectful but timid: the credits never become part of the image the way the drawings do. Let a name be written into the mirror-script or follow a sketch's construction lines",
+              "The ink-and-glow illustration style sits close to its genre (period drama titles over grunge textures). Push one more surprising transformation so it isn't just a mood collage",
+              "Some frames rely on overlay and multiply blending for depth instead of real spatial staging. Give at least one move clear 3D parallax or a physical camera so the paper world has weight"
+            ]
+          },
+          "B": {
+            "verdict": "not professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 2,
+              "composition": 3,
+              "typography": 2,
+              "colour": 4,
+              "light_texture": 4,
+              "motion": 2,
+              "craft": 3,
+              "originality": 2
+            },
+            "tells": [
+              "Every frame is one object centred on a flat pastel ground (cream, sage, blush, grey): the generic 'tasteful AI' product-render look",
+              "The same composition repeats in all six frames. It reads as a gallery of separate prompts, not a choreographed film",
+              "Nothing connects the subjects (earbuds, steering wheel with traffic-sign pills, a cannabis ball, a plug in a porthole, a retro chess TV, a sci-fi ring). No idea or story runs through them",
+              "Frame aspect ratios are inconsistent (some square, some wide), so it was not designed as one piece",
+              "Placeholder-like UI pill icons sit stuck onto the steering wheel; the textures are uncanny and over-smooth (the cannabis reads as a texture blob); the light is the same soft studio fill every time",
+              "No typography at all, and nothing visual replaces it as a way of communicating"
+            ],
+            "gaps": [
+              "There is no concept. Pick one idea that links the objects and build the frames as a sequence of cause and effect, not a lineup",
+              "The compositions are identical and centred. Vary scale, cropping and camera, and stage objects interacting with each other and with space",
+              "The lighting and materials are generic. Use motivated light, real shadows and a palette chosen for the brief instead of a default pastel sweep"
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.7,
+            "scores": {
+              "idea": 5,
+              "composition": 5,
+              "typography": 2,
+              "colour": 4,
+              "light_texture": 6,
+              "motion": 4,
+              "craft": 3,
+              "originality": 4
+            },
+            "tells": [
+              "The metaphor (tuning forks resonating = 'settled instantly') is a reasonable start but obvious, and it never develops past forks on blocks",
+              "Window-blind shadow bands are reused in almost every frame as a stock atmosphere effect, and the shadow direction and shape shift from shot to shot with no motivation",
+              "Repeated near-identical close-ups of fork tines (frames 1 and 5); little happens across the sequence",
+              "Objects are generic CG: plain wooden blocks with a procedural wood texture, a red ball striker, a field of forks with inconsistent scale and placement, which suggests generated or template output",
+              "The end card is default bold grotesk in flat red pasted onto the wood, with a low-contrast tagline that is barely legible. It has no material integration (not engraved, burned or printed) and no typographic idea"
+            ],
+            "gaps": [
+              "The type is the weakest part. Set the logo with intent and make it physical (branded, cut or inked into the wood), or let the resonance itself form the wordmark",
+              "There is no choreography. Build a chain reaction where one strike sets off the whole field and shows 'one call, everything settles' through causal motion instead of repeated static macro shots",
+              "The light and materials are inconsistent. Use one coherent light source, believable steel and wood shading, and a palette chosen on purpose beyond grey plus one red accent"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 5,
+              "colour": 8,
+              "light_texture": 8,
+              "motion": 8,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "A recurring hero (a jewelled, diamond-encrusted bird) leads the viewer through a sequence of different worlds: a clock face, an overhead street crossing with a yellow cab, a stage with a ballerina, a brownstone facade, a dining table",
+              "The sparkle trail is a consistent device that links the shots, which shows planned choreography and camera travel between scenes",
+              "Real cinematic light: practical lamps, bokeh, candlelight, cool stage wash against warm interiors, a teal-and-amber palette with a yellow cab accent",
+              "Strong variety of scale and angle (macro, top-down, wide stage, street-level architecture)",
+              "No type is visible in the sampled frames. The image-led storytelling carries the piece, which suits a luxury holiday film, though the brand end card isn't shown"
+            ],
+            "gaps": [
+              "The final painterly desert frame breaks the established visual language. Either motivate the style shift or bring it into line with the rest",
+              "The sparkle-trail magic is a familiar holiday-luxury trope. Find a stranger, more specific idea for the bird's journey so it is memorable beyond the craft",
+              "Typography is absent or unproven. Design an end card or integrated type moment with the same craft as the image, for example engraved or set in light"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "D",
+          "C",
+          "B"
+        ]
+      },
+      "meta": {
+        "seconds": 34.6,
+        "cost_usd": 0.1762724,
+        "tokens": 72228,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "da-vincis-demons",
+        "B": "wealthsimple-trade",
+        "C": "tiffany-holiday",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "Leonardo's notebook drawings (Vitruvian Man, mirror-script pages, machine studies, Mona Lisa) are layered with hand-inked figure illustration and painted skies. Every frame belongs to one specific world, and that world grows out of the subject.",
+              "Heavy layering of parchment grain, ink spatter, scratched texture and double exposure gives real material depth instead of a clean digital ground.",
+              "The palette is deliberate and unusual: violet and lilac against sepia and umber, held consistently across shots.",
+              "The framing changes from shot to shot: wide architecture, an extreme close-up of a quill, a low-angle portrait, a silhouette on the horizon. That reads as choreographed camera and transitions, not one repeated layout.",
+              "Credits are in a small-caps classical serif placed into negative space within each composition. This is appropriate but conventional; the type is not part of the image."
+            ],
+            "gaps": [
+              "The type is the weakest element. It is a standard small-caps credit serif dropped into empty space. It could interact with the ink lines or mirror-script, for example writing on, being drawn by the quill, or mirroring.",
+              "The Renaissance iconography is close to clich\u00e9 (Vitruvian Man, Mona Lisa, St Peter's dome). Less obvious source material from the codices would feel more ownable.",
+              "The grunge overlays are applied a little uniformly. Varying texture density between shots would give the sequence more rhythm."
+            ]
+          },
+          "B": {
+            "verdict": "not professional",
+            "confidence": 0.7,
+            "scores": {
+              "idea": 3,
+              "composition": 3,
+              "typography": 3,
+              "colour": 5,
+              "light_texture": 5,
+              "motion": 2,
+              "craft": 5,
+              "originality": 3
+            },
+            "tells": [
+              "Every frame repeats the same composition: one centred hero object on a flat pastel or cream seamless. Only the subject changes, like a slide deck.",
+              "The objects don't connect to each other (earbuds, a steering wheel with UI icons, a cannabis ball, a power plug, a CRT chess monitor, a glowing ring). There is no narrative or visual thread, and no idea links the frames.",
+              "It has the generic 'tasteful AI render' look: soft diffuse studio light, plasticky perfect surfaces, and placeholder UI icons in pills floating around the steering wheel.",
+              "The aspect ratios are inconsistent across frames, which suggests stitched outputs rather than one designed film.",
+              "The frames suggest no camera or object choreography; each looks like a static product shot.",
+              "No type is visible, and its absence does nothing for the piece because there is no message or brand voice in its place."
+            ],
+            "gaps": [
+              "Commit to a single concept that links the objects, such as a transformation chain where one object morphs into the next, and stage it as a choreographed sequence instead of isolated hero shots.",
+              "Break the centred-on-seamless formula with cropping, scale contrast, environments, and motivated, directional light with shadows and imperfection.",
+              "Add an authored layer such as typography, sound-led cuts or a narrative device, so the piece says something rather than displaying renders."
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 5,
+              "colour": 7,
+              "light_texture": 8,
+              "motion": 8,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "A jewelled bird acts as a recurring character that carries the camera through a city at night. It moves from a clock face to a top-down street crossing with a yellow cab, then a stage spotlight on a ballerina, a brownstone facade and a dining table. This is clear choreography, with a narrative thread and a trail of sparkle.",
+              "The light is real and motivated: practical window light, string lights, shallow depth of field with bokeh, and theatrical volumetric light on the stage.",
+              "The camera language varies (macro, overhead, wide stage, low architectural angle, tabletop), so the frames read as directed shots.",
+              "The final painted desert frame breaks style abruptly. It may be a deliberate dream turn, but the frames don't make that clear, so it reads as inconsistent.",
+              "No typography is visible. Its absence suits a luxury mood piece, but there is no end-card craft to judge."
+            ],
+            "gaps": [
+              "The style shift into the painterly Monument Valley frame needs a visible bridge, or the whole film needs a unifying treatment so it feels intended.",
+              "The 'magical sparkle creature over a festive city' premise is a familiar luxury-holiday trope. A more specific conceit would lift its originality.",
+              "There is no typographic or graphic layer with a point of view. An integrated title or end card would complete the piece."
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.75,
+            "scores": {
+              "idea": 4,
+              "composition": 5,
+              "typography": 2,
+              "colour": 4,
+              "light_texture": 4,
+              "motion": 4,
+              "craft": 3,
+              "originality": 3
+            },
+            "tells": [
+              "The end card uses a default heavy grotesk in flat red, stamped onto a wooden block like a slide. The tagline 'One API call. Settled instantly.' is generic SaaS copy, and the type has no relationship to the material it sits on.",
+              "The metaphor is literal: tuning forks for 'in sync' or 'resonance'. It is a one-step visual pun, and the frames show little more than forks and blocks.",
+              "Venetian-blind and window-grid gobo shadows on a grey seamless are a stock 'cinematic' clich\u00e9. They repeat in almost every frame and do the work of a real lighting idea.",
+              "The materials are CG-default: tiling wood texture, chrome forks with no handling marks, overlaid noise grain. The field of forks is near-instanced, with the same block over and over.",
+              "Three of the six frames are near-identical close-ups of fork tines against shadow stripes, so little happens and the sequence lacks escalation."
+            ],
+            "gaps": [
+              "Typography needs a point of view. Custom or carefully chosen letterforms that resonate, vibrate or are cut or branded into the wood would make the type part of the idea.",
+              "Push the metaphor past literal: show sympathetic resonance spreading through the field as visible choreography (fork to fork, wave across the room) with scale and camera variation, not repeated tine close-ups.",
+              "Replace the stock gobo-shadow look with motivated light and real material detail (worn wood, fingerprints, imperfect chrome, varied blocks) so the frames work as posters."
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "C",
+          "D",
+          "B"
+        ]
+      },
+      "meta": {
+        "seconds": 35.7,
+        "cost_usd": 0.166608,
+        "tokens": 72380,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "critic": {
+    "answer": {
+      "scores": {
+        "motion": 5,
+        "sound": 5,
+        "craft": 6
+      },
+      "checks": {
+        "idea": true,
+        "invariant": true,
+        "arc": false,
+        "type_meaning": false,
+        "freeze_frame": false,
+        "ending": true,
+        "restraint": true,
+        "material": true,
+        "sync": true
+      },
+      "defects": [
+        "Heavy, uniform film grain sits over everything at 100%; it reads as a filter over the CG, not as captured texture, and it muddies the soft shadow edges",
+        "The red 'One API call. Settled instantly.' tagline on mid-brown wood has poor contrast, and the slatted shadow crossing the block cuts through the end card, so the line is close to illegible",
+        "The wood blocks use a flat procedural or stock grain that repeats across the whole field of blocks, with no wear, edge bevel highlights or variation, so they read as CG",
+        "The extreme close-ups on the tines (frames 1 and 5) are mostly defocused grey; they are long, near-static holds that fill time",
+        "Overhead shot 3 (window-grid shadow with two tiny blocks) is flat and small-scale and breaks the lens and lighting language of the other shots",
+        "The mallet strike shows no anticipation, contact squash or visible tine vibration; the fork never moves to sell resonance",
+        "The camera moves are slow, linear-feeling dollies, with almost identical spacing between the paired frames",
+        "The 5.0s longest shot and 2.5s median shot are slow for 15s; there is dead air in the tine close-ups"
+      ],
+      "gaps": [
+        "Motion: the central device (a struck fork making others resonate, i.e. settlement) is never shown physically. Top work would have the tines blur and shimmer, sympathetic forks rippling through the field in a timed cascade, and that wave would be the climax. Here the field of forks is a static beauty shot with a camera drift",
+        "Sound: tonal mallet/bell plucks over a noise bed with repetitive arpeggiated partials, and a 1s silence drop before the end card. It is serviceable, but the arrangement is thin and loops rather than evolving, with no designed strike transient, sympathetic-ring build or tuned resolution chord landing on the logo",
+        "Finish: the lighting (soft window-slat shadows) carries the look, but the grain overlay, generic wood shaders and an end card with low-contrast, shadow-crossed type keep it at good-render level, not studio-finished. The type also has no relation to the fork or resonance idea"
+      ]
+    },
+    "meta": {
+      "seconds": 25.5,
+      "cost_usd": 0.1645732,
+      "tokens": 72250,
+      "models": [
+        "claude-opus-5-5"
+      ]
+    },
+    "pace": "pass1.mp4: 15.0s, 5 shots, median 2.50s, longest 5.00s\nper-second change: [15.9, 14.9, 59.2, 35.8, 64.0, 10.3, 10.8, 67.5, 21.1, 72.9, 24.2, 59.3, 39.7, 14.8]\nPACE: FAIL \u2014 longest shot 5.0s > 2.5s; median shot 2.5s > 2.0s"
+  },
+  "full_scores": {
+    "idea": 4.5,
+    "composition": 5.0,
+    "typography": 2.0,
+    "colour": 4.0,
+    "light_texture": 5.0,
+    "motion": 4.5,
+    "craft": 4.5,
+    "originality": 3.5,
+    "sound": 5
+  },
+  "full_overall": 4.22,
+  "cost_usd": 0.507,
+  "judge_seconds": 95.8,
+  "verdict": "FAIL"
+}

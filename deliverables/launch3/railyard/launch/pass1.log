@@ -1,0 +1,33 @@
+warning: scenes[0].layers[0].props.objects[7].pos: the sphere floats 0.30 m above the floor; set y = radius (0.016) for contact, or lift it clearly
+warning: scenes[1].layers[0].props.objects[7].pos: the sphere floats 0.30 m above the floor; set y = radius (0.016) for contact, or lift it clearly
+warning: scenes[2].layers[0].props.objects[7].pos: the sphere floats 0.30 m above the floor; set y = radius (0.016) for contact, or lift it clearly
+warning: scenes[3].layers[0].props.objects[245].pos: the sphere floats 0.30 m above the floor; set y = radius (0.016) for contact, or lift it clearly
+estimate: ~178 s (1434.6 ms/frame × 450 changing frames on 4 threads); heaviest: scenes[2].layers[0] (component:scene3d) ~0% of a frame. Faster: --quality draft, or --from/--to for a range.
+render 19/450 frames  1 fps  15.5s  ETA 351s
+render 33/450 frames  1 fps  31.9s  ETA 403s
+render 49/450 frames  1 fps  46.9s  ETA 384s
+render 74/450 frames  1 fps  62.4s  ETA 317s
+render 96/450 frames  1 fps  77.8s  ETA 287s
+render 116/450 frames  1 fps  93.3s  ETA 269s
+render 132/450 frames  1 fps  108.8s  ETA 262s
+render 150/450 frames  1 fps  124.6s  ETA 249s
+render 170/450 frames  1 fps  140.0s  ETA 231s
+render 186/450 frames  1 fps  155.7s  ETA 221s
+render 204/450 frames  1 fps  171.5s  ETA 207s
+render 218/450 frames  1 fps  187.8s  ETA 200s
+render 234/450 frames  1 fps  203.7s  ETA 188s
+render 250/450 frames  1 fps  218.9s  ETA 175s
+render 269/450 frames  1 fps  234.2s  ETA 158s
+render 290/450 frames  1 fps  250.6s  ETA 138s
+render 311/450 frames  1 fps  267.1s  ETA 119s
+render 324/450 frames  1 fps  283.7s  ETA 110s
+render 338/450 frames  1 fps  299.6s  ETA 99s
+render 355/450 frames  1 fps  316.0s  ETA 85s
+render 369/450 frames  1 fps  333.1s  ETA 73s
+render 382/450 frames  1 fps  349.2s  ETA 62s
+render 404/450 frames  1 fps  365.2s  ETA 42s
+render 424/450 frames  1 fps  380.6s  ETA 23s
+render 446/450 frames  1 fps  395.8s  ETA 4s
+
+wrote launch/pass1.mp4 — 1920×1080 30 fps, 450 frames (0 deduped), 15.00 s video in 400.27 s (1 fps), 159534.6 KB
+sheet: launch/pass1.png (16 frames spread over the video)

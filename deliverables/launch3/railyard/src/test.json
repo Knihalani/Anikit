@@ -1,0 +1,16 @@
+{ "size": "16:9", "fps": 30,
+  "scenes": [ { "duration": 2, "layers": [ { "component": "scene3d", "props": {
+    "env": {"hdri": "polyhaven:hdri/blue_photo_studio", "background": "blur", "exposure": 0},
+    "rig": {"preset": "window", "gobo": "window", "warmth": -0.1},
+    "set": {"preset": "sweep", "color": "#B9BDB8"},
+    "camera": { "lens": "portrait85", "shake": "breath", "keys": [
+      {"t": 0, "pos": [0.55, 0.42, 1.25], "target": [0, 0.24, 0], "focus": "tineL", "fstop": 2.8, "shutter": 0.5},
+      {"t": 2, "pos": [0.48, 0.4, 1.15], "target": [0, 0.24, 0], "focus": "tineL", "fstop": 2.8, "shutter": 0.5} ] },
+    "objects": [
+      {"type": "box", "name": "box", "size": [0.34, 0.12, 0.16], "pos": [0, 0.06, 0], "material": {"texture": "polyhaven:texture/oak_veneer_01", "scale": 0.5}},
+      {"type": "box", "size": [0.004, 0.09, 0.13], "pos": [0.169, 0.06, 0], "material": {"base": "#1a1612", "roughness": 0.9}},
+      {"type": "cylinder", "radius": 0.006, "height": 0.07, "pos": [0, 0.155, 0], "material": {"extends": "chrome", "roughness": 0.25, "imperfections": 0.4}},
+      {"type": "extrude", "name": "yoke", "d": "M -18 0 L 18 0 L 18 -4 C 18 -16, -18 -16, -18 -4 Z", "height": 0.036, "depth": 0.008, "pos": [0, 0.19, 0], "material": {"extends": "chrome", "roughness": 0.25, "imperfections": 0.4}},
+      {"type": "box", "name": "tineL", "size": [0.007, 0.15, 0.008], "pos": ["=-0.0145 - 0.0015*sin(t*90)*exp(-t*0.8)", 0.265, 0], "material": {"extends": "chrome", "roughness": 0.22, "imperfections": 0.4}},
+      {"type": "box", "name": "tineR", "size": [0.007, 0.15, 0.008], "pos": ["=0.0145 + 0.0015*sin(t*90)*exp(-t*0.8)", 0.265, 0], "material": {"extends": "chrome", "roughness": 0.22, "imperfections": 0.4}}
+    ] } } ] } ] }
