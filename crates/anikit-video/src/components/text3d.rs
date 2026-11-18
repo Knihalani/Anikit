@@ -517,7 +517,7 @@ impl Component for Text3d {
         ]);
         let letters = &self.letters;
         let draws: Vec<(&Mesh, [f32; 15])> = insts.iter().map(|(i, inst)| (&letters[*i].mesh, *inst)).collect();
-        let image = ctx.assets.image(key, iw, ih, &mut || render(&draws, &vp, eye, &mat, &light, sheen, iw as usize, ih as usize));
+        let image = ctx.assets.frame_image(key, iw, ih, &mut || render(&draws, &vp, eye, &mat, &light, sheen, iw as usize, ih as usize));
         out.push(Op::Image { image, dst: [x0, y0, rw_px, rh_px], opacity: fade, transform: crate::dl::IDENTITY });
         out
     }

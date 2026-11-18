@@ -6,7 +6,9 @@
 
 use std::time::Instant;
 
+use anikit_music::custom::{apply_chain, fx_chain, TrackAuto};
 use anikit_music::dsp::*;
+use anikit_music::seq::Grid;
 use anikit_music::sfx::{sfx, SfxParams, SFX};
 use anikit_music::Rng;
 
@@ -47,6 +49,30 @@ fn bench(name: &str, src: &(Vec<f32>, Vec<f32>), p: &mut dyn Processor) {
 
 fn report(name: &str, secs: f64) {
     println!("{name:<34} {:>8.1} ms {:>9.0}× real time", secs * 1000.0, SECS as f64 / secs);
+}
+
+fn bench_custom(name: &str, src: &(Vec<f32>, Vec<f32>), mut run: impl FnMut(&mut [f32], &mut [f32])) {
+    let (mut warm_l, mut warm_r) = (src.0[..48_000].to_vec(), src.1[..48_000].to_vec());
+    run(&mut warm_l, &mut warm_r);
+    let (mut l, mut r) = src.clone();
+    let t = Instant::now();
+    run(&mut l, &mut r);
+    report(name, t.elapsed().as_secs_f64());
+    assert!(l.iter().chain(&r).all(|x| x.is_finite()), "{name}: non-finite output");
+}
+
+fn control_rate_bench() {
+    let src = mix();
+    let mut chain = fx_chain(&serde_json::json!([{ "type": "autopan", "rate": 0.5, "depth": 0.8 }]), FS as u32, 120.0, "bench.fx").unwrap();
+    let grid = Grid { bpm: 120.0, ..Default::default() };
+    let auto = TrackAuto::parse(
+        &serde_json::json!({"volume": [[0, -20], [30, 0], [60, -6]], "pan": "=0.8*sin(beat)"}),
+        &grid,
+        "bench",
+    )
+    .unwrap();
+    bench_custom("autopan via apply_chain", &src, |l, r| apply_chain(&mut chain, l, r, FS as u32));
+    bench_custom("TrackAuto volume + pan", &src, |l, r| auto.apply(l, r, FS as u32));
 }
 
 const BLOCK: usize = 128;
@@ -111,6 +137,10 @@ fn validation() {
 }
 
 fn main() {
+    if std::env::args().any(|arg| arg == "--control-rate") {
+        control_rate_bench();
+        return;
+    }
     let src = mix();
     println!("60 s stereo @ 48 kHz, {BLOCK}-sample blocks, single thread\n");
     let eq: EqParams = serde_json::from_str(r#"{"low": -2, "lowFreq": 120, "mid": [[400, -3, 1.0]], "high": 2, "highFreq": 8000, "hp": 30, "lp": 18000}"#).unwrap();

@@ -109,8 +109,8 @@ pub struct Def {
     friction: f32,
     pub size: f32,
     size_var: f32,
-    /// Power-law sizes: (min, max, exponent α), p(size) ∝ size^-α.
-    size_pow: Option<(f32, f32, f32)>,
+    /// Power-law sizes, p(size) ∝ size^-α on [min, max].
+    size_pow: Option<SizePow>,
     /// Lit particles: forward scattering (Henyey–Greenstein g, -0.9..0.9;
     /// 0 keeps the diffuse sphere phase) and glints (per-particle facets
     /// flashing the key light; amount and sharpness).
@@ -341,7 +341,7 @@ pub fn parse(v: &Value, shapes: &mut spec::Shapes, mats: &mut Vec<Material>, nam
                 let base = gf(m, "size", 0.004, path)?;
                 let lo = gf(o, "min", base * 0.25, &p)?.max(1e-5);
                 let hi = gf(o, "max", base * 4.0, &p)?.max(lo * 1.0001);
-                Some((lo, hi, gf(o, "power", 2.5, &p)?.clamp(0.0, 8.0)))
+                Some(SizePow::new(lo, hi, gf(o, "power", 2.5, &p)?.clamp(0.0, 8.0)))
             }
             Some(_) => return Err(format!("{path}.size_dist: expected {{ \"min\", \"max\", \"power\" }} (p(size) ∝ size^-power)")),
         },
@@ -493,21 +493,42 @@ fn eval3p(e: &[PExpr; 3], p: V3, v: V3, t: f32, age: f32, i: usize) -> V3 {
 
 // ------------------------------------------------------------------ emitters
 
+/// Inverse CDF of p(s) ∝ s^-α on [lo, hi], with the per-definition terms
+/// precomputed so sampling a particle costs a single `powf`.
+#[derive(Clone, Copy, Debug)]
+enum SizePow {
+    /// α ≈ 1: s = lo · (hi/lo)^u.
+    Log { lo: f32, ratio: f32 },
+    /// s = (lo^e + u · (hi^e − lo^e))^(1/e), e = 1 − α.
+    Pow { lo_e: f32, span_e: f32, inv_e: f32 },
+}
+
+impl SizePow {
+    fn new(lo: f32, hi: f32, a: f32) -> Self {
+        if (a - 1.0).abs() < 1e-3 {
+            SizePow::Log { lo, ratio: hi / lo }
+        } else {
+            let e = 1.0 - a;
+            SizePow::Pow { lo_e: lo.powf(e), span_e: hi.powf(e) - lo.powf(e), inv_e: 1.0 / e }
+        }
+    }
+
+    #[inline]
+    fn sample(self, u: f32) -> f32 {
+        match self {
+            SizePow::Log { lo, ratio } => lo * ratio.powf(u),
+            SizePow::Pow { lo_e, span_e, inv_e } => (lo_e + u * span_e).powf(inv_e),
+        }
+    }
+}
+
 impl Def {
     /// Radius of particle `i` (without a `size` expression).
     #[inline]
     pub fn size_of(&self, i: usize) -> f32 {
         let u = hu(self.seed, i as u32, 7);
         match self.size_pow {
-            Some((lo, hi, a)) => {
-                // Inverse CDF of p(s) ∝ s^-a on [lo, hi].
-                if (a - 1.0).abs() < 1e-3 {
-                    lo * (hi / lo).powf(u)
-                } else {
-                    let e = 1.0 - a;
-                    (lo.powf(e) + u * (hi.powf(e) - lo.powf(e))).powf(1.0 / e)
-                }
-            }
+            Some(sp) => sp.sample(u),
             None => self.size * (1.0 + self.size_var * (u - 0.5) * 2.0),
         }
     }
@@ -3214,6 +3235,25 @@ mod tests {
         let c = one[(h / 2) * w + w / 2];
         assert!(c[0] < 0.05, "centre transmits {}", c[0]);
         assert_eq!(one[0], [1.0, 1.0, 1.0, 0.0, 0.0, 0.0]);
+    }
+
+    #[test]
+    fn size_pow_matches_reference_formula() {
+        let us: Vec<f32> = (0..=100).map(|u| u as f32 / 100.0).chain((0..8).map(|i| hu(0x1234_5678, i, 7))).collect();
+        for a in [0.0, 1.0, 1.0005, 2.5, 8.0] {
+            for (lo, hi) in [(0.001, 0.01), (1e-5, 0.5)] {
+                let size_pow = SizePow::new(lo, hi, a);
+                for &u in &us {
+                    let expected = if (a - 1.0).abs() < 1e-3 {
+                        lo * (hi / lo).powf(u)
+                    } else {
+                        let e = 1.0 - a;
+                        (lo.powf(e) + u * (hi.powf(e) - lo.powf(e))).powf(1.0 / e)
+                    };
+                    assert_eq!(size_pow.sample(u).to_bits(), expected.to_bits(), "a={a}, lo={lo}, hi={hi}, u={u}");
+                }
+            }
+        }
     }
 
     #[test]
