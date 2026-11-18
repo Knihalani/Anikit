@@ -338,6 +338,7 @@ pub fn build(ty: &str, m: &Map<String, Value>, path: &str, t: f32) -> Res<Option
             }
             grid(pts, nu, nvb, false)
         }
+        "cloth" => super::cloth::mesh_at(m, path, t as f32)?,
         "heightfield" => {
             let xz = [("x", "p"), ("z", "gt")];
             let e = num_as(m.get("expr").or(m.get("y")).ok_or_else(|| format!("{path}: a heightfield needs `expr` (y as an expression of x and z)"))?, &xz, &format!("{path}.expr"))?;

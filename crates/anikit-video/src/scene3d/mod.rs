@@ -24,6 +24,7 @@
 #![allow(clippy::too_many_arguments, clippy::needless_range_loop, clippy::type_complexity, clippy::question_mark, clippy::new_without_default)]
 
 pub mod authoring;
+pub mod cloth;
 pub mod bvh;
 pub mod rig;
 pub mod sets;
