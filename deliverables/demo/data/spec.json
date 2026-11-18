@@ -1,0 +1,1907 @@
+{
+ "size": [
+  1920,
+  1080
+ ],
+ "fps": 30,
+ "intent": {
+  "pace": "slow"
+ },
+ "background": "#071520",
+ "music": {
+  "style": "ambient",
+  "bpm": 64,
+  "key": "Dm",
+  "mood": "cold sparse"
+ },
+ "sound": {
+  "palette": "organic",
+  "ambience": "wind",
+  "density": 0.35,
+  "cues": [
+   {
+    "sfx": "crunch",
+    "at": 4.5
+   },
+   {
+    "sfx": "shatter",
+    "at": 13.0,
+    "gain": -2
+   },
+   {
+    "sfx": "crunch",
+    "at": 17.5,
+    "gain": -4
+   },
+   {
+    "sfx": "droplet",
+    "at": 24.6,
+    "gain": -6
+   }
+  ]
+ },
+ "post": {
+  "grain": 0.03,
+  "vignette": 0.18
+ },
+ "transition": "cut",
+ "scenes": [
+  {
+   "id": "1979",
+   "duration": 4.5,
+   "layers": [
+    {
+     "shader": "ice.glsl",
+     "uniforms": {
+      "cover": 0.9446,
+      "sun": 0.0,
+      "scale": "=4.2 + t * 0.25",
+      "panx": 0.0,
+      "pany": 0.0
+     },
+     "supersample": false
+    },
+    {
+     "text": "1979",
+     "x": 110,
+     "y": 400,
+     "size": 600,
+     "color": "#ff5a1f",
+     "font": "Big Shoulders Stencil",
+     "anchor": "topLeft",
+     "axes": {
+      "wght": 900,
+      "opsz": 72
+     },
+     "blend": "multiply",
+     "inkTexture": {
+      "amount": 0.32,
+      "scale": 38,
+      "seed": 3
+     },
+     "enter": {
+      "preset": "fadeIn",
+      "duration": 0.5,
+      "delay": 0.3
+     }
+    },
+    {
+     "shader": "ice.glsl",
+     "uniforms": {
+      "cover": 0.9446,
+      "sun": 0.0,
+      "scale": "=4.2 + t * 0.25",
+      "panx": 0.0,
+      "pany": 0.0,
+      "hl": -2
+     },
+     "supersample": false,
+     "alpha": true
+    },
+    {
+     "shape": "rect",
+     "x": 524.0,
+     "y": 151.0,
+     "width": 880,
+     "height": 118,
+     "fill": "#e8eef2",
+     "opacity": 0.92,
+     "cutout": {
+      "edge": "torn",
+      "amount": 3,
+      "rim": 0,
+      "shadow": false,
+      "seed": 79
+     },
+     "enter": {
+      "preset": "fadeIn",
+      "duration": 0.5,
+      "delay": 1.1
+     }
+    },
+    {
+     "text": "September, the month the Arctic Ocean’s ice is smallest.\n7.05 million km² of it in 1979.",
+     "x": 104,
+     "y": 110,
+     "size": 45,
+     "color": "#0b1d2a",
+     "font": "Big Shoulders",
+     "anchor": "topLeft",
+     "axes": {
+      "wght": 600,
+      "opsz": 24
+     },
+     "lineHeight": 1.12,
+     "enter": {
+      "preset": "fadeIn",
+      "duration": 0.5,
+      "delay": 1.1
+     }
+    }
+   ]
+  },
+  {
+   "id": "melt",
+   "duration": 8.5,
+   "layers": [
+    {
+     "shader": "ice.glsl",
+     "uniforms": {
+      "yi": "=clamp((t - 0.6) / 0.23750 + 0.5, 0, 32)",
+      "sun": "=t * 0.035",
+      "scale": "=5.4 + t * 0.42"
+     },
+     "supersample": false
+    },
+    {
+     "text": "1979",
+     "x": 110,
+     "y": 400,
+     "size": 600,
+     "color": "#ff5a1f",
+     "font": "Big Shoulders Stencil",
+     "anchor": "topLeft",
+     "axes": {
+      "wght": 900,
+      "opsz": 72
+     },
+     "start": 0,
+     "end": 0.6,
+     "sfx": false,
+     "blend": "multiply",
+     "inkTexture": {
+      "amount": 0.32,
+      "scale": 38,
+      "seed": 3
+     }
+    },
+    {
+     "shape": "rect",
+     "x": 394.0,
+     "y": 129.0,
+     "width": 620,
+     "height": 66,
+     "fill": "#e8eef2",
+     "opacity": 0.92,
+     "cutout": {
+      "edge": "torn",
+      "amount": 3,
+      "rim": 0,
+      "shadow": false,
+      "seed": 83
+     },
+     "sfx": false
+    },
+    {
+     "text": "September 1979: 7.05 million km² of ice",
+     "x": 104,
+     "y": 110,
+     "size": 45,
+     "color": "#0b1d2a",
+     "font": "Big Shoulders",
+     "anchor": "topLeft",
+     "axes": {
+      "wght": 600,
+      "opsz": 24
+     },
+     "lineHeight": 1.12,
+     "sfx": false,
+     "start": 0,
+     "end": 0.6
+    },
+    {
+     "text": "1980",
+     "x": 110,
+     "y": 400,
+     "size": 600,
+     "color": "#ff5a1f",
+     "font": "Big Shoulders Stencil",
+     "anchor": "topLeft",
+     "axes": {
+      "wght": 900,
+      "opsz": 72
+     },
+     "start": 0.6,
+     "end": 0.837,
+     "sfx": false,
+     "blend": "multiply",
+     "inkTexture": {
+      "amount": 0.32,
+      "scale": 38,
+      "seed": 3
+     }
+    },
+    {
+     "text": "September 1980: 7.67 million km² of ice",
+     "x": 104,
+     "y": 110,
+     "size": 45,
+     "color": "#0b1d2a",
+     "font": "Big Shoulders",
+     "anchor": "topLeft",
+     "axes": {
+      "wght": 600,
+      "opsz": 24
+     },
+     "lineHeight": 1.12,
+     "sfx": false,
+     "start": 0.6,
+     "end": 0.837
+    },
+    {
+     "text": "1981",
+     "x": 110,
+     "y": 400,
+     "size": 600,
+     "color": "#ff5a1f",
+     "font": "Big Shoulders Stencil",
+     "anchor": "topLeft",
+     "axes": {
+      "wght": 900,
+      "opsz": 72
+     },
+     "start": 0.837,
+     "end": 1.075,
+     "sfx": false,
+     "blend": "multiply",
+     "inkTexture": {
+      "amount": 0.32,
+      "scale": 38,
+      "seed": 3
+     }
+    },
+    {
+     "text": "September 1981: 7.14 million km² of ice",
+     "x": 104,
+     "y": 110,
+     "size": 45,
+     "color": "#0b1d2a",
+     "font": "Big Shoulders",
+     "anchor": "topLeft",
+     "axes": {
+      "wght": 600,
+      "opsz": 24
+     },
+     "lineHeight": 1.12,
+     "sfx": false,
+     "start": 0.837,
+     "end": 1.075
+    },
+    {
+     "text": "1982",
+     "x": 110,
+     "y": 400,
+     "size": 600,
+     "color": "#ff5a1f",
+     "font": "Big Shoulders Stencil",
+     "anchor": "topLeft",
+     "axes": {
+      "wght": 900,
+      "opsz": 72
+     },
+     "start": 1.075,
+     "end": 1.312,
+     "sfx": false,
+     "blend": "multiply",
+     "inkTexture": {
+      "amount": 0.32,
+      "scale": 38,
+      "seed": 3
+     }
+    },
+    {
+     "text": "September 1982: 7.30 million km² of ice",
+     "x": 104,
+     "y": 110,
+     "size": 45,
+     "color": "#0b1d2a",
+     "font": "Big Shoulders",
+     "anchor": "topLeft",
+     "axes": {
+      "wght": 600,
+      "opsz": 24
+     },
+     "lineHeight": 1.12,
+     "sfx": false,
+     "start": 1.075,
+     "end": 1.312
+    },
+    {
+     "text": "1983",
+     "x": 110,
+     "y": 400,
+     "size": 600,
+     "color": "#ff5a1f",
+     "font": "Big Shoulders Stencil",
+     "anchor": "topLeft",
+     "axes": {
+      "wght": 900,
+      "opsz": 72
+     },
+     "start": 1.312,
+     "end": 1.55,
+     "sfx": false,
+     "blend": "multiply",
+     "inkTexture": {
+      "amount": 0.32,
+      "scale": 38,
+      "seed": 3
+     }
+    },
+    {
+     "text": "September 1983: 7.39 million km² of ice",
+     "x": 104,
+     "y": 110,
+     "size": 45,
+     "color": "#0b1d2a",
+     "font": "Big Shoulders",
+     "anchor": "topLeft",
+     "axes": {
+      "wght": 600,
+      "opsz": 24
+     },
+     "lineHeight": 1.12,
+     "sfx": false,
+     "start": 1.312,
+     "end": 1.55
+    },
+    {
+     "text": "1984",
+     "x": 110,
+     "y": 400,
+     "size": 600,
+     "color": "#ff5a1f",
+     "font": "Big Shoulders Stencil",
+     "anchor": "topLeft",
+     "axes": {
+      "wght": 900,
+      "opsz": 72
+     },
+     "start": 1.55,
+     "end": 1.787,
+     "sfx": false,
+     "blend": "multiply",
+     "inkTexture": {
+      "amount": 0.32,
+      "scale": 38,
+      "seed": 3
+     }
+    },
+    {
+     "text": "September 1984: 6.81 million km² of ice",
+     "x": 104,
+     "y": 110,
+     "size": 45,
+     "color": "#0b1d2a",
+     "font": "Big Shoulders",
+     "anchor": "topLeft",
+     "axes": {
+      "wght": 600,
+      "opsz": 24
+     },
+     "lineHeight": 1.12,
+     "sfx": false,
+     "start": 1.55,
+     "end": 1.787
+    },
+    {
+     "text": "1985",
+     "x": 110,
+     "y": 400,
+     "size": 600,
+     "color": "#ff5a1f",
+     "font": "Big Shoulders Stencil",
+     "anchor": "topLeft",
+     "axes": {
+      "wght": 900,
+      "opsz": 72
+     },
+     "start": 1.788,
+     "end": 2.025,
+     "sfx": false,
+     "blend": "multiply",
+     "inkTexture": {
+      "amount": 0.32,
+      "scale": 38,
+      "seed": 3
+     }
+    },
+    {
+     "text": "September 1985: 6.70 million km² of ice",
+     "x": 104,
+     "y": 110,
+     "size": 45,
+     "color": "#0b1d2a",
+     "font": "Big Shoulders",
+     "anchor": "topLeft",
+     "axes": {
+      "wght": 600,
+      "opsz": 24
+     },
+     "lineHeight": 1.12,
+     "sfx": false,
+     "start": 1.788,
+     "end": 2.025
+    },
+    {
+     "text": "1986",
+     "x": 110,
+     "y": 400,
+     "size": 600,
+     "color": "#ff5a1f",
+     "font": "Big Shoulders Stencil",
+     "anchor": "topLeft",
+     "axes": {
+      "wght": 900,
+      "opsz": 72
+     },
+     "start": 2.025,
+     "end": 2.262,
+     "sfx": false,
+     "blend": "multiply",
+     "inkTexture": {
+      "amount": 0.32,
+      "scale": 38,
+      "seed": 3
+     }
+    },
+    {
+     "text": "September 1986: 7.41 million km² of ice",
+     "x": 104,
+     "y": 110,
+     "size": 45,
+     "color": "#0b1d2a",
+     "font": "Big Shoulders",
+     "anchor": "topLeft",
+     "axes": {
+      "wght": 600,
+      "opsz": 24
+     },
+     "lineHeight": 1.12,
+     "sfx": false,
+     "start": 2.025,
+     "end": 2.262
+    },
+    {
+     "text": "1987",
+     "x": 110,
+     "y": 400,
+     "size": 600,
+     "color": "#ff5a1f",
+     "font": "Big Shoulders Stencil",
+     "anchor": "topLeft",
+     "axes": {
+      "wght": 900,
+      "opsz": 72
+     },
+     "start": 2.262,
+     "end": 2.5,
+     "sfx": false,
+     "blend": "multiply",
+     "inkTexture": {
+      "amount": 0.32,
+      "scale": 38,
+      "seed": 3
+     }
+    },
+    {
+     "text": "September 1987: 7.28 million km² of ice",
+     "x": 104,
+     "y": 110,
+     "size": 45,
+     "color": "#0b1d2a",
+     "font": "Big Shoulders",
+     "anchor": "topLeft",
+     "axes": {
+      "wght": 600,
+      "opsz": 24
+     },
+     "lineHeight": 1.12,
+     "sfx": false,
+     "start": 2.262,
+     "end": 2.5
+    },
+    {
+     "text": "1988",
+     "x": 110,
+     "y": 400,
+     "size": 600,
+     "color": "#ff5a1f",
+     "font": "Big Shoulders Stencil",
+     "anchor": "topLeft",
+     "axes": {
+      "wght": 900,
+      "opsz": 72
+     },
+     "start": 2.5,
+     "end": 2.737,
+     "sfx": false,
+     "blend": "multiply",
+     "inkTexture": {
+      "amount": 0.32,
+      "scale": 38,
+      "seed": 3
+     }
+    },
+    {
+     "text": "September 1988: 7.37 million km² of ice",
+     "x": 104,
+     "y": 110,
+     "size": 45,
+     "color": "#0b1d2a",
+     "font": "Big Shoulders",
+     "anchor": "topLeft",
+     "axes": {
+      "wght": 600,
+      "opsz": 24
+     },
+     "lineHeight": 1.12,
+     "sfx": false,
+     "start": 2.5,
+     "end": 2.737
+    },
+    {
+     "text": "1989",
+     "x": 110,
+     "y": 400,
+     "size": 600,
+     "color": "#ff5a1f",
+     "font": "Big Shoulders Stencil",
+     "anchor": "topLeft",
+     "axes": {
+      "wght": 900,
+      "opsz": 72
+     },
+     "start": 2.737,
+     "end": 2.975,
+     "sfx": false,
+     "blend": "multiply",
+     "inkTexture": {
+      "amount": 0.32,
+      "scale": 38,
+      "seed": 3
+     }
+    },
+    {
+     "text": "September 1989: 7.01 million km² of ice",
+     "x": 104,
+     "y": 110,
+     "size": 45,
+     "color": "#0b1d2a",
+     "font": "Big Shoulders",
+     "anchor": "topLeft",
+     "axes": {
+      "wght": 600,
+      "opsz": 24
+     },
+     "lineHeight": 1.12,
+     "sfx": false,
+     "start": 2.737,
+     "end": 2.975
+    },
+    {
+     "text": "1990",
+     "x": 110,
+     "y": 400,
+     "size": 600,
+     "color": "#ff5a1f",
+     "font": "Big Shoulders Stencil",
+     "anchor": "topLeft",
+     "axes": {
+      "wght": 900,
+      "opsz": 72
+     },
+     "start": 2.975,
+     "end": 3.212,
+     "sfx": false,
+     "blend": "multiply",
+     "inkTexture": {
+      "amount": 0.32,
+      "scale": 38,
+      "seed": 3
+     }
+    },
+    {
+     "text": "September 1990: 6.14 million km² of ice",
+     "x": 104,
+     "y": 110,
+     "size": 45,
+     "color": "#0b1d2a",
+     "font": "Big Shoulders",
+     "anchor": "topLeft",
+     "axes": {
+      "wght": 600,
+      "opsz": 24
+     },
+     "lineHeight": 1.12,
+     "sfx": false,
+     "start": 2.975,
+     "end": 3.212
+    },
+    {
+     "text": "1991",
+     "x": 110,
+     "y": 400,
+     "size": 600,
+     "color": "#ff5a1f",
+     "font": "Big Shoulders Stencil",
+     "anchor": "topLeft",
+     "axes": {
+      "wght": 900,
+      "opsz": 72
+     },
+     "start": 3.212,
+     "end": 3.45,
+     "sfx": false,
+     "blend": "multiply",
+     "inkTexture": {
+      "amount": 0.32,
+      "scale": 38,
+      "seed": 3
+     }
+    },
+    {
+     "text": "September 1991: 6.47 million km² of ice",
+     "x": 104,
+     "y": 110,
+     "size": 45,
+     "color": "#0b1d2a",
+     "font": "Big Shoulders",
+     "anchor": "topLeft",
+     "axes": {
+      "wght": 600,
+      "opsz": 24
+     },
+     "lineHeight": 1.12,
+     "sfx": false,
+     "start": 3.212,
+     "end": 3.45
+    },
+    {
+     "text": "1992",
+     "x": 110,
+     "y": 400,
+     "size": 600,
+     "color": "#ff5a1f",
+     "font": "Big Shoulders Stencil",
+     "anchor": "topLeft",
+     "axes": {
+      "wght": 900,
+      "opsz": 72
+     },
+     "start": 3.45,
+     "end": 3.687,
+     "sfx": false,
+     "blend": "multiply",
+     "inkTexture": {
+      "amount": 0.32,
+      "scale": 38,
+      "seed": 3
+     }
+    },
+    {
+     "text": "September 1992: 7.47 million km² of ice",
+     "x": 104,
+     "y": 110,
+     "size": 45,
+     "color": "#0b1d2a",
+     "font": "Big Shoulders",
+     "anchor": "topLeft",
+     "axes": {
+      "wght": 600,
+      "opsz": 24
+     },
+     "lineHeight": 1.12,
+     "sfx": false,
+     "start": 3.45,
+     "end": 3.687
+    },
+    {
+     "text": "1993",
+     "x": 110,
+     "y": 400,
+     "size": 600,
+     "color": "#ff5a1f",
+     "font": "Big Shoulders Stencil",
+     "anchor": "topLeft",
+     "axes": {
+      "wght": 900,
+      "opsz": 72
+     },
+     "start": 3.688,
+     "end": 3.925,
+     "sfx": false,
+     "blend": "multiply",
+     "inkTexture": {
+      "amount": 0.32,
+      "scale": 38,
+      "seed": 3
+     }
+    },
+    {
+     "text": "September 1993: 6.40 million km² of ice",
+     "x": 104,
+     "y": 110,
+     "size": 45,
+     "color": "#0b1d2a",
+     "font": "Big Shoulders",
+     "anchor": "topLeft",
+     "axes": {
+      "wght": 600,
+      "opsz": 24
+     },
+     "lineHeight": 1.12,
+     "sfx": false,
+     "start": 3.688,
+     "end": 3.925
+    },
+    {
+     "text": "1994",
+     "x": 110,
+     "y": 400,
+     "size": 600,
+     "color": "#ff5a1f",
+     "font": "Big Shoulders Stencil",
+     "anchor": "topLeft",
+     "axes": {
+      "wght": 900,
+      "opsz": 72
+     },
+     "start": 3.925,
+     "end": 4.162,
+     "sfx": false,
+     "blend": "multiply",
+     "inkTexture": {
+      "amount": 0.32,
+      "scale": 38,
+      "seed": 3
+     }
+    },
+    {
+     "text": "September 1994: 7.14 million km² of ice",
+     "x": 104,
+     "y": 110,
+     "size": 45,
+     "color": "#0b1d2a",
+     "font": "Big Shoulders",
+     "anchor": "topLeft",
+     "axes": {
+      "wght": 600,
+      "opsz": 24
+     },
+     "lineHeight": 1.12,
+     "sfx": false,
+     "start": 3.925,
+     "end": 4.162
+    },
+    {
+     "text": "1995",
+     "x": 110,
+     "y": 400,
+     "size": 600,
+     "color": "#ff5a1f",
+     "font": "Big Shoulders Stencil",
+     "anchor": "topLeft",
+     "axes": {
+      "wght": 900,
+      "opsz": 72
+     },
+     "start": 4.162,
+     "end": 4.4,
+     "sfx": false,
+     "blend": "multiply",
+     "inkTexture": {
+      "amount": 0.32,
+      "scale": 38,
+      "seed": 3
+     }
+    },
+    {
+     "text": "September 1995: 6.08 million km² of ice",
+     "x": 104,
+     "y": 110,
+     "size": 45,
+     "color": "#0b1d2a",
+     "font": "Big Shoulders",
+     "anchor": "topLeft",
+     "axes": {
+      "wght": 600,
+      "opsz": 24
+     },
+     "lineHeight": 1.12,
+     "sfx": false,
+     "start": 4.162,
+     "end": 4.4
+    },
+    {
+     "text": "1996",
+     "x": 110,
+     "y": 400,
+     "size": 600,
+     "color": "#ff5a1f",
+     "font": "Big Shoulders Stencil",
+     "anchor": "topLeft",
+     "axes": {
+      "wght": 900,
+      "opsz": 72
+     },
+     "start": 4.4,
+     "end": 4.637,
+     "sfx": false,
+     "blend": "multiply",
+     "inkTexture": {
+      "amount": 0.32,
+      "scale": 38,
+      "seed": 3
+     }
+    },
+    {
+     "text": "September 1996: 7.58 million km² of ice",
+     "x": 104,
+     "y": 110,
+     "size": 45,
+     "color": "#0b1d2a",
+     "font": "Big Shoulders",
+     "anchor": "topLeft",
+     "axes": {
+      "wght": 600,
+      "opsz": 24
+     },
+     "lineHeight": 1.12,
+     "sfx": false,
+     "start": 4.4,
+     "end": 4.637
+    },
+    {
+     "text": "1997",
+     "x": 110,
+     "y": 400,
+     "size": 600,
+     "color": "#ff5a1f",
+     "font": "Big Shoulders Stencil",
+     "anchor": "topLeft",
+     "axes": {
+      "wght": 900,
+      "opsz": 72
+     },
+     "start": 4.637,
+     "end": 4.875,
+     "sfx": false,
+     "blend": "multiply",
+     "inkTexture": {
+      "amount": 0.32,
+      "scale": 38,
+      "seed": 3
+     }
+    },
+    {
+     "text": "September 1997: 6.69 million km² of ice",
+     "x": 104,
+     "y": 110,
+     "size": 45,
+     "color": "#0b1d2a",
+     "font": "Big Shoulders",
+     "anchor": "topLeft",
+     "axes": {
+      "wght": 600,
+      "opsz": 24
+     },
+     "lineHeight": 1.12,
+     "sfx": false,
+     "start": 4.637,
+     "end": 4.875
+    },
+    {
+     "text": "1998",
+     "x": 110,
+     "y": 400,
+     "size": 600,
+     "color": "#ff5a1f",
+     "font": "Big Shoulders Stencil",
+     "anchor": "topLeft",
+     "axes": {
+      "wght": 900,
+      "opsz": 72
+     },
+     "start": 4.875,
+     "end": 5.112,
+     "sfx": false,
+     "blend": "multiply",
+     "inkTexture": {
+      "amount": 0.32,
+      "scale": 38,
+      "seed": 3
+     }
+    },
+    {
+     "text": "September 1998: 6.54 million km² of ice",
+     "x": 104,
+     "y": 110,
+     "size": 45,
+     "color": "#0b1d2a",
+     "font": "Big Shoulders",
+     "anchor": "topLeft",
+     "axes": {
+      "wght": 600,
+      "opsz": 24
+     },
+     "lineHeight": 1.12,
+     "sfx": false,
+     "start": 4.875,
+     "end": 5.112
+    },
+    {
+     "text": "1999",
+     "x": 110,
+     "y": 400,
+     "size": 600,
+     "color": "#ff5a1f",
+     "font": "Big Shoulders Stencil",
+     "anchor": "topLeft",
+     "axes": {
+      "wght": 900,
+      "opsz": 72
+     },
+     "start": 5.112,
+     "end": 5.35,
+     "sfx": false,
+     "blend": "multiply",
+     "inkTexture": {
+      "amount": 0.32,
+      "scale": 38,
+      "seed": 3
+     }
+    },
+    {
+     "text": "September 1999: 6.12 million km² of ice",
+     "x": 104,
+     "y": 110,
+     "size": 45,
+     "color": "#0b1d2a",
+     "font": "Big Shoulders",
+     "anchor": "topLeft",
+     "axes": {
+      "wght": 600,
+      "opsz": 24
+     },
+     "lineHeight": 1.12,
+     "sfx": false,
+     "start": 5.112,
+     "end": 5.35
+    },
+    {
+     "text": "2000",
+     "x": 110,
+     "y": 400,
+     "size": 600,
+     "color": "#ff5a1f",
+     "font": "Big Shoulders Stencil",
+     "anchor": "topLeft",
+     "axes": {
+      "wght": 900,
+      "opsz": 72
+     },
+     "start": 5.35,
+     "end": 5.587,
+     "sfx": false,
+     "blend": "multiply",
+     "inkTexture": {
+      "amount": 0.32,
+      "scale": 38,
+      "seed": 3
+     }
+    },
+    {
+     "text": "September 2000: 6.25 million km² of ice",
+     "x": 104,
+     "y": 110,
+     "size": 45,
+     "color": "#0b1d2a",
+     "font": "Big Shoulders",
+     "anchor": "topLeft",
+     "axes": {
+      "wght": 600,
+      "opsz": 24
+     },
+     "lineHeight": 1.12,
+     "sfx": false,
+     "start": 5.35,
+     "end": 5.587
+    },
+    {
+     "text": "2001",
+     "x": 110,
+     "y": 400,
+     "size": 600,
+     "color": "#ff5a1f",
+     "font": "Big Shoulders Stencil",
+     "anchor": "topLeft",
+     "axes": {
+      "wght": 900,
+      "opsz": 72
+     },
+     "start": 5.587,
+     "end": 5.825,
+     "sfx": false,
+     "blend": "multiply",
+     "inkTexture": {
+      "amount": 0.32,
+      "scale": 38,
+      "seed": 3
+     }
+    },
+    {
+     "text": "September 2001: 6.73 million km² of ice",
+     "x": 104,
+     "y": 110,
+     "size": 45,
+     "color": "#0b1d2a",
+     "font": "Big Shoulders",
+     "anchor": "topLeft",
+     "axes": {
+      "wght": 600,
+      "opsz": 24
+     },
+     "lineHeight": 1.12,
+     "sfx": false,
+     "start": 5.587,
+     "end": 5.825
+    },
+    {
+     "text": "2002",
+     "x": 110,
+     "y": 400,
+     "size": 600,
+     "color": "#ff5a1f",
+     "font": "Big Shoulders Stencil",
+     "anchor": "topLeft",
+     "axes": {
+      "wght": 900,
+      "opsz": 72
+     },
+     "start": 5.825,
+     "end": 6.062,
+     "sfx": false,
+     "blend": "multiply",
+     "inkTexture": {
+      "amount": 0.32,
+      "scale": 38,
+      "seed": 3
+     }
+    },
+    {
+     "text": "September 2002: 5.83 million km² of ice",
+     "x": 104,
+     "y": 110,
+     "size": 45,
+     "color": "#0b1d2a",
+     "font": "Big Shoulders",
+     "anchor": "topLeft",
+     "axes": {
+      "wght": 600,
+      "opsz": 24
+     },
+     "lineHeight": 1.12,
+     "sfx": false,
+     "start": 5.825,
+     "end": 6.062
+    },
+    {
+     "text": "2003",
+     "x": 110,
+     "y": 400,
+     "size": 600,
+     "color": "#ff5a1f",
+     "font": "Big Shoulders Stencil",
+     "anchor": "topLeft",
+     "axes": {
+      "wght": 900,
+      "opsz": 72
+     },
+     "start": 6.062,
+     "end": 6.3,
+     "sfx": false,
+     "blend": "multiply",
+     "inkTexture": {
+      "amount": 0.32,
+      "scale": 38,
+      "seed": 3
+     }
+    },
+    {
+     "text": "September 2003: 6.12 million km² of ice",
+     "x": 104,
+     "y": 110,
+     "size": 45,
+     "color": "#0b1d2a",
+     "font": "Big Shoulders",
+     "anchor": "topLeft",
+     "axes": {
+      "wght": 600,
+      "opsz": 24
+     },
+     "lineHeight": 1.12,
+     "sfx": false,
+     "start": 6.062,
+     "end": 6.3
+    },
+    {
+     "text": "2004",
+     "x": 110,
+     "y": 400,
+     "size": 600,
+     "color": "#ff5a1f",
+     "font": "Big Shoulders Stencil",
+     "anchor": "topLeft",
+     "axes": {
+      "wght": 900,
+      "opsz": 72
+     },
+     "start": 6.3,
+     "end": 6.537,
+     "sfx": false,
+     "blend": "multiply",
+     "inkTexture": {
+      "amount": 0.32,
+      "scale": 38,
+      "seed": 3
+     }
+    },
+    {
+     "text": "September 2004: 5.98 million km² of ice",
+     "x": 104,
+     "y": 110,
+     "size": 45,
+     "color": "#0b1d2a",
+     "font": "Big Shoulders",
+     "anchor": "topLeft",
+     "axes": {
+      "wght": 600,
+      "opsz": 24
+     },
+     "lineHeight": 1.12,
+     "sfx": false,
+     "start": 6.3,
+     "end": 6.537
+    },
+    {
+     "text": "2005",
+     "x": 110,
+     "y": 400,
+     "size": 600,
+     "color": "#ff5a1f",
+     "font": "Big Shoulders Stencil",
+     "anchor": "topLeft",
+     "axes": {
+      "wght": 900,
+      "opsz": 72
+     },
+     "start": 6.537,
+     "end": 6.775,
+     "sfx": false,
+     "blend": "multiply",
+     "inkTexture": {
+      "amount": 0.32,
+      "scale": 38,
+      "seed": 3
+     }
+    },
+    {
+     "text": "September 2005: 5.50 million km² of ice",
+     "x": 104,
+     "y": 110,
+     "size": 45,
+     "color": "#0b1d2a",
+     "font": "Big Shoulders",
+     "anchor": "topLeft",
+     "axes": {
+      "wght": 600,
+      "opsz": 24
+     },
+     "lineHeight": 1.12,
+     "sfx": false,
+     "start": 6.537,
+     "end": 6.775
+    },
+    {
+     "text": "2006",
+     "x": 110,
+     "y": 400,
+     "size": 600,
+     "color": "#ff5a1f",
+     "font": "Big Shoulders Stencil",
+     "anchor": "topLeft",
+     "axes": {
+      "wght": 900,
+      "opsz": 72
+     },
+     "start": 6.775,
+     "end": 7.012,
+     "sfx": false,
+     "blend": "multiply",
+     "inkTexture": {
+      "amount": 0.32,
+      "scale": 38,
+      "seed": 3
+     }
+    },
+    {
+     "text": "September 2006: 5.86 million km² of ice",
+     "x": 104,
+     "y": 110,
+     "size": 45,
+     "color": "#0b1d2a",
+     "font": "Big Shoulders",
+     "anchor": "topLeft",
+     "axes": {
+      "wght": 600,
+      "opsz": 24
+     },
+     "lineHeight": 1.12,
+     "sfx": false,
+     "start": 6.775,
+     "end": 7.012
+    },
+    {
+     "text": "2007",
+     "x": 110,
+     "y": 400,
+     "size": 600,
+     "color": "#ff5a1f",
+     "font": "Big Shoulders Stencil",
+     "anchor": "topLeft",
+     "axes": {
+      "wght": 900,
+      "opsz": 72
+     },
+     "start": 7.012,
+     "end": 7.25,
+     "sfx": false,
+     "blend": "multiply",
+     "inkTexture": {
+      "amount": 0.32,
+      "scale": 38,
+      "seed": 3
+     }
+    },
+    {
+     "text": "September 2007: 4.27 million km² of ice",
+     "x": 104,
+     "y": 110,
+     "size": 45,
+     "color": "#0b1d2a",
+     "font": "Big Shoulders",
+     "anchor": "topLeft",
+     "axes": {
+      "wght": 600,
+      "opsz": 24
+     },
+     "lineHeight": 1.12,
+     "sfx": false,
+     "start": 7.012,
+     "end": 7.25
+    },
+    {
+     "text": "2008",
+     "x": 110,
+     "y": 400,
+     "size": 600,
+     "color": "#ff5a1f",
+     "font": "Big Shoulders Stencil",
+     "anchor": "topLeft",
+     "axes": {
+      "wght": 900,
+      "opsz": 72
+     },
+     "start": 7.25,
+     "end": 7.487,
+     "sfx": false,
+     "blend": "multiply",
+     "inkTexture": {
+      "amount": 0.32,
+      "scale": 38,
+      "seed": 3
+     }
+    },
+    {
+     "text": "September 2008: 4.69 million km² of ice",
+     "x": 104,
+     "y": 110,
+     "size": 45,
+     "color": "#0b1d2a",
+     "font": "Big Shoulders",
+     "anchor": "topLeft",
+     "axes": {
+      "wght": 600,
+      "opsz": 24
+     },
+     "lineHeight": 1.12,
+     "sfx": false,
+     "start": 7.25,
+     "end": 7.487
+    },
+    {
+     "text": "2009",
+     "x": 110,
+     "y": 400,
+     "size": 600,
+     "color": "#ff5a1f",
+     "font": "Big Shoulders Stencil",
+     "anchor": "topLeft",
+     "axes": {
+      "wght": 900,
+      "opsz": 72
+     },
+     "start": 7.487,
+     "end": 7.725,
+     "sfx": false,
+     "blend": "multiply",
+     "inkTexture": {
+      "amount": 0.32,
+      "scale": 38,
+      "seed": 3
+     }
+    },
+    {
+     "text": "September 2009: 5.26 million km² of ice",
+     "x": 104,
+     "y": 110,
+     "size": 45,
+     "color": "#0b1d2a",
+     "font": "Big Shoulders",
+     "anchor": "topLeft",
+     "axes": {
+      "wght": 600,
+      "opsz": 24
+     },
+     "lineHeight": 1.12,
+     "sfx": false,
+     "start": 7.487,
+     "end": 7.725
+    },
+    {
+     "text": "2010",
+     "x": 110,
+     "y": 400,
+     "size": 600,
+     "color": "#ff5a1f",
+     "font": "Big Shoulders Stencil",
+     "anchor": "topLeft",
+     "axes": {
+      "wght": 900,
+      "opsz": 72
+     },
+     "start": 7.725,
+     "end": 7.962,
+     "sfx": false,
+     "blend": "multiply",
+     "inkTexture": {
+      "amount": 0.32,
+      "scale": 38,
+      "seed": 3
+     }
+    },
+    {
+     "text": "September 2010: 4.87 million km² of ice",
+     "x": 104,
+     "y": 110,
+     "size": 45,
+     "color": "#0b1d2a",
+     "font": "Big Shoulders",
+     "anchor": "topLeft",
+     "axes": {
+      "wght": 600,
+      "opsz": 24
+     },
+     "lineHeight": 1.12,
+     "sfx": false,
+     "start": 7.725,
+     "end": 7.962
+    },
+    {
+     "text": "2011",
+     "x": 110,
+     "y": 400,
+     "size": 600,
+     "color": "#ff5a1f",
+     "font": "Big Shoulders Stencil",
+     "anchor": "topLeft",
+     "axes": {
+      "wght": 900,
+      "opsz": 72
+     },
+     "start": 7.962,
+     "end": 8.5,
+     "sfx": false,
+     "blend": "multiply",
+     "inkTexture": {
+      "amount": 0.32,
+      "scale": 38,
+      "seed": 3
+     }
+    },
+    {
+     "text": "September 2011: 4.56 million km² of ice",
+     "x": 104,
+     "y": 110,
+     "size": 45,
+     "color": "#0b1d2a",
+     "font": "Big Shoulders",
+     "anchor": "topLeft",
+     "axes": {
+      "wght": 600,
+      "opsz": 24
+     },
+     "lineHeight": 1.12,
+     "sfx": false,
+     "start": 7.962,
+     "end": 8.5
+    },
+    {
+     "shader": "ice.glsl",
+     "uniforms": {
+      "yi": "=clamp((t - 0.6) / 0.23750 + 0.5, 0, 32)",
+      "sun": "=t * 0.035",
+      "scale": "=5.4 + t * 0.42",
+      "hl": -2
+     },
+     "supersample": false,
+     "alpha": true
+    },
+    {
+     "text": "White is ice. The frame holds\n8 million km² of ocean.",
+     "x": 1830,
+     "y": 110,
+     "size": 40,
+     "color": "#0b1d2a",
+     "font": "Big Shoulders",
+     "anchor": "topRight",
+     "axes": {
+      "wght": 600,
+      "opsz": 24
+     },
+     "lineHeight": 1.12,
+     "align": "right",
+     "enter": {
+      "preset": "fadeIn",
+      "duration": 0.5,
+      "delay": 0.3
+     },
+     "exit": {
+      "preset": "fadeOut",
+      "duration": 0.3
+     },
+     "end": 4.0
+    }
+   ]
+  },
+  {
+   "id": "2012",
+   "duration": 4.5,
+   "transition": "cut",
+   "layers": [
+    {
+     "shader": "ice.glsl",
+     "uniforms": {
+      "cover": 0.5759,
+      "sun": 0.45,
+      "scale": "=3.0 + t * 0.12",
+      "pany": 0.25,
+      "panx": 2.0,
+      "edge": 0,
+      "crack": "=clamp(t * 0.5, 0, 0.35)"
+     },
+     "supersample": false
+    },
+    {
+     "text": "3.57",
+     "x": 900,
+     "y": 300,
+     "size": 600,
+     "color": "#ff5a1f",
+     "font": "Big Shoulders Stencil",
+     "anchor": "center",
+     "axes": {
+      "wght": 900,
+      "opsz": 72
+     },
+     "blend": "multiply",
+     "inkTexture": {
+      "amount": 0.32,
+      "scale": 38,
+      "seed": 3
+     }
+    },
+    {
+     "shader": "ice.glsl",
+     "uniforms": {
+      "cover": 0.5759,
+      "sun": 0.45,
+      "scale": "=3.0 + t * 0.12",
+      "pany": 0.25,
+      "panx": 2.0,
+      "edge": 0,
+      "crack": "=clamp(t * 0.5, 0, 0.35)",
+      "hl": -2
+     },
+     "supersample": false,
+     "alpha": true
+    },
+    {
+     "text": "2012",
+     "x": 1830,
+     "y": 860,
+     "size": 150,
+     "color": "#f2f6f8",
+     "font": "Big Shoulders Stencil",
+     "anchor": "bottomRight",
+     "axes": {
+      "wght": 900,
+      "opsz": 72
+     },
+     "enter": {
+      "preset": "fadeIn",
+      "duration": 0.3,
+      "delay": 0.25
+     }
+    },
+    {
+     "text": "million km² in September 2012, the smallest on record:\nabout half the ice of 1979.",
+     "x": 1836,
+     "y": 1030,
+     "size": 42,
+     "color": "#f2f6f8",
+     "font": "Big Shoulders",
+     "anchor": "bottomRight",
+     "axes": {
+      "wght": 600,
+      "opsz": 24
+     },
+     "lineHeight": 1.12,
+     "align": "right",
+     "enter": {
+      "preset": "fadeIn",
+      "duration": 0.4,
+      "delay": 0.7
+     }
+    }
+   ]
+  },
+  {
+   "id": "chart",
+   "duration": 7.0,
+   "transition": "cut",
+   "camera": {
+    "animate": [
+     {
+      "from": {
+       "zoom": 1.0
+      },
+      "to": {
+       "zoom": 1.07
+      },
+      "duration": 7.0,
+      "ease": "inOutSine"
+     }
+    ]
+   },
+   "layers": [
+    {
+     "shader": "ice.glsl",
+     "uniforms": {
+      "chart": 1,
+      "grow": "=clamp(t * 20 + 30, 0, 48)",
+      "hl": "=t > 1.3 ? 33 : -1",
+      "scale": 26,
+      "sun": "=0.55 + t * 0.03"
+     },
+     "supersample": false
+    },
+    {
+     "shape": "rect",
+     "x": 960.0,
+     "y": 273.6187744458931,
+     "width": 1632.0,
+     "height": 2,
+     "fill": "#f2f6f8",
+     "opacity": 0.6,
+     "start": 1.2,
+     "enter": {
+      "preset": "wipe",
+      "duration": 0.6
+     }
+    },
+    {
+     "text": "1979 level",
+     "x": 1776.0,
+     "y": 261.6187744458931,
+     "size": 35,
+     "color": "#f2f6f8",
+     "font": "Big Shoulders",
+     "anchor": "bottomRight",
+     "axes": {
+      "wght": 600,
+      "opsz": 24
+     },
+     "lineHeight": 1.12,
+     "start": 1.4,
+     "enter": {
+      "preset": "fadeIn",
+      "duration": 0.3
+     }
+    },
+    {
+     "text": "48 Septembers",
+     "x": 144,
+     "y": 64,
+     "size": 96,
+     "color": "#f2f6f8",
+     "font": "Big Shoulders Stencil",
+     "anchor": "topLeft",
+     "axes": {
+      "wght": 900,
+      "opsz": 72
+     },
+     "letterSpacing": "-0.02em",
+     "enter": {
+      "preset": "fadeIn",
+      "duration": 0.3
+     }
+    },
+    {
+     "text": "2012\n3.57",
+     "x": 1283.0,
+     "y": 428.6164276401564,
+     "size": 37,
+     "color": "#ff5a1f",
+     "font": "Big Shoulders",
+     "anchor": "bottom",
+     "axes": {
+      "wght": 600,
+      "opsz": 24
+     },
+     "lineHeight": 1.12,
+     "align": "center",
+     "start": 1.4,
+     "enter": {
+      "preset": "fadeIn",
+      "duration": 0.3
+     }
+    },
+    {
+     "text": "1979",
+     "x": 161.0,
+     "y": 946.8,
+     "size": 35,
+     "color": "#f2f6f8",
+     "font": "Big Shoulders",
+     "anchor": "top",
+     "axes": {
+      "wght": 600,
+      "opsz": 24
+     },
+     "lineHeight": 1.12,
+     "align": "center",
+     "opacity": 0.8,
+     "start": 0,
+     "enter": {
+      "preset": "fadeIn",
+      "duration": 0.25
+     }
+    },
+    {
+     "text": "1990",
+     "x": 535.0,
+     "y": 946.8,
+     "size": 35,
+     "color": "#f2f6f8",
+     "font": "Big Shoulders",
+     "anchor": "top",
+     "axes": {
+      "wght": 600,
+      "opsz": 24
+     },
+     "lineHeight": 1.12,
+     "align": "center",
+     "opacity": 0.8,
+     "start": 0,
+     "enter": {
+      "preset": "fadeIn",
+      "duration": 0.25
+     }
+    },
+    {
+     "text": "2000",
+     "x": 875.0,
+     "y": 946.8,
+     "size": 35,
+     "color": "#f2f6f8",
+     "font": "Big Shoulders",
+     "anchor": "top",
+     "axes": {
+      "wght": 600,
+      "opsz": 24
+     },
+     "lineHeight": 1.12,
+     "align": "center",
+     "opacity": 0.8,
+     "start": 0,
+     "enter": {
+      "preset": "fadeIn",
+      "duration": 0.25
+     }
+    },
+    {
+     "text": "2010",
+     "x": 1215.0,
+     "y": 946.8,
+     "size": 35,
+     "color": "#f2f6f8",
+     "font": "Big Shoulders",
+     "anchor": "top",
+     "axes": {
+      "wght": 600,
+      "opsz": 24
+     },
+     "lineHeight": 1.12,
+     "align": "center",
+     "opacity": 0.8,
+     "start": 0.05,
+     "enter": {
+      "preset": "fadeIn",
+      "duration": 0.25
+     }
+    },
+    {
+     "text": "2026",
+     "x": 1759.0,
+     "y": 946.8,
+     "size": 35,
+     "color": "#f2f6f8",
+     "font": "Big Shoulders",
+     "anchor": "top",
+     "axes": {
+      "wght": 600,
+      "opsz": 24
+     },
+     "lineHeight": 1.12,
+     "align": "center",
+     "opacity": 0.8,
+     "start": 0.85,
+     "enter": {
+      "preset": "fadeIn",
+      "duration": 0.25
+     }
+    }
+   ]
+  },
+  {
+   "id": "now",
+   "duration": 5.5,
+   "transition": {
+    "type": "fade",
+    "duration": 0.6
+   },
+   "layers": [
+    {
+     "shader": "ice.glsl",
+     "uniforms": {
+      "cover": 0.66,
+      "sun": 0.75,
+      "scale": "=19 - t * 0.5",
+      "dusk": "=0.35 + t * 0.06",
+      "edge": -70
+     },
+     "supersample": false
+    },
+    {
+     "text": "Missing\nsince 1979:\na Greenland.",
+     "x": 1830,
+     "y": 110,
+     "size": 88,
+     "color": "#f2f6f8",
+     "font": "Big Shoulders Stencil",
+     "anchor": "topRight",
+     "axes": {
+      "wght": 900,
+      "opsz": 72
+     },
+     "align": "right",
+     "lineHeight": 0.92,
+     "letterSpacing": "-0.02em",
+     "kinetic": "mask by line up 0.6s 80ms outExpo",
+     "start": 0.4
+    },
+    {
+     "shape": "path",
+     "d": "M18 12 L30 5 L45 1 L62 0 L78 2 L92 6 L100 12 L94 17 L98 24 L92 31 L86 38 L80 46 L76 52 L70 58 L64 66 L58 74 L52 82 L46 90 L41 100 L36 96 L32 90 L28 82 L24 74 L20 66 L15 59 L10 53 L7 47 L10 42 L5 36 L3 30 L8 25 L4 19 L10 14 Z",
+     "x": 1620,
+     "y": 740,
+     "width": 290,
+     "height": 390,
+     "fill": "#ff5a1f30",
+     "stroke": {
+      "color": "#ff5a1f",
+      "width": 4,
+      "dash": [
+       12,
+       7
+      ]
+     },
+     "trimEnd": 0,
+     "start": 1.0,
+     "animate": [
+      {
+       "to": {
+        "trimEnd": 1
+       },
+       "duration": 2.2,
+       "ease": "inOutCubic"
+      }
+     ]
+    },
+    {
+     "text": "2.24 million km² of September\nice lost since 1979.\nGreenland: 2.17.",
+     "x": 1836,
+     "y": 420,
+     "size": 37,
+     "color": "#f2f6f8",
+     "font": "Big Shoulders",
+     "anchor": "topRight",
+     "axes": {
+      "wght": 600,
+      "opsz": 24
+     },
+     "lineHeight": 1.12,
+     "align": "right",
+     "start": 1.2,
+     "enter": {
+      "preset": "fadeIn",
+      "duration": 0.4
+     }
+    },
+    {
+     "text": "Source: NSIDC Sea Ice Index v4 (G02135),\nSeptember mean extent, 1979–2026.",
+     "x": 1836,
+     "y": 1030,
+     "size": 30,
+     "color": "#f2f6f8",
+     "font": "Big Shoulders",
+     "anchor": "bottomRight",
+     "axes": {
+      "wght": 600,
+      "opsz": 24
+     },
+     "lineHeight": 1.12,
+     "align": "right",
+     "opacity": 0.8,
+     "start": 1.6,
+     "enter": {
+      "preset": "fadeIn",
+      "duration": 0.4
+     }
+    }
+   ]
+  }
+ ]
+}

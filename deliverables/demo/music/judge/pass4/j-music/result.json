@@ -1,0 +1,524 @@
+{
+  "name": "j-music",
+  "tags": [
+    "music-video",
+    "kinetic-type"
+  ],
+  "refs": [
+    "weirdcore-aphex-twin-t69-collapse-2018",
+    "blanc-festival-2015",
+    "raven-kwok-skyline-2015"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 5,
+      "composition": 3,
+      "typography": 4,
+      "colour": 4,
+      "light_texture": 4,
+      "motion": 3,
+      "craft": 3,
+      "originality": 4
+    },
+    "overall": 3.75,
+    "judged_professional": "0/3",
+    "pro_rate": 0.0,
+    "mean_rank": 4,
+    "gaps": [
+      "Make the lights physical. Show drones, parallax, real night-sky and water reflection, and let the type form, scatter and re-form in space, so the choreography carries the emotion, the way D's neon and B's camera moves do.",
+      "Choose or draw a face with a reason for being here, and compose each line as an image with deliberate scale, placement and negative space, not stacked captions.",
+      "Build an arc of colour and light across the whole film, not a single cool-to-warm switch at the end, and add one image beyond the words.",
+      "Build a real spatial idea: put the light-letters in the scene with reflections, parallax and a camera move, rather than overlaying them flat on blurred water",
+      "Fix framing and consistency: lock the aspect ratio, keep type inside the safe area, and design each frame as a composed poster as in C",
+      "Give the typography a point of view (a custom bulb-matrix letterform, rhythm tied to the song, varied scale and placement) instead of one default slab set line by line",
+      "Make the lights physical: real drones or lamps with perspective, parallax, bloom and reflection on the water, not a flat dot-fill overlaid on a blurred plate",
+      "Choose or draw a face whose form comes from the light-point grid, and choreograph how the points travel between lines instead of cutting phrase to phrase",
+      "Break the slide structure with compositional variety and one surprise, such as the lights scattering into stars or the harbour lights themselves spelling the word"
+    ],
+    "tells": [
+      "This is a lyric video. Every frame is the same move: lines of a stock bold slab/Cooper-style face built from a dot-matrix of 'drone lights', placed like slides over blurred dark water.",
+      "The drone-show-lettering conceit is the only idea, and it is applied literally: the words are spelled out in the sky, with no image beyond the text.",
+      "The type has no scale or layout idea beyond big/small line stacking. Letters are cropped awkwardly at the frame edge ('when the harbou', 'we were'), and the tracking is default.",
+      "The water is generic stretched blur with no real light interaction. Only the last frame adds a reflection and a warm colour shift.",
+      "The frame sizes and crops are inconsistent, and the repeated composition gives the sequence a slide-deck structure.",
+      "The concept is literal: lyrics spelled in dotted bulb or drone lights over a night harbour. The idea is pleasant but obvious",
+      "Composition is broken across frames: text runs off the edge ('when the harbou', 'we were' clipped at left) and the aspect ratio and letterboxing change between frames, which points to unconsidered or automated output",
+      "One stock slab face (Cooper/Clarendon-like) is applied uniformly. The only scale contrast is on 'low' and 'on.', and the type is placed like slide lines",
+      "Each frame repeats one layout (dark water plus bulb text) with the words swapped, so little happens in the motion",
+      "The light is generic glow with no believable interaction with the water. The amber shift at the end is the only colour event",
+      "A literal premise: lyric lines rendered as dot-matrix 'drone or harbour lights' over a dark, blurred water plate, with a single warm accent on the final word",
+      "A generic chunky slab/Cooper-style face filled with a dot halftone, set left-aligned or centred like slide captions with no typographic idea beyond scale on 'low' and 'on.'",
+      "The frames repeat one layout with the words swapped (a lyric-video template structure)",
+      "Craft inconsistencies: the frame aspect ratios and crops change between samples, text runs off frame ('harbou'), the reflection on 'on.' is a crude flipped copy, and the water and moon read as a stock plate",
+      "Dark ground, mostly empty frame and a single accent colour fit the generic AI/template look"
+    ]
+  },
+  "refs_summary": {
+    "weirdcore-aphex-twin-t69-collapse-2018": {
+      "overall": 7,
+      "judged_professional": "3/3",
+      "mean_rank": 2
+    },
+    "blanc-festival-2015": {
+      "overall": 8.25,
+      "judged_professional": "3/3",
+      "mean_rank": 1
+    },
+    "raven-kwok-skyline-2015": {
+      "overall": 6.62,
+      "judged_professional": "3/3",
+      "mean_rank": 3
+    }
+  },
+  "ref_mean": 7.29,
+  "delta": -3.54,
+  "trials": [
+    {
+      "key": {
+        "A": "raven-kwok-skyline-2015",
+        "B": "weirdcore-aphex-twin-t69-collapse-2018",
+        "C": "candidate",
+        "D": "blanc-festival-2015"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.65,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 6,
+              "colour": 6,
+              "light_texture": 7,
+              "motion": 7,
+              "craft": 7,
+              "originality": 6
+            },
+            "tells": [
+              "One rule system drives the whole film: Voronoi tessellation whose cell density stands in for luminance. A face resolves out of the mesh in frames 3 and 5, so the piece has a payoff and is more than an effect.",
+              "The frames change shape a lot: radial clusters, horizontal banded strata on a white ground, a rectangular void ringed with particles, and a face coming into focus. That variety points to a planned sequence, not a single preset left running.",
+              "The palette is strictly monochrome, which suits the subject. The white inversion in frame 2 is a deliberate break in rhythm.",
+              "There is no type, which is the right call for an abstract, audio-reactive piece.",
+              "The Voronoi look is a familiar generative-art idiom, and the depth comes only from gradient vignettes."
+            ],
+            "gaps": [
+              "The visual language is a well-known Voronoi/plexus look. It needs one signature move that only this piece could have, the way B owns its collapsing photogrammetry city.",
+              "The grey ground is flat. Light, material or a second layer behind the mesh would give it the physical depth that B's textured scans have.",
+              "The face reveal is the only figurative beat. Building toward it with recurring motifs would make the arc read as choreographed, not as a reveal at the end."
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.75,
+            "scores": {
+              "idea": 8,
+              "composition": 7,
+              "typography": 7,
+              "colour": 7,
+              "light_texture": 8,
+              "motion": 8,
+              "craft": 7,
+              "originality": 8
+            },
+            "tells": [
+              "The material is photogrammetry and point clouds of real streets, deliberately broken. Re-projected textures in red false colour, kaleidoscopic radial houses against a burning sky, and terrain that melts into shards make a strong, specific world.",
+              "The frames range widely: a corridor tunnel, a pink-black spiked landscape, a radial building mandala, and a monospaced code/subtitle text field mapped onto the scanned architecture. That shows real camera choreography through one 3D space.",
+              "The type is integrated into the space, not overlaid. It reads as data spilling over the walls, so the type has a point of view.",
+              "The texture is real and dense. Every surface carries scanned detail.",
+              "Some frames tip into glitch excess, and the pink 'flesh' landscape reads as less controlled."
+            ],
+            "gaps": [
+              "Colour discipline is weaker than D's. The red false-colour, the sky blue and the fire orange don't yet add up to one palette.",
+              "Composition is sometimes overwhelmed by noise. Frames need a clearer focal hierarchy so that each one works as a poster.",
+              "The type frame is the strongest idea but appears only once. Developing it would give the film its own typographic signature."
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.6,
+            "scores": {
+              "idea": 5,
+              "composition": 4,
+              "typography": 4,
+              "colour": 5,
+              "light_texture": 5,
+              "motion": 4,
+              "craft": 4,
+              "originality": 4
+            },
+            "tells": [
+              "This is a lyric video. Every frame is the same move: lines of a stock bold slab/Cooper-style face built from a dot-matrix of 'drone lights', placed like slides over blurred dark water.",
+              "The drone-show-lettering conceit is the only idea, and it is applied literally: the words are spelled out in the sky, with no image beyond the text.",
+              "The type has no scale or layout idea beyond big/small line stacking. Letters are cropped awkwardly at the frame edge ('when the harbou', 'we were'), and the tracking is default.",
+              "The water is generic stretched blur with no real light interaction. Only the last frame adds a reflection and a warm colour shift.",
+              "The frame sizes and crops are inconsistent, and the repeated composition gives the sequence a slide-deck structure."
+            ],
+            "gaps": [
+              "Make the lights physical. Show drones, parallax, real night-sky and water reflection, and let the type form, scatter and re-form in space, so the choreography carries the emotion, the way D's neon and B's camera moves do.",
+              "Choose or draw a face with a reason for being here, and compose each line as an image with deliberate scale, placement and negative space, not stacked captions.",
+              "Build an arc of colour and light across the whole film, not a single cool-to-warm switch at the end, and add one image beyond the words."
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 8,
+              "composition": 9,
+              "typography": 8,
+              "colour": 9,
+              "light_texture": 7,
+              "motion": 8,
+              "craft": 8,
+              "originality": 8
+            },
+            "tells": [
+              "The idea is specific and witty: a voyeur-club identity. A moustached peeper looks through hand-binoculars from the bushes, cutting to 'Melones' signage with a cheeky body pun, a lick, and a neon club sign.",
+              "It draws on Matisse-like cut-out foliage in an unusual palette (jungle green, coral red, cobalt, yellow, black/white) used with real discipline.",
+              "The type has character. Script 'Melones' has a drop shadow. The neon 'BLANC VOYEUR club' is hand-drawn and mixes caps with script, and it pays off the foliage motifs in neon line.",
+              "Grain and stipple textures on the flat shapes stop it reading as vector-default.",
+              "Each frame works as a poster. The cut from foliage to peeper to sign to mouth to neon implies a choreographed narrative."
+            ],
+            "gaps": [
+              "Light is mostly flat graphic colour. Only the neon end-frame uses light, and more lighting effects earlier would add depth.",
+              "The illustration language is close to a widely imitated contemporary flat-cutout style. It needs one more element that is unmistakably its own.",
+              "The neon end card is slightly conventional as a resolve. A final beat that inverts the voyeur gag would land harder."
+            ]
+          }
+        },
+        "ranking": [
+          "D",
+          "B",
+          "A",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 34.4,
+        "cost_usd": 0.160689,
+        "tokens": 72092,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "raven-kwok-skyline-2015",
+        "B": "weirdcore-aphex-twin-t69-collapse-2018",
+        "C": "blanc-festival-2015",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.72,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 6,
+              "colour": 6,
+              "light_texture": 7,
+              "motion": 7,
+              "craft": 7,
+              "originality": 7
+            },
+            "tells": [
+              "One generative idea carried through the whole film: a Voronoi tessellation whose cell density acts as tone, so a face builds up out of the mesh and then breaks apart again",
+              "Clear choreography across frames: a dark sparse field, then a bright inverted plate, then a profile emerging in three-quarter view, then a framed void, then a frontal face fully resolved. The ending feels earned",
+              "The density gradients are controlled rather than default noise. Interference bands and stretched cells show a tuned simulation, not a preset filter",
+              "No type, which suits a pure image-and-system piece",
+              "The monochrome palette is disciplined but safe and close to the familiar creative-coding look"
+            ],
+            "gaps": [
+              "Colour is a missed opportunity: add one deliberate tonal shift or accent at the moment of revelation instead of staying uniformly grey",
+              "The middle frames (2 and 4) are abstract pattern studies with no clear link to the face. Tie every phase to the subject so the system never reads as an effect without a subject",
+              "Add depth and material (light passing through the cells, layered planes) so the ending gains weight to match C's richness of image"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.65,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 6,
+              "colour": 7,
+              "light_texture": 7,
+              "motion": 8,
+              "craft": 6,
+              "originality": 8
+            },
+            "tells": [
+              "Photogrammetry and point-cloud scans of a street, broken on purpose: datamosh-style smearing, a kaleidoscopic radial fold of facades against a burning sky, terrain extruded into spikes",
+              "Strong variety of camera language between frames (corridor flythrough, low terrain, top-down radial view, wireframe text wall), which suggests real choreography and weight",
+              "Type is used as material: spoken-transcript words are mapped onto the scanned walls in a monospace face. That is an idea, not a slide",
+              "The aggressive red/yellow false colour against the natural sky is a deliberate clash",
+              "The finish is rough in places and the glitch aesthetic runs close to familiar 2010s net-art territory"
+            ],
+            "gaps": [
+              "Tighten the finish: some frames (the spiked terrain) look like uncontrolled artefacts rather than authored images. Hold every frame to the poster standard C sets",
+              "Give the typography more hierarchy and a point of view. Scale contrast or a custom face would make the text layer as considered as the image layer",
+              "Narrow the palette's logic so the red false colour carries meaning rather than appearing as a filter state"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 8,
+              "composition": 9,
+              "typography": 8,
+              "colour": 9,
+              "light_texture": 8,
+              "motion": 8,
+              "craft": 9,
+              "originality": 8
+            },
+            "tells": [
+              "A specific, witty concept: voyeurism told through cheeky illustration. Hidden eyes in the foliage, a binocular-hands peeper, a 'Melones' sign, a lick. It ends on a neon 'Blanc Voyeur Club' sign. Only this piece could have this idea",
+              "Matisse-cutout shapes with grain and stipple texture give the flat colour material; this is not vector-default clip art",
+              "A bold, unusual palette (coral, mustard, cobalt, jade, black) held consistently across every frame",
+              "The typography has a point of view: a retro script with drop shadow on 'Melones', and a hand-drawn neon logotype mixing caps, a stencil-ish sans and a script 'club'",
+              "Every frame is a poster, with clear progression from jungle to reveal to punchline to title card. The cropping of the face and tongue is graphic and confident"
+            ],
+            "gaps": [
+              "The neon end card drops the grain texture and the cutout language. Carry the material through so the payoff matches the body",
+              "Push the camera and layer choreography further (parallax through the foliage) for more spatial depth",
+              "The neon frame alone breaks the established colour ground. Make that break more clearly motivated (lights out, night falls)"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.75,
+            "scores": {
+              "idea": 4,
+              "composition": 3,
+              "typography": 4,
+              "colour": 4,
+              "light_texture": 4,
+              "motion": 3,
+              "craft": 3,
+              "originality": 4
+            },
+            "tells": [
+              "The concept is literal: lyrics spelled in dotted bulb or drone lights over a night harbour. The idea is pleasant but obvious",
+              "Composition is broken across frames: text runs off the edge ('when the harbou', 'we were' clipped at left) and the aspect ratio and letterboxing change between frames, which points to unconsidered or automated output",
+              "One stock slab face (Cooper/Clarendon-like) is applied uniformly. The only scale contrast is on 'low' and 'on.', and the type is placed like slide lines",
+              "Each frame repeats one layout (dark water plus bulb text) with the words swapped, so little happens in the motion",
+              "The light is generic glow with no believable interaction with the water. The amber shift at the end is the only colour event"
+            ],
+            "gaps": [
+              "Build a real spatial idea: put the light-letters in the scene with reflections, parallax and a camera move, rather than overlaying them flat on blurred water",
+              "Fix framing and consistency: lock the aspect ratio, keep type inside the safe area, and design each frame as a composed poster as in C",
+              "Give the typography a point of view (a custom bulb-matrix letterform, rhythm tied to the song, varied scale and placement) instead of one default slab set line by line"
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "B",
+          "A",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 32.3,
+        "cost_usd": 0.1585138,
+        "tokens": 71992,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "blanc-festival-2015",
+        "B": "weirdcore-aphex-twin-t69-collapse-2018",
+        "C": "raven-kwok-skyline-2015",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 8,
+              "composition": 9,
+              "typography": 8,
+              "colour": 9,
+              "light_texture": 7,
+              "motion": 8,
+              "craft": 9,
+              "originality": 8
+            },
+            "tells": [
+              "Clear authored character design: a voyeur peering through finger-binoculars, a lolling tongue and the 'Melones' sign joke tie each frame to one witty brief (a 'Blanc Voyeur Club')",
+              "Deliberate palette of coral, saffron, cobalt and jungle green on white or black, with grain stipple adding texture to the flat shapes",
+              "Typography with a point of view: the retro script 'Melones' with a drop shadow, and an end card hand-built as neon tubes that reuses the foliage motifs as glowing glyphs",
+              "Varied compositions (dense foliage, then a character reveal, a sign, an extreme close-up and a neon end card) suggest real choreography: the leaves part, reveal, and come back as neon",
+              "Matisse-cutout foliage handled with asymmetry and confidence, not clip art"
+            ],
+            "gaps": [
+              "The flat Matisse-meets-Jean-Jullien style is well established in the field. Push for a visual signature that couldn't be mistaken for a peer studio's",
+              "Light is mostly flat until the neon finale. Bring light into the illustrated scenes as a story device, such as a spotlight or a peephole glow, to raise the stakes",
+              "Story beats are gag-led. One bigger structural surprise or transition would lift it from very good to award-winning"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.7,
+            "scores": {
+              "idea": 7,
+              "composition": 6,
+              "typography": 6,
+              "colour": 6,
+              "light_texture": 7,
+              "motion": 7,
+              "craft": 6,
+              "originality": 7
+            },
+            "tells": [
+              "Photogrammetry and point-cloud streets that tear, invert into a kaleidoscopic tunnel of houses and melt into shards. The data-artefact aesthetic is a deliberate subject, not an accident",
+              "Text sprayed across the point-cloud surfaces ('point cloud', 'midi', 'theory', 'simulation') makes type part of the space, which gives the piece a conceptual layer about representation",
+              "Big swings between frames (red street, shattered sky, rotating house mandala, monochrome text void) imply aggressive camera movement and variety",
+              "However, the red-saturated, false-colour grading looks glitch-generic in places, and the sky composites are crude"
+            ],
+            "gaps": [
+              "The colour grade is harsh and unconsidered: hot red with stock-looking cloud and fire skies. A disciplined palette would make the decay feel authored",
+              "The typography is a default monospace sprayed as texture. A typographic system with hierarchy and timing would turn the text from noise into a voice",
+              "The frames lack poster-level composition. Find held, designed moments between the chaotic flythroughs"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.55,
+            "scores": {
+              "idea": 6,
+              "composition": 6,
+              "typography": 5,
+              "colour": 5,
+              "light_texture": 6,
+              "motion": 6,
+              "craft": 6,
+              "originality": 5
+            },
+            "tells": [
+              "A generative Voronoi tessellation driven by an image or video source: a face emerges from cell density, so the system has a subject rather than being an effect alone",
+              "The frames vary in density, polarity (a light frame against dark ones) and structure (horizontal bands, a rectangular void, a portrait reveal), which suggests audio-reactive or choreographed parameters",
+              "No type is visible. Its absence suits an abstract music-visual piece, but nothing replaces it as a point of view",
+              "The Voronoi look is a well-worn generative-art default, and the greyscale gradient grounds feel unconsidered"
+            ],
+            "gaps": [
+              "The look is the technique's default output. Introduce a material, colour or rendering decision that makes this Voronoi piece unmistakably yours",
+              "The grounds are flat grey gradients. Add real light, depth or a physical texture so the cells feel like matter rather than wireframe",
+              "The face reveal is the only narrative beat. Build an arc of several distinct transformations so the piece has an idea beyond 'image dissolves into cells'"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.75,
+            "scores": {
+              "idea": 5,
+              "composition": 3,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 4,
+              "motion": 3,
+              "craft": 3,
+              "originality": 4
+            },
+            "tells": [
+              "A literal premise: lyric lines rendered as dot-matrix 'drone or harbour lights' over a dark, blurred water plate, with a single warm accent on the final word",
+              "A generic chunky slab/Cooper-style face filled with a dot halftone, set left-aligned or centred like slide captions with no typographic idea beyond scale on 'low' and 'on.'",
+              "The frames repeat one layout with the words swapped (a lyric-video template structure)",
+              "Craft inconsistencies: the frame aspect ratios and crops change between samples, text runs off frame ('harbou'), the reflection on 'on.' is a crude flipped copy, and the water and moon read as a stock plate",
+              "Dark ground, mostly empty frame and a single accent colour fit the generic AI/template look"
+            ],
+            "gaps": [
+              "Make the lights physical: real drones or lamps with perspective, parallax, bloom and reflection on the water, not a flat dot-fill overlaid on a blurred plate",
+              "Choose or draw a face whose form comes from the light-point grid, and choreograph how the points travel between lines instead of cutting phrase to phrase",
+              "Break the slide structure with compositional variety and one surprise, such as the lights scattering into stars or the harbour lights themselves spelling the word"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "B",
+          "C",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 33.2,
+        "cost_usd": 0.1591408,
+        "tokens": 72013,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "critic": {
+    "answer": {
+      "scores": {
+        "motion": 4,
+        "sound": 6,
+        "craft": 6
+      },
+      "checks": {
+        "idea": true,
+        "invariant": true,
+        "arc": true,
+        "type_meaning": true,
+        "freeze_frame": false,
+        "ending": true,
+        "restraint": true,
+        "material": true,
+        "sync": true
+      },
+      "defects": [
+        "Frame 4 (~10s) is close to an empty black frame: only the moon and a horizon line, more than 1s of dead air with no reason for it",
+        "Words switch on and sit still. The pair frames 1/6s apart show 'low' \u2192 'low tide' added as a hard appear, with no build of individual bulbs, no flicker and no stagger",
+        "Water plate is a smeared, motion-blurred texture that reads as a scrolling 2D card, not a surface with depth or parallax",
+        "At 100%, a grey-brown rectangular haze sits behind the 'on.' letterforms: the glow or plate shows as a flat box, not light falloff from the bulbs",
+        "Reflections of the lettering are a simple ripple-displaced copy that ignores the bulbs' real positions and brightness",
+        "Lines are cropped at the frame edge ('harbou', 'stayed') in a way that reads as a layout error, not a choice",
+        "Only 2 shots across 20s. The 12.8s shot holds static type with only slow drift in the plate",
+        "Dot-matrix slab serif at small sizes ('we were never meant') breaks up into noise, so the counters fill in and legibility drops"
+      ],
+      "gaps": [
+        "Motion: the strong device (lyrics as harbour/pier lights) is never animated as light. Top work would have bulbs ignite in sequence, ripple with the beat, shiver on the water, short out on 'lights are gone' and surge on 'stayed on', with eased camera moves or rack focus between lines instead of static holds and hard appearances",
+        "Pacing and staging: a near-black middle and long uninterrupted holds flatten the piece. It needs 3-4s beats with in-shot camera travel along the shoreline and a clearer build into the warm colour turn at ~17s",
+        "Finish and sound integration: the flat glow plate, the fake reflection and the smeared water plate betray a 2D comp. The produced track (clear sections, a dropout at ~16s, a full-band hit at ~17.3s) is used only for the final colour switch; individual lines and bulb events are not cut or driven to its transients"
+      ]
+    },
+    "meta": {
+      "seconds": 21.0,
+      "cost_usd": 0.1577832,
+      "tokens": 71996,
+      "models": [
+        "claude-opus-5-5"
+      ]
+    },
+    "pace": "final4.mp4: 20.0s, 2 shots, median 10.00s, longest 12.83s\nper-second change: [4.9, 3.7, 5.5, 8.6, 11.3, 8.8, 17.7, 6.7, 8.3, 9.1, 12.0, 6.5, 6.7, 8.1, 7.1, 13.7, 5.9, 15.4, 10.0]\nPACE: FAIL \u2014 longest shot 12.8s > 2.5s; median shot 10.0s > 2.0s; 4/19 seconds look like the previous second"
+  },
+  "full_scores": {
+    "idea": 5,
+    "composition": 3,
+    "typography": 4,
+    "colour": 4,
+    "light_texture": 4,
+    "motion": 3.5,
+    "craft": 4.5,
+    "originality": 4,
+    "sound": 6
+  },
+  "full_overall": 4.22,
+  "cost_usd": 0.636,
+  "judge_seconds": 120.9,
+  "verdict": "FAIL"
+}

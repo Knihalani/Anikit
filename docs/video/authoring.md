@@ -16,6 +16,7 @@ Start a value with `=`. It works for any numeric property (`x y width height sca
 | Variables | `t` (layer seconds) · `T` (scene seconds) · `gt` (video seconds) · `p` (layer progress 0..1) · `frame` · `i` `n` (index and count among siblings) · `w` `h` (frame size) · `fps` · `beat` `bar` (beats and bars elapsed, fractional; music required) · `level` (music loudness 0..1) · `bpm` · `pi e tau` |
 | Operators | `+ - * / % ^` · `< <= > >= == !=` · `&& || !` · `c ? a : b` |
 | Functions | `sin cos tan asin acos atan atan2 sinh cosh tanh` · `abs sign floor ceil round fract mod min max clamp sqrt pow exp log log2 log10 hypot` · `mix lerp remap(x, a, b, c, d) smoothstep step pingpong if(c, a, b)` · `ease easeIn easeOut spring` (of 0..1) · `tri saw square` (period 1) · `noise(x) noise(x, y) rand(x) rand2(x, y)` |
+| Arrays | `[10, 20, 30][i]` · `at(array, i)` · `steps(times, values, t)` (hold) · `interp(times, values, t)` (linear); entries are constant numbers, so one array can drive a `repeat` with `$i` |
 | Units | `50%` (of the parent) · `10vw` `8vh` `5vmin` · `500ms` · `30deg` |
 | Colours | `=rgb(r, g, b[, a])` (0–255, alpha 0–1) · `=hsl(h, s, l[, a])` (degrees, 0–100) · `=oklch(L, C, h[, a])` · `=mix(colourA, colourB, x)` (in OKLab) · `=cond ? colourA : colourB`; every argument is an expression and colours may be tokens (`$accent`) |
 

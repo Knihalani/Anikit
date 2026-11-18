@@ -648,6 +648,7 @@ fn empty_node(kind: Kind) -> Node {
         inertia: None,
         posterize_time: 0.0,
         drag: 0.0,
+        loop_ramp: 0.0,
     }
 }
 
@@ -2134,6 +2135,9 @@ impl C<'_> {
                     None
                 }
             };
+            if let Some(r) = p.ramp {
+                n.loop_ramp = r.clamp(0.0, 60.0) as f32;
+            }
             if let Some(lp) = lp {
                 if matches!(lp, LoopC::Float { period, .. } | LoopC::Pulse { period, .. } | LoopC::Spin { period } | LoopC::Wiggle { period, .. } | LoopC::Breathe { period, .. } | LoopC::Blink { period } if period <= 0.0)
                 {

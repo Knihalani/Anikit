@@ -45,7 +45,7 @@ Other entry points:
 | `aq_strength` | `-0.5` (auto) | Adaptive quantisation: smooth macroblocks (fades, lit floors) get a lower QP, −(4 + up to 7)·strength, with a wide AC dead zone; busy ones keep `qp`. ≥ 0 is used as given. Negative is automatic per frame: \|value\| on frames dominated by smooth textured content (3D renders, video), 0 on UI and motion graphics. |
 | `ssim_floor` | `0.985` | Per-frame quality floor. After each frame the luma SSIM of the reconstruction is estimated; while it is below the floor the next frames use a lower slice QP (`slice_qp_delta`), and an IDR below the floor is coded a second time at the estimated QP. The QP comes back up towards `qp` when there is margin. It is deterministic: it depends only on frames already coded in the stream or chunk. 0 = constant QP. Content above the floor (all UI, text and motion-graphics clips tested), and frames already above 45 dB PSNR-Y, are bit-identical to constant QP. |
 | `ssim_max_drop` | `8` | Lowest QP the floor may use, as an offset below `qp`. It bounds the size on content where SSIM rises slowly with bits, such as per-frame film grain. |
-| `bframes` | `0` (anikit-video: 1) | Non-reference B pictures between reference pictures (CABAC, `threads == 1`). Output is delayed: call `Encoder::flush()` at the end of a stream (the chunk encoders do). anikit-video uses 1 for its CABAC qualities. See "B-frames" below. |
+| `bframes` | `0` (anikit-video: 1) | Non-reference B pictures between reference pictures (CABAC, `threads == 1`). Output is delayed (an IDR also waits one frame, see "IDR lookahead"): call `Encoder::flush()` at the end of a stream (the chunk encoders do). anikit-video uses 1 for its CABAC qualities. See "B-frames" below. |
 | `transform8` | `true` | 8×8 transform for inter macroblocks (High profile; CABAC only). |
 | `partitions` | `false` | 16×8, 8×16 and 8×8 P partitions. About 1.5% smaller at equal SSIM, for about 1.5× the encode instructions, so off. |
 | `skip_threshold` | `0` | Perceptual skip: code a changed macroblock as a copy when every sample is within this distance of the reconstructed reference. Off by default (see the measurements below). |
@@ -584,7 +584,7 @@ quarter-pel; AQ and the SSIM floor off so that QP alone sets quality).
   - spatial direct and B_Skip (direct is used only over an unpartitioned
     co-located macroblock);
   - intra 16×16;
-  - QP +2 (adaptive), and no deblocking in the encoder (B pictures are never
+  - QP +4 (adaptive), and no deblocking in the encoder (B pictures are never
     referenced; the decoder deblocks them).
 
   Searches are seeded with the direct vectors and the co-located P vector
@@ -601,6 +601,48 @@ quarter-pel; AQ and the SSIM floor off so that QP alone sets quality).
   There are no B pictures on frames with a grain hint. The MP4 muxer writes
   `ctts` and an edit list from the slice POCs (POC type 0 when B-frames are
   on).
+- **IDR lookahead.** With B-frames on, an IDR waits for the next frame. Its
+  macroblocks that are unchanged there (mean absolute luma difference ≤ 0.5)
+  are coded 6 QP lower. Static content is then copied onward by skips, so it
+  pays to code it well once: a one-frame version of x264's macroblock tree.
+  Content that changes keeps the frame QP, so clips that change everywhere
+  (film grain, full-frame motion, `post`) are coded as before.
+  - The IDR is first coded at the frame QP. It is coded again with the drop only
+    if its luma PSNR is under 45 dB (the SSIM floor's cap): above that the
+    error isn't visible.
+  - Ungated, the near-lossless qbench specs grew for nothing: ui +23%, scene3d
+    +25%, shader-hero +13%, at 51–60 dB. Gated, they are byte-identical.
+  - A flat IDR QP offset was tried first: −3 helped octava by 12% but cost
+    `post` 8%.
+
+  Together with the B offset (QP +4 instead of +2; the guard's slack stays
+  0.001: at 0.0015 `particles` fails qbench's delivered-PSNR gate),
+  BD-rate (SSIM) at GOP 60 with B-frames:
+
+  | launch | tutorial | shader | post | tern | octava (paper texture) | hill (grain) | mean |
+  |---|---|---|---|---|---|---|---|
+  | −0.2% | −2.3% | −7.7% | −0.6% | −3.5% | −20.2% | +0.1% | −4.9% |
+
+  At the pipeline's settings (QP 23, SSIM floor, 20-frame chunks), octava
+  goes from 31.1 MB / SSIM 0.988 to 24.4 MB / 0.982 (18.2 MB / 0.972 with
+  the bitrate ceiling below). x264 CRF 20 is
+  8.4 MB / 0.986: it puts I frames at QP 14 and B frames at QP 26 (macroblock
+  tree), and gains 14% from partitions and 10% from extra references.
+- **SSIM floor bitrate ceiling.** The floor does not lower the QP while
+  reference pictures average more than 25 Mbit/s (at 1920×1080, scaled by
+  frame area and `fps`); above it, it gives back one QP step per frame. Texture
+  whose SSIM rises slowly with bits (grain, paper, halftone) used to take the
+  floor's full 8-QP drop. With 20-frame chunks:
+
+  | clip | before | with the ceiling | x264 |
+  |---|---|---|---|
+  | octava | 24.4 MB / SSIM 0.982 | 18.2 MB / 0.972 | 8.4 MB / 0.986 (CRF 20) |
+  | hill | 35.0 MB / 0.983 | 26.7 MB / 0.978 | 20.3 MB / 0.980 (CRF 21) |
+
+  On octava, the static paper texture is unchanged: the IDR lookahead codes it
+  once at the lower QP, and it keeps about 90% of the source's
+  horizontal-gradient energy (x264: 100%). The ceiling only touches the
+  moving parts.
 - **8×8 transform.** For inter macroblocks, used when the residual's 8×8
   Hadamard cost is below its 4×4 SATD (x264's rule, SSE2). It includes CABAC
   category-5 residuals, `transform_size_8x8_flag` (coded as 0 for I4×4
@@ -631,7 +673,16 @@ of it back.
 **Tried and rejected** (BD-rate at equal SSIM):
 - An intra penalty in P frames: helps tern, costs 37% on post.
 - An early skip trial: +12% mean.
-- IDR at QP −3.
+- IDR at QP −3 for the whole frame (see the IDR lookahead instead).
+- The same lookahead for P pictures (hold each P one frame): tern +3–4%.
+- Temporal AQ (QP from the inter/intra cost ratio): no gain on octava or hill.
+- x264-style variance AQ (lower QP on low-variance blocks). On hill it keeps
+  more dark grain: high-frequency energy in dark grain blocks goes from 0.88
+  to 0.94 of the source's. x264 CRF 21 keeps 1.00, and 0.88 with psy off.
+  But BD-rate (SSIM) gets worse on everything except octava: post +15%,
+  launch +5%. SSIM does not reward keeping grain, so this needs a perceptual
+  metric before it can be a default.
+- A narrower inter dead zone (1/4, 1/3) or no decimation: grain energy +1%.
 - SATD instead of SAD for sub-pel candidates: 0%.
 - A quick B search with no hexagon: +5.9%.
 - A larger P quick-exit bound: +3.4%.

@@ -42,11 +42,14 @@ fn main() {
                 height: h,
                 qp,
                 gop: env("GOP", 60.0) as u32,
-                deblock: true,
+                deblock: env("DEBLOCK", 1.0) > 0.0,
                 aq_strength: env("AQ", 0.0),
                 ssim_floor: env("SSIM", 0.0),
+                ssim_max_drop: env("DROP", 8.0) as u8,
                 bframes: env("BF", 0.0) as u8,
                 transform8: env("T8", 1.0) > 0.0,
+                partitions: env("PART", 0.0) > 0.0,
+                subpel: env("SUBPEL", 1.0) > 0.0,
                 ..Default::default()
             };
             let t = Instant::now();
