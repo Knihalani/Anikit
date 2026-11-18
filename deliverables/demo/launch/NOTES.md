@@ -22,8 +22,10 @@ The rest of the build:
 | **pass 2 (final.mp4)** | **4.62 (4.94)** | 7 authored shots with cuts; drum runs ≤ 13 flaps (no garbage glyphs); clean end lockup |
 | pass 3 | 4.25 (4.78) | shorter copy, framing that fits, lamp shaft in haze, a grazing rim light, a green wave as the peak |
 | pass 4 | 4.0 (4.44) | flaps at 0.07 s (the hinge reads); Railyard events land in ONE synchronized flap |
+| JUDGE 6-trial re-judge of final.mp4 (pass 2) | 4.31 (4.67), 0/6 pro | pooled with my pass-2 run: ~4.4 over 9 trials, +0.8 over r1/r2 |
+| pass 5, 6 trials (`gen_pass5.py`) | 4.12 (4.61), 0/6 pro | pass 2 + the old letter stays on the falling flap (no garbled half-states) + end cards framed to fit |
 
-That is a plateau at about 4.2 ± 0.4, so I stopped. Pass 2 is kept as `final.mp4` (`score.json`). Passes 3–4 changed *how* it looks; the jury's verdict on *what* it is didn't move.
+That is a plateau at about 4.2 ± 0.4, confirmed by pass 5 at 6 trials (4.12 vs 4.31), so I stopped. Pass 2 is kept as `final.mp4` (`score.json`). Passes 3–4 changed *how* it looks; the jury's verdict on *what* it is didn't move.
 
 ## What still holds it back (jury, all passes)
 1. **Idea:** "a departure board for a company called Railyard" reads as a literal pun in every trial. The jury asks for the board to break, transform, or open into a physical rail world. That's a concept limit, not an engine limit.
