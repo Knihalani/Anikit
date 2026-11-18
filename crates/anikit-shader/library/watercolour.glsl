@@ -20,16 +20,20 @@ float vnoise(vec2 p) {
     return mix(mix(h21(i), h21(i + vec2(1, 0)), u.x), mix(h21(i + vec2(0, 1)), h21(i + vec2(1, 1)), u.x), u.y);
 }
 
-// Two independent value noises at once: four 2-channel hashes instead of eight.
-vec2 h22(vec2 p) {
-    vec3 p3 = fract(vec3(p.xyx) * vec3(0.1031, 0.1030, 0.0973));
-    p3 += dot(p3, p3.yzx + 33.33);
-    return fract((p3.xx + p3.yz) * p3.zy);
-}
+// Two independent value noises at once. The four corners' hashes are built
+// from per-axis fractions (shared between corners), so the whole lattice costs
+// a few multiply-adds and fracts instead of four full 2-channel hashes.
 vec2 vnoise2(vec2 p) {
     vec2 i = floor(p), f = fract(p);
     vec2 u = f * f * (3.0 - 2.0 * f);
-    return mix(mix(h22(i), h22(i + vec2(1, 0)), u.x), mix(h22(i + vec2(0, 1)), h22(i + vec2(1, 1)), u.x), u.y);
+    vec2 qx = fract(vec2(i.x, i.x + 1.0) * 0.1031);
+    vec2 qy = fract(vec2(i.y, i.y + 1.0) * 0.1137);
+    vec4 x = qx.xyxy, y = qy.xxyy;
+    vec4 h1 = fract((x + y + 0.37) * (x * y * 19.19 + 33.33));
+    vec4 h2 = fract(h1 * (x + 5.17) * 13.7 + y);
+    vec2 a = mix(vec2(h1.x, h2.x), vec2(h1.y, h2.y), u.x);
+    vec2 b = mix(vec2(h1.z, h2.z), vec2(h1.w, h2.w), u.x);
+    return mix(a, b, u.y);
 }
 
 void mainImage(out vec4 fragColor, in vec2 fragCoord) {
@@ -49,7 +53,8 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
     vec3 pig = 1.0 - c;
     pig = floor(pig * 6.0 + 0.5 + w2.x * 0.5) / 6.0 * 0.4 + pig * 0.6;
     // Edge darkening where the wash changes.
-    float e = length(vec3(dFdx(c.r), dFdx(c.g), dFdx(c.b))) + length(vec3(dFdy(c.r), dFdy(c.g), dFdy(c.b)));
+    vec3 dc = abs(dFdx(c)) + abs(dFdy(c));
+    float e = (dc.r + dc.g + dc.b) * 0.62;   // L1 instead of two lengths: no square roots
     pig *= 1.0 + edges * clamp(e * 8.0 / s, 0.0, 1.2);
     // Granulation: pigment settles in the paper's tooth.
     float gr = h21(floor(p * 0.6));                // per-cell grain: the paper's tooth
