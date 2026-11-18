@@ -12,7 +12,7 @@ use crate::render;
 use crate::text::FontStore;
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicU64, Ordering};
-use std::sync::{Arc, RwLock};
+use std::sync::{Arc, Mutex, RwLock};
 use vello_cpu::Pixmap;
 
 /// Fonts and images shared by evaluation and rendering.
@@ -27,13 +27,15 @@ pub struct SharedAssets {
     /// Named sub-compositions (weak: the root evaluator owns them) and their texture cache.
     comps: RwLock<Vec<(String, std::sync::Weak<super::Evaluator>, bool)>>,
     textures: std::sync::OnceLock<crate::pipeline::textures::CompTextures>,
-    /// Per-frame images, LRU-evicted so full-frame renders don't pile up.
+    /// Per-frame images, LRU-evicted so full-frame renders don't pile up. Batch
+    /// paths that evaluate before drawing hold their images separately.
     volatile: RwLock<Volatile>,
+    held: Mutex<Option<Held>>,
 }
 
 /// First id of per-frame images.
 pub(crate) const VOLATILE_BASE: u32 = 0x6000_0000;
-/// Per-frame images kept before LRU eviction.
+/// Per-frame images kept before LRU eviction; batch paths hold images until drawn.
 const VOLATILE_SLOTS: usize = 96;
 
 #[derive(Default)]
@@ -58,6 +60,23 @@ impl Volatile {
     }
 }
 
+#[derive(Default)]
+struct Held {
+    by_key: HashMap<u64, u32>,
+    by_seq: HashMap<u32, (u64, Arc<Pixmap>)>,
+}
+
+/// Keeps per-frame images resolvable while a batch is evaluated before drawing.
+pub struct HeldFrameImages<'a> {
+    held: &'a Mutex<Option<Held>>,
+}
+
+impl Drop for HeldFrameImages<'_> {
+    fn drop(&mut self) {
+        *self.held.lock().unwrap() = None;
+    }
+}
+
 impl Default for SharedAssets {
     fn default() -> Self {
         Self::new(Arc::new(FontStore::new()))
@@ -65,10 +84,9 @@ impl Default for SharedAssets {
 }
 
 impl SharedAssets {
-    /// Drop the per-frame images (component fields, rays, particle text),
-    /// which hold up to 96 full-frame pixmaps. Call only when no
-    /// display list that refers to them is in flight, e.g. when a render is done;
-    /// later frames rebuild them on demand, with the same ids as a fresh build.
+    /// Drop cached per-frame images and any images held for a batch. Call only
+    /// when no display list that refers to them is in flight; later frames
+    /// rebuild them on demand, with the same ids as a fresh build.
     pub fn release_frame_images(&self) {
         let mut v = self.volatile.write().unwrap();
         v.slots.clear();
@@ -76,6 +94,10 @@ impl SharedAssets {
         v.by_seq.clear();
         v.next = 0;
         v.clock.store(0, Ordering::Relaxed);
+        if let Some(held) = self.held.lock().unwrap().as_mut() {
+            held.by_key.clear();
+            held.by_seq.clear();
+        }
     }
 
     pub fn new(fonts: Arc<FontStore>) -> Self {
@@ -89,19 +111,37 @@ impl SharedAssets {
             comps: RwLock::new(Vec::new()),
             textures: std::sync::OnceLock::new(),
             volatile: RwLock::default(),
+            held: Mutex::new(None),
         }
     }
 
+    /// Keep images made during a batch resolvable until the returned guard drops.
+    pub fn hold_frame_images(&self) -> HeldFrameImages<'_> {
+        let mut held = self.held.lock().unwrap();
+        if held.is_none() {
+            *held = Some(Held::default());
+        }
+        HeldFrameImages { held: &self.held }
+    }
+
     fn volatile_hit(&self, key: u64) -> Option<ImageId> {
-        let v = self.volatile.read().unwrap();
-        let idx = *v.by_key.get(&key)?;
-        let seq = v.slots[idx].seq;
-        v.touch(idx);
-        Some(ImageId(VOLATILE_BASE + seq))
+        let ring = {
+            let v = self.volatile.read().unwrap();
+            v.by_key.get(&key).map(|&idx| {
+                let seq = v.slots[idx].seq;
+                v.touch(idx);
+                ImageId(VOLATILE_BASE + seq)
+            })
+        };
+        ring.or_else(|| self.held.lock().unwrap().as_ref()?.by_key.get(&key).copied().map(|seq| ImageId(VOLATILE_BASE + seq)))
     }
 
     fn volatile_insert(&self, key: u64, pm: Arc<Pixmap>) -> ImageId {
         let mut v = self.volatile.write().unwrap();
+        let mut held = self.held.lock().unwrap();
+        if let Some(seq) = held.as_ref().and_then(|held| held.by_key.get(&key)).copied() {
+            return ImageId(VOLATILE_BASE + seq);
+        }
         if let Some(&idx) = v.by_key.get(&key) {
             // Another thread may have made the same key meanwhile: hand out its image,
             // so a key always maps to one id and one Arc (the renderer's incremental
@@ -113,13 +153,14 @@ impl SharedAssets {
         let seq = loop {
             let seq = v.next;
             v.next = (v.next + 1) % (super::shader::SHADER_BASE - VOLATILE_BASE);
-            if !v.by_seq.contains_key(&seq) {
+            let held_seq_is_live = held.as_ref().is_some_and(|held| held.by_seq.contains_key(&seq));
+            if !v.by_seq.contains_key(&seq) && !held_seq_is_live {
                 break seq;
             }
         };
         let idx = if v.slots.len() < VOLATILE_SLOTS {
             let idx = v.slots.len();
-            v.slots.push(VSlot { key, seq, pm, last: AtomicU64::new(0) });
+            v.slots.push(VSlot { key, seq, pm: pm.clone(), last: AtomicU64::new(0) });
             idx
         } else {
             let idx = v.slots.iter().enumerate().min_by_key(|(_, slot)| slot.last.load(Ordering::Relaxed)).unwrap().0;
@@ -127,11 +168,15 @@ impl SharedAssets {
             let old_seq = v.slots[idx].seq;
             v.by_key.remove(&old_key);
             v.by_seq.remove(&old_seq);
-            v.slots[idx] = VSlot { key, seq, pm, last: AtomicU64::new(0) };
+            v.slots[idx] = VSlot { key, seq, pm: pm.clone(), last: AtomicU64::new(0) };
             idx
         };
         v.by_key.insert(key, idx);
         v.by_seq.insert(seq, idx);
+        if let Some(held) = held.as_mut() {
+            held.by_key.insert(key, seq);
+            held.by_seq.insert(seq, (key, pm));
+        }
         v.touch(idx);
         ImageId(VOLATILE_BASE + seq)
     }
@@ -193,10 +238,14 @@ impl SharedAssets {
         }
         if (VOLATILE_BASE..super::shader::SHADER_BASE).contains(&id.0) {
             let seq = id.0 - VOLATILE_BASE;
-            let v = self.volatile.read().unwrap();
-            let idx = *v.by_seq.get(&seq)?;
-            v.touch(idx);
-            return Some(v.slots[idx].pm.clone());
+            let ring = {
+                let v = self.volatile.read().unwrap();
+                v.by_seq.get(&seq).map(|&idx| {
+                    v.touch(idx);
+                    v.slots[idx].pm.clone()
+                })
+            };
+            return ring.or_else(|| self.held.lock().unwrap().as_ref()?.by_seq.get(&seq).map(|(_, pm)| pm.clone()));
         }
         self.images.read().unwrap().get(id.0 as usize).cloned()
     }
@@ -212,9 +261,11 @@ impl SharedAssets {
         }
         if (VOLATILE_BASE..super::shader::SHADER_BASE).contains(&id.0) {
             let seq = id.0 - VOLATILE_BASE;
-            let v = self.volatile.read().unwrap();
-            let idx = *v.by_seq.get(&seq)?;
-            return Some(v.slots[idx].key ^ 0x564f_4c41);
+            let ring = {
+                let v = self.volatile.read().unwrap();
+                v.by_seq.get(&seq).map(|&idx| v.slots[idx].key ^ 0x564f_4c41)
+            };
+            return ring.or_else(|| self.held.lock().unwrap().as_ref()?.by_seq.get(&seq).map(|(key, _)| *key ^ 0x564f_4c41));
         }
         let pm = self.images.read().unwrap().get(id.0 as usize).cloned()?;
         let mut h = std::collections::hash_map::DefaultHasher::new();
@@ -355,6 +406,21 @@ mod tests {
         a.release_frame_images();
         assert!(a.pixmap(first).is_none());
         assert_eq!(a.frame_image(8, 2, 2, &mut || vec![3; 16]), first);
+    }
+
+    #[test]
+    fn held_frame_images_survive_ring_eviction() {
+        let a = SharedAssets::new(Arc::new(FontStore::new()));
+        let held = a.hold_frame_images();
+        let first = a.frame_image(0, 2, 2, &mut || vec![0; 16]);
+        for key in 1..200 {
+            a.frame_image(key, 2, 2, &mut || vec![key as u8; 16]);
+        }
+        assert!(a.pixmap(first).is_some());
+        assert!(a.content_key(first).is_some());
+        assert_eq!(a.frame_image(0, 2, 2, &mut || unreachable!()), first);
+        drop(held);
+        assert!(a.pixmap(first).is_none());
     }
 
     #[test]

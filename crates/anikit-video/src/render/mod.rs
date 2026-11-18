@@ -212,10 +212,12 @@ pub struct Renderer {
     /// Motion-blur accumulator (linear RGB).
     motion_acc: Vec<f32>,
     motion_tmp: Vec<f32>,
+    motion_cols: Vec<f32>,
     /// Clip coverage masks for motion-blurred wipes.
     mask_ctx: Option<RenderContext>,
     mask_pix: Pixmap,
     grain: Vec<grain::Grain>,
+    grain_cache: grain::Cache,
     /// The background colour as a 2×2 backdrop (RGBA8), reused while it stays.
     bg_pix: Option<([u8; 4], Arc<Pixmap>)>,
     motion_brute: bool,
@@ -255,9 +257,11 @@ impl Renderer {
             pp: Default::default(),
             motion_acc: Vec::new(),
             motion_tmp: Vec::new(),
+            motion_cols: Vec::new(),
             mask_ctx: None,
             mask_pix: Pixmap::new(1, 1),
             grain: Vec::new(),
+            grain_cache: Default::default(),
             bg_pix: None,
             motion_brute: false,
             quality: Quality::Standard,
@@ -429,7 +433,7 @@ impl Renderer {
             None
         } else {
             let view = View { assets: &self.assets, frame: &self.frame_images, dynamic: self.dynamic.as_deref() };
-            grain::tail(&list.ops, w as f64, h as f64, list.background, &view, &mut layers)
+            grain::tail(&list.ops, w as f64, h as f64, list.background, &view, &mut self.grain_cache, &mut layers)
         };
         let Some(k) = at else {
             self.grain = layers;
