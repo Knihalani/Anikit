@@ -57,6 +57,7 @@ The card is a black flag that only shows in reflections; it gives chrome contras
 - **Local lights** (in `lights`, given a `pos`): a point light `{ "pos": [x, y, z], "color", "intensity": 10 }`, or a spot when it also has a `target`, `angle` (degrees) and `penumbra` (0–1). They fall off with the inverse square and cast hard traced shadows (`"shadow": false` turns them off). Use them for light pools on the floor, LEDs and practicals.
   - `pos`, `target` and `intensity` take `"=expressions"` of `t`: a searchlight that sweeps (`"pos": "=[2.2*sin(t*0.9), 3.2, 1+1.2*cos(t*0.9)]"`), a spot that tracks, a sign that flickers (`"intensity": "=1.2+max(0,sin(t*7))"`).
   - Proof: `docs/video/shots/3d-lights/searchlight.jpg` (two moments of the same shot).
+  - Texture prints (compositions on panes, planes and text) are lit by local lights too, like matte paper: a sodium lamp pools on a brick-textured wall and a sign spills its colour onto a textured facade. Each shadowed light costs one shadow ray per textured pixel (a street with 20 shadowed lamps and many textured panes roughly doubles the trace time); set `"shadow": false` on fill lights.
 - **`fog`:** a density per metre, or `{ "density", "color", "shafts": true, "height", "base" }`. `height` makes it height fog: dense at `base` (default 0, the floor) and thinning by e every `height` metres. That gives ground mist, a valley fog, or a set that dissolves into haze. It's integrated exactly along each camera ray (one `exp`), and the layer meets the sky softly. Proof: `docs/video/shots/3d-fog/ground-mist.jpg` (`{ "density": 0.9, "height": 0.25 }`). `shafts` adds volumetric light: spot cones and god rays from the key, with object shadows cut into them. Use density 0.02–0.08 with a dark fog colour at night.
 - **`camera`:**
   - presets: `push`, `reveal`, `flyby`, `orbit` (all 5 s by default), `dolly`, `crane`, `static`; or `{ "preset", "duration", "degrees", "height", "shake" }`;
@@ -68,6 +69,7 @@ The card is a black flag that only shows in reflections; it gives chrome contras
   - animation: `keys: [{ t, pos, rot, scale, ease }]`, `spin`, `start`/`end`;
   - instances: `count` and `lanes`;
   - `texture`: `"#comp"`, `{ "composition", "frame": "=i", "face": "front|back|both" }`, or a list of these (one per face);
+    compositions can contain shader layers (including ones that read text channels), so a 3D sign, screen or poster can carry an animated GLSL treatment (proof: `deliverables/ceiling1/proof_shader_texture_3d.png`, top row as 2D layers, bottom row on 3D panes);
   - `material`: a name or an object;
   - flags: `camera: false` (a reflector card), `shadow`, `thin`.
 - **`materials`:**
@@ -111,6 +113,21 @@ They stick to the object (object space), are deterministic, and show mostly wher
 
 Cost: measured on the comparison scene (3 objects, 1080p, 4 cores), trace went from 0.76 s to 1.02 s at 0.6, because uneven highlights get more edge samples. Proof: `docs/video/shots/3d-imperfections/compare.jpg` (clean vs `imperfections: 0.6`, with 100% crops).
 
+## Machined finishes
+
+Watches, cameras, audio gear and tools are defined by their machined surfaces. `pattern` adds one as bump on any material (`patternScale` is the period in metres, `patternStrength` defaults to 1):
+- `brushed`: fine parallel grooves (along the object's X);
+- `sunburst`: radial lines from the object's Y axis (dials);
+- `guilloche`: engine-turned waves (rings whose radius ripples with angle);
+- `clous-de-paris`: a hobnail grid of small pyramids;
+- `knurl`: crossed helical grooves (grips and crowns, on the sides of cylinders).
+
+Grooves need about six pixels per period to resolve. Below that they fade into extra roughness (sheen) instead of aliasing, so frame them close: a 100 mm `macro` at f/8–11.
+
+`{ "extends": "aluminium", "base": "#E4E6E9", "roughness": 0.15, "pattern": "guilloche", "patternScale": 0.012 }`
+
+Recipe: `anikit-video recipes precision-macro` (a knurled knob with a sunburst cap on a brushed plate, a strip sweep and a rack focus; still `docs/video/shots/3d-patterns/precision-macro.jpg`). Proof: `docs/video/shots/3d-patterns/dials.jpg` (a 100 mm macro on two dials, guilloché and clous de Paris; trace about 0.7 s at 1080p). Known limit: very fine guilloché can still moiré near the centre of the rings.
+
 ## Sets
 
 Build a stage, not a void. `set` adds a designed set around the subject as ordinary objects, so materials, keys and expressions still apply. It takes a name, `{ "preset", "color", "material", "size", "shape", "density" }`, or a list of these.
@@ -123,10 +140,11 @@ Build a stage, not a void. `set` adds a designed set around the subject as ordin
 | `field` | An abstract field of columns with noise heights, rising with distance, with a clearing for the subject (`density` 0.25–3). |
 | `arches` | A receding corridor of half-buried rings. |
 | `terrain` | Rolling fBm ground that flattens near the subject (replaces the floor). |
+| `landscape` | Terrain plus about 70 boulders and 90 stylised trees standing on it (placed with the same height function), outside a clearing. Pair it with `rig: { "preset": "golden", "gobo": false }` and a light height fog. |
 
 `{ "env": "cyc", "rig": "rembrandt", "look": "clay", "set": { "preset": "sweep", "color": "#C8664A" }, "objects": [ ... ] }`
 
-Stills (each with its spec): `docs/video/shots/3d-sets/`. Measured 1080p traces on 4 cores: 0.52–0.82 s (`field` has 784 instanced columns).
+Stills (each with its spec): `docs/video/shots/3d-sets/` (`landscape.jpg`: 1080p trace 0.8 s and object build 0.3 s, on 4 cores). Measured 1080p traces on 4 cores: 0.52–0.82 s (`field` has 784 instanced columns).
 
 ## Camera language
 
@@ -264,6 +282,12 @@ The hot parts live in `scene3d/kernel/`:
   151 → 84 ns). Large meshes build in parallel (650k triangles: 1.3 s).
 - `post.rs`: the post stack on structure-of-arrays planes, row-parallel,
   hot loops in `simd_fn!` kernels (AVX2 + baseline, same bits).
+- Volumetric shafts (`Scene::volumetrics`) march at half resolution with an
+  R2 low-discrepancy offset per pixel, so the separable 5×5 binomial blur
+  cancels the banding (white-noise offsets left sandy grain in bright
+  beams), and each local light's scattering fades out over the outer 40% of
+  its reach (no visible sphere where the march stops). Before/after:
+  `docs/video/shots/rtk/shafts-before-after.jpg`.
 - `envk.rs`: environment softboxes evaluated eight lanes at a time (same
   bits as `Softbox::eval`).
 - `pool.rs`: frame-sized buffers reused across frames (fresh 100+ MB

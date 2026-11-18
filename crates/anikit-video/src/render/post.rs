@@ -453,6 +453,14 @@ impl PostProcessor {
         };
         let (g0, g1, g2) = (&grade[0][..], &grade[1][..], &grade[2][..]);
         use rayon::prelude::*;
+        if grade_lut.is_none() && !SCALAR_FINAL.with(|c| c.get()) {
+            // The common case: planar, chunked stages that LLVM vectorises. Same
+            // arithmetic, in the same order, as the per-pixel loop below (bit-exact;
+            // `final_pass_matches_scalar` checks it).
+            let fc = FinalCtx { w, h, gw, gh, glow, gcols: &gcols, img, dith, lut, grade: [g0, g1, g2], sat, tonemap, vig, soft, cx, cy, inv_diag, grain_amp, gsize, seed, dither };
+            rgba.par_chunks_mut(w * 4).enumerate().for_each(|(y, row)| final_row(&fc, y, row));
+            return;
+        }
         rgba.par_chunks_mut(w * 4).enumerate().for_each(|(y, row)| {
             let src = &img[y * w..(y + 1) * w];
             let drow = &dith[y * w..(y + 1) * w];
@@ -553,7 +561,7 @@ impl PostProcessor {
         // Zoom so the corners still sample inside the frame.
         let zoom = 1.0 / (1.0 + k.max(0.0));
         let ca = ca_px * inv; // fraction of the half-diagonal at the corner
-        self.tmp.clear();
+        // Every pixel is written below: only the size matters.
         self.tmp.resize(w * h, [0.0; 3]);
         let img = &self.img[..w * h];
         let (wm, hm) = ((w - 1) as f32, (h - 1) as f32);
@@ -581,6 +589,12 @@ impl PostProcessor {
             a + (b - a) * fy
         }
         use rayon::prelude::*;
+        if !SCALAR_FINAL.with(|c| c.get()) {
+            let lc = LensCtx { img, w, wm, hm, cx, cy, inv, k, zoom, ca };
+            self.tmp.par_chunks_mut(w).enumerate().for_each(|(y, row)| lens_row(&lc, y, row));
+            std::mem::swap(&mut self.img, &mut self.tmp);
+            return;
+        }
         self.tmp.par_chunks_mut(w).enumerate().for_each(|(y, row)| {
             let dy = y as f32 + 0.5 - cy;
             for (x, out) in row.iter_mut().enumerate() {
@@ -605,7 +619,10 @@ impl PostProcessor {
         use rayon::prelude::*;
         let mut base = vec![[0f32; 3]; hw * hh];
         let img = &self.img;
-        base.par_chunks_mut(hw).enumerate().for_each(|(y, row)| {
+        if !SCALAR_FINAL.with(|c| c.get()) {
+            base.par_chunks_mut(hw).enumerate().for_each(|(y, row)| bright_row(img, w, h, y, t, knee, row));
+        } else {
+            base.par_chunks_mut(hw).enumerate().for_each(|(y, row)| {
             for (x, out) in row.iter_mut().enumerate() {
                 let mut acc = [0f32; 3];
                 for (ox, oy) in [(0, 0), (1, 0), (0, 1), (1, 1)] {
@@ -621,7 +638,8 @@ impl PostProcessor {
                 let c = s.max(l - t) / l.max(1e-5);
                 *out = acc.map(|v| v * c.max(0.0));
             }
-        });
+            });
+        }
         // Pyramid: levels until the blur reaches the radius.
         let target = (p.bloom_radius.max(0.01) * h as f32).max(4.0);
         let levels = ((target / 2.0).log2().ceil() as usize).clamp(2, 9);
@@ -680,14 +698,25 @@ impl PostProcessor {
             let (dw, _dh, dst) = &mut lo[i];
             let (sw, sh, small) = (&hi[0].0, &hi[0].1, &hi[0].2);
             let (sw, sh, dw) = (*sw, *sh, *dw);
-            dst.par_chunks_mut(dw).enumerate().for_each(|(y, row)| {
-                for (x, d) in row.iter_mut().enumerate() {
-                    let u = up(small, sw, sh, x, y);
-                    for k in 0..3 {
-                        d[k] += u[k];
+            if !SCALAR_FINAL.with(|c| c.get()) {
+                // Same taps as `up`, computed once per column and per row.
+                let cols = taps(dw, |x| ((x as f32 + 0.5) * 0.5 - 0.5).clamp(0.0, (sw - 1) as f32), sw);
+                dst.par_chunks_mut(dw).enumerate().for_each(|(y, row)| {
+                    let fy = ((y as f32 + 0.5) * 0.5 - 0.5).clamp(0.0, (sh - 1) as f32);
+                    let y0 = fy as usize;
+                    let y1 = (y0 + 1).min(sh - 1);
+                    lerp_add_row(&small[y0 * sw..(y0 + 1) * sw], &small[y1 * sw..(y1 + 1) * sw], fy - y0 as f32, &cols, row);
+                });
+            } else {
+                dst.par_chunks_mut(dw).enumerate().for_each(|(y, row)| {
+                    for (x, d) in row.iter_mut().enumerate() {
+                        let u = up(small, sw, sh, x, y);
+                        for k in 0..3 {
+                            d[k] += u[k];
+                        }
                     }
-                }
-            });
+                });
+            }
             if i == hal_level {
                 halo = Some((dw, lo[i].1, lo[i].2.clone()));
             }
@@ -701,6 +730,42 @@ impl PostProcessor {
         glow.clear();
         glow.resize(bw * bh, [0.0; 3]);
         let base = &self.pyr[0].2;
+        if !SCALAR_FINAL.with(|c| c.get()) {
+            let hal = halo.as_ref().filter(|_| p.halation > 0.0);
+            let cols = hal.map(|(hw2, _, _)| taps(bw, |x| ((x as f32 + 0.5) * *hw2 as f32 / bw as f32 - 0.5).clamp(0.0, (*hw2 - 1) as f32), *hw2)).unwrap_or_default();
+            let bscale: [f32; 3] = std::array::from_fn(|k| p.bloom_tint[k]);
+            glow.par_chunks_mut(bw).enumerate().for_each(|(y, row)| {
+                let b = &base[y * bw..(y + 1) * bw];
+                for (g, b) in row.iter_mut().zip(b) {
+                    for k in 0..3 {
+                        g[k] = b[k] * norm * p.bloom * bscale[k] * 2.0;
+                    }
+                }
+                if let Some((hw2, hh2, hv)) = hal {
+                    let (hw2, hh2) = (*hw2, *hh2);
+                    let sy = ((y as f32 + 0.5) * hh2 as f32 / bh as f32 - 0.5).clamp(0.0, (hh2 - 1) as f32);
+                    let y0 = sy as usize;
+                    let y1 = (y0 + 1).min(hh2 - 1);
+                    let (ra, rb, ty) = (&hv[y0 * hw2..(y0 + 1) * hw2], &hv[y1 * hw2..(y1 + 1) * hw2], sy - y0 as f32);
+                    for (g, &(x0, x1, tx)) in row.iter_mut().zip(&cols) {
+                        // SAFETY: `taps` clamps x0, x1 to hw2 − 1.
+                        let (a, b, c, d) = unsafe { (*ra.get_unchecked(x0 as usize), *ra.get_unchecked(x1 as usize), *rb.get_unchecked(x0 as usize), *rb.get_unchecked(x1 as usize)) };
+                        let hb: [f32; 3] = std::array::from_fn(|k| {
+                            let top = a[k] + (b[k] - a[k]) * tx;
+                            let bot = c[k] + (d[k] - c[k]) * tx;
+                            top + (bot - top) * ty
+                        });
+                        let l = 0.2126 * hb[0] + 0.7152 * hb[1] + 0.0722 * hb[2];
+                        for k in 0..3 {
+                            g[k] += l * hal_tint[k] * p.halation * 3.0 * norm;
+                        }
+                    }
+                }
+            });
+            self.glow = glow;
+            self.glow_dims = (bw, bh);
+            return;
+        }
         glow.par_chunks_mut(bw).enumerate().for_each(|(y, row)| {
             for (x, g) in row.iter_mut().enumerate() {
                 let b = base[y * bw + x];
@@ -737,6 +802,389 @@ fn sample_grid(src: &[[f32; 3]], sw: usize, sh: usize, x: usize, y: usize, dw: u
         let bot = c[k] + (d[k] - c[k]) * tx;
         top + (bot - top) * ty
     })
+}
+
+thread_local! {
+    /// Tests: force the per-pixel final pass, to check the fast one against it.
+    static SCALAR_FINAL: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+}
+
+/// Bilinear taps along one axis: for each of `n` output positions, the two
+/// source indices (clamped to `len − 1`) and the fraction, from the source
+/// coordinate `f(i)` (already clamped to `0..=len − 1`).
+fn taps(n: usize, f: impl Fn(usize) -> f32, len: usize) -> Vec<(u32, u32, f32)> {
+    (0..n)
+        .map(|i| {
+            let s = f(i);
+            let i0 = s as usize;
+            (i0 as u32, (i0 + 1).min(len - 1) as u32, s - i0 as f32)
+        })
+        .collect()
+}
+
+/// `row[x] += bilinear(ra, rb)` with column taps `cols` and row fraction `ty`
+/// (the same arithmetic as `up`).
+fn lerp_add_row(ra: &[[f32; 3]], rb: &[[f32; 3]], ty: f32, cols: &[(u32, u32, f32)], row: &mut [[f32; 3]]) {
+    for (d, &(x0, x1, tx)) in row.iter_mut().zip(cols) {
+        // SAFETY: `taps` clamps x0, x1 below the source width, the length of ra and rb.
+        let (p00, p01, p10, p11) = unsafe { (*ra.get_unchecked(x0 as usize), *ra.get_unchecked(x1 as usize), *rb.get_unchecked(x0 as usize), *rb.get_unchecked(x1 as usize)) };
+        for k in 0..3 {
+            let a = p00[k] + (p01[k] - p00[k]) * tx;
+            let b = p10[k] + (p11[k] - p10[k]) * tx;
+            d[k] += a + (b - a) * ty;
+        }
+    }
+}
+
+/// One row of the bloom's bright pass at half resolution: a 2×2 box average
+/// and the soft-knee threshold (the same arithmetic as the per-pixel loop).
+fn bright_row(img: &[[f32; 3]], w: usize, h: usize, y: usize, t: f32, knee: f32, row: &mut [[f32; 3]]) {
+    #[cfg(target_arch = "x86_64")]
+    {
+        if std::arch::is_x86_feature_detected!("avx2") {
+            // SAFETY: AVX2 is available; no multiply-adds are fused.
+            unsafe { bright_row_avx2(img, w, h, y, t, knee, row) };
+            return;
+        }
+    }
+    bright_row_impl(img, w, h, y, t, knee, row)
+}
+
+#[cfg(target_arch = "x86_64")]
+#[target_feature(enable = "avx2")]
+unsafe fn bright_row_avx2(img: &[[f32; 3]], w: usize, h: usize, y: usize, t: f32, knee: f32, row: &mut [[f32; 3]]) {
+    bright_row_impl(img, w, h, y, t, knee, row)
+}
+
+#[inline(always)]
+// Index loops over planar chunk arrays are what vectorises here.
+#[allow(clippy::needless_range_loop)]
+fn bright_row_impl(img: &[[f32; 3]], w: usize, h: usize, y: usize, t: f32, knee: f32, row: &mut [[f32; 3]]) {
+    let r0 = &img[(2 * y).min(h - 1) * w..][..w];
+    let r1 = &img[(2 * y + 1).min(h - 1) * w..][..w];
+    let mut acc = [[0f32; FCH]; 3];
+    let mut cm = [0f32; FCH];
+    let hw = row.len();
+    let mut x0 = 0;
+    while x0 < hw {
+        let n = FCH.min(hw - x0);
+        for i in 0..n {
+            let x = x0 + i;
+            let (sa, sb) = ((2 * x).min(w - 1), (2 * x + 1).min(w - 1));
+            // Tap order (0,0), (1,0), (0,1), (1,1), as in the per-pixel loop.
+            let (c00, c10, c01, c11) = (r0[sa], r0[sb], r1[sa], r1[sb]);
+            for k in 0..3 {
+                acc[k][i] = 0.0 + c00[k] * 0.25 + c10[k] * 0.25 + c01[k] * 0.25 + c11[k] * 0.25;
+            }
+        }
+        for i in 0..n {
+            let l = 0.2126 * acc[0][i] + 0.7152 * acc[1][i] + 0.0722 * acc[2][i];
+            let s = (l - t + knee).clamp(0.0, 2.0 * knee);
+            let s = s * s / (4.0 * knee);
+            let c = s.max(l - t) / l.max(1e-5);
+            cm[i] = c.max(0.0);
+        }
+        for i in 0..n {
+            row[x0 + i] = [acc[0][i] * cm[i], acc[1][i] * cm[i], acc[2][i] * cm[i]];
+        }
+        x0 += n;
+    }
+}
+
+/// Inputs of the lens resample.
+struct LensCtx<'a> {
+    img: &'a [[f32; 3]],
+    w: usize,
+    wm: f32,
+    hm: f32,
+    cx: f32,
+    cy: f32,
+    inv: f32,
+    k: f32,
+    zoom: f32,
+    ca: f32,
+}
+
+/// One row of the lens resample: coordinates and weights in vector stages,
+/// the four taps per channel gathered in a scalar loop, the blend vectorised.
+/// Bit-exact with the per-pixel loop in `lens`.
+fn lens_row(c: &LensCtx, y: usize, row: &mut [[f32; 3]]) {
+    #[cfg(target_arch = "x86_64")]
+    {
+        if std::arch::is_x86_feature_detected!("avx2") {
+            // SAFETY: AVX2 is available; no multiply-adds are fused.
+            unsafe { lens_row_avx2(c, y, row) };
+            return;
+        }
+    }
+    lens_row_impl(c, y, row)
+}
+
+#[cfg(target_arch = "x86_64")]
+#[target_feature(enable = "avx2")]
+unsafe fn lens_row_avx2(c: &LensCtx, y: usize, row: &mut [[f32; 3]]) {
+    lens_row_impl(c, y, row)
+}
+
+#[inline(always)]
+// Index loops over planar chunk arrays are what vectorises here.
+#[allow(clippy::needless_range_loop)]
+fn lens_row_impl(c: &LensCtx, y: usize, row: &mut [[f32; 3]]) {
+    let (w, wm, hm) = (c.w, c.wm, c.hm);
+    let dy = y as f32 + 0.5 - c.cy;
+    let mut m = [[0f32; FCH]; 3];
+    let mut i00 = [[0u32; FCH]; 3];
+    let mut dxo = [[0u32; FCH]; 3];
+    let mut dyo = [[0u32; FCH]; 3];
+    let mut fx = [[0f32; FCH]; 3];
+    let mut fy = [[0f32; FCH]; 3];
+    let mut p = [[[0f32; FCH]; 4]; 3];
+    let mut x0 = 0;
+    while x0 < w {
+        let n = FCH.min(w - x0);
+        for i in 0..n {
+            let dx = (x0 + i) as f32 + 0.5 - c.cx;
+            let r2 = (dx * dx + dy * dy) * c.inv * c.inv;
+            let f = (1.0 + c.k * r2) * c.zoom;
+            let cr = c.ca * r2.sqrt();
+            m[0][i] = f * (1.0 + cr);
+            m[1][i] = f * 1.0;
+            m[2][i] = f * (1.0 - cr);
+        }
+        for ch in 0..3 {
+            for i in 0..n {
+                let dx = (x0 + i) as f32 + 0.5 - c.cx;
+                let sx = (c.cx + dx * m[ch][i] - 0.5).max(0.0).min(wm);
+                let sy = (c.cy + dy * m[ch][i] - 0.5).max(0.0).min(hm);
+                // SAFETY: 0 ≤ sx ≤ w − 1 and 0 ≤ sy ≤ h − 1.
+                let (xi, yi) = unsafe { (sx.to_int_unchecked::<i32>(), sy.to_int_unchecked::<i32>()) };
+                let (xf, yf) = (xi as f32, yi as f32);
+                dxo[ch][i] = (xf < wm) as u32;
+                dyo[ch][i] = if yf < hm { w as u32 } else { 0 };
+                i00[ch][i] = yi as u32 * w as u32 + xi as u32;
+                fx[ch][i] = sx - xf;
+                fy[ch][i] = sy - yf;
+            }
+            for i in 0..n {
+                let (a, ox, oy) = (i00[ch][i] as usize, dxo[ch][i] as usize, dyo[ch][i] as usize);
+                // SAFETY: a, a + ox, a + oy and a + ox + oy are pixels of the frame
+                // (ox and oy are 0 on the last column and row).
+                unsafe {
+                    p[ch][0][i] = c.img.get_unchecked(a)[ch];
+                    p[ch][1][i] = c.img.get_unchecked(a + ox)[ch];
+                    p[ch][2][i] = c.img.get_unchecked(a + oy)[ch];
+                    p[ch][3][i] = c.img.get_unchecked(a + oy + ox)[ch];
+                }
+            }
+            for i in 0..n {
+                let [p00, p01, p10, p11] = [p[ch][0][i], p[ch][1][i], p[ch][2][i], p[ch][3][i]];
+                let a = p00 + (p01 - p00) * fx[ch][i];
+                let b = p10 + (p11 - p10) * fx[ch][i];
+                row[x0 + i][ch] = a + (b - a) * fy[ch][i];
+            }
+        }
+        x0 += n;
+    }
+}
+
+/// Inputs of the final pass (grade, tone map, vignette, grain, dither, encode).
+struct FinalCtx<'a> {
+    w: usize,
+    h: usize,
+    gw: usize,
+    gh: usize,
+    glow: &'a [[f32; 3]],
+    gcols: &'a [(usize, usize, f32)],
+    img: &'a [[f32; 3]],
+    dith: &'a [f32],
+    lut: &'a [f32],
+    grade: [&'a [f32]; 3],
+    sat: f32,
+    tonemap: Tonemap,
+    vig: f32,
+    soft: f32,
+    cx: f32,
+    cy: f32,
+    inv_diag: f32,
+    grain_amp: f32,
+    gsize: f32,
+    seed: u32,
+    dither: bool,
+}
+
+/// One output row of the final pass, in chunks of [`FCH`] pixels and one stage
+/// at a time over planar arrays, so the arithmetic vectorises (the table
+/// lookups stay scalar). Bit-exact with the per-pixel loop in `apply`.
+fn final_row(c: &FinalCtx, y: usize, row: &mut [u8]) {
+    #[cfg(target_arch = "x86_64")]
+    {
+        if std::arch::is_x86_feature_detected!("avx2") {
+            // SAFETY: AVX2 is available. Rust never fuses multiply-adds, so the
+            // results are the same as the baseline build's.
+            unsafe { final_row_avx2(c, y, row) };
+            return;
+        }
+    }
+    final_row_impl(c, y, row)
+}
+
+#[cfg(target_arch = "x86_64")]
+#[target_feature(enable = "avx2")]
+unsafe fn final_row_avx2(c: &FinalCtx, y: usize, row: &mut [u8]) {
+    final_row_impl(c, y, row)
+}
+
+const FCH: usize = 64;
+
+#[inline(always)]
+// Index loops over planar chunk arrays are what vectorises here.
+// max/min rather than clamp: NaN must become a number before the unchecked casts.
+#[allow(clippy::needless_range_loop, clippy::manual_clamp)]
+fn final_row_impl(c: &FinalCtx, y: usize, row: &mut [u8]) {
+    let w = c.w;
+    let src = &c.img[y * w..(y + 1) * w];
+    let drow = &c.dith[y * w..(y + 1) * w];
+    let dy = (y as f32 + 0.5 - c.cy) * c.inv_diag;
+    let grow = (!c.glow.is_empty()).then(|| {
+        let sy = ((y as f32 + 0.5) * c.gh as f32 / c.h as f32 - 0.5).clamp(0.0, (c.gh - 1) as f32);
+        let y0 = sy as usize;
+        let y1 = (y0 + 1).min(c.gh - 1);
+        (&c.glow[y0 * c.gw..(y0 + 1) * c.gw], &c.glow[y1 * c.gw..(y1 + 1) * c.gw], sy - y0 as f32)
+    });
+    let mut v = [[0f32; FCH]; 3];
+    let mut si = [[0u32; FCH]; 3];
+    let mut sf = [[0f32; FCH]; 3];
+    let gy = (y as f32 / c.gsize.max(1.0)) as u32;
+    let mut x0 = 0;
+    while x0 < w {
+        let n = FCH.min(w - x0);
+        // Linear colour, plus the glow (bilinear from the half-res grid).
+        for i in 0..n {
+            let s = src[x0 + i];
+            v[0][i] = s[0];
+            v[1][i] = s[1];
+            v[2][i] = s[2];
+        }
+        if let Some((ra, rb, ty)) = grow {
+            for i in 0..n {
+                let (gx0, gx1, tx) = c.gcols[x0 + i];
+                let (a, b, cc, d) = (ra[gx0], ra[gx1], rb[gx0], rb[gx1]);
+                for k in 0..3 {
+                    let top = a[k] + (b[k] - a[k]) * tx;
+                    let bot = cc[k] + (d[k] - cc[k]) * tx;
+                    v[k][i] += top + (bot - top) * ty;
+                }
+            }
+        }
+        // Grade curves: table index and fraction (vector), lookup (scalar).
+        for k in 0..3 {
+            for i in 0..n {
+                let s = (v[k][i].max(0.0) / GRADE_MAX).sqrt().min(1.0) * GRADE_LUT as f32;
+                // SAFETY: 0 ≤ s ≤ GRADE_LUT, so the conversion is in range.
+                let ii = unsafe { s.to_int_unchecked::<i32>() }.min(GRADE_LUT as i32 - 1);
+                si[k][i] = ii as u32;
+                sf[k][i] = s - ii as f32;
+            }
+            let t = c.grade[k];
+            for i in 0..n {
+                let ii = si[k][i] as usize;
+                // SAFETY: ii + 1 ≤ GRADE_LUT and the table has GRADE_LUT + 1 entries.
+                let (a, b) = unsafe { (*t.get_unchecked(ii), *t.get_unchecked(ii + 1)) };
+                v[k][i] = a + (b - a) * sf[k][i];
+            }
+        }
+        if c.sat != 1.0 {
+            let sat = c.sat;
+            for i in 0..n {
+                let l = 0.2126 * v[0][i] + 0.7152 * v[1][i] + 0.0722 * v[2][i];
+                for k in 0..3 {
+                    v[k][i] = (l + (v[k][i] - l) * sat).max(0.0);
+                }
+            }
+        }
+        match c.tonemap {
+            Tonemap::None => {}
+            Tonemap::Soft => {
+                for i in 0..n {
+                    let m = v[0][i].max(v[1][i]).max(v[2][i]);
+                    let excess = (1.0 - 1.0 / m) * 0.6;
+                    let over = m > 1.0;
+                    for k in 0..3 {
+                        let nn = v[k][i] / m;
+                        let r = nn + (1.0 - nn) * excess;
+                        v[k][i] = if over { r } else { v[k][i] };
+                    }
+                }
+            }
+            Tonemap::Aces => {
+                for k in 0..3 {
+                    for i in 0..n {
+                        let x = v[k][i] * 0.8;
+                        v[k][i] = ((x * (2.51 * x + 0.03)) / (x * (2.43 * x + 0.59) + 0.14)).clamp(0.0, 1.0);
+                    }
+                }
+            }
+        }
+        if c.vig > 0.0 {
+            let (vig, soft) = (c.vig, c.soft);
+            for i in 0..n {
+                let dx = ((x0 + i) as f32 + 0.5 - c.cx) * c.inv_diag;
+                let r = (dx * dx + dy * dy).sqrt() * std::f32::consts::SQRT_2;
+                let t = ((r - (1.0 - soft)) / soft).clamp(0.0, 1.0);
+                let m = 1.0 - vig * t * t * (3.0 - 2.0 * t);
+                for k in 0..3 {
+                    v[k][i] *= m;
+                }
+            }
+        }
+        // Encode to sRGB 0..255.
+        for k in 0..3 {
+            for i in 0..n {
+                let s = v[k][i].max(0.0).min(1.0).sqrt() * SRGB_LUT as f32;
+                // SAFETY: 0 ≤ s ≤ SRGB_LUT.
+                let ii = unsafe { s.to_int_unchecked::<i32>() }.min(SRGB_LUT as i32 - 1);
+                si[k][i] = ii as u32;
+                sf[k][i] = s - ii as f32;
+            }
+            for i in 0..n {
+                let ii = si[k][i] as usize;
+                // SAFETY: ii + 1 ≤ SRGB_LUT and the table has SRGB_LUT + 1 entries.
+                let (a, b) = unsafe { (*c.lut.get_unchecked(ii), *c.lut.get_unchecked(ii + 1)) };
+                v[k][i] = a + (b - a) * sf[k][i];
+            }
+        }
+        if c.grain_amp > 0.0 {
+            let (amp, gsize, seed) = (c.grain_amp, c.gsize, c.seed);
+            for i in 0..n {
+                // SAFETY: x / gsize is finite, non-negative and below 2^31.
+                let gx = unsafe { ((x0 + i) as f32 / gsize).to_int_unchecked::<i32>() } as u32;
+                let g = (hash01(gx, gy, seed) + hash01(gx, gy, seed ^ 0x68e3_1da4) - 1.0) * amp;
+                let l = (0.2126 * v[0][i] + 0.7152 * v[1][i] + 0.0722 * v[2][i]) / 255.0;
+                let wgt = 0.35 + 2.6 * l * (1.0 - l);
+                for k in 0..3 {
+                    v[k][i] += g * wgt;
+                }
+            }
+        }
+        if c.dither {
+            for k in 0..3 {
+                for i in 0..n {
+                    v[k][i] += drow[x0 + i];
+                }
+            }
+        }
+        let out = &mut row[x0 * 4..(x0 + n) * 4];
+        for (i, px) in out.chunks_exact_mut(4).enumerate() {
+            // max/min, not clamp: same values, and NaN becomes 0 (as `as u8` did).
+            for k in 0..3 {
+                let q = (v[k][i] + 0.5).max(0.0).min(255.0);
+                // SAFETY: 0 ≤ q ≤ 255.
+                px[k] = unsafe { q.to_int_unchecked::<i32>() } as u8;
+            }
+            px[3] = 255;
+        }
+        x0 += n;
+    }
 }
 
 #[cfg(test)]
@@ -819,6 +1267,36 @@ mod tests {
         // Far away, about the same.
         let j = (5 * w + 5) * 4;
         assert!(a[j].abs_diff(src[j]) <= 3);
+    }
+
+    /// The chunked final pass must match the per-pixel one bit for bit, for
+    /// every preset and tone map, with and without glow, at odd sizes.
+    #[test]
+    fn final_pass_matches_scalar() {
+        let mut looks: Vec<PostSettings> = PRESETS.iter().map(|n| PostSettings::preset(n).unwrap()).collect();
+        let c = PostSettings::preset("cinematic").unwrap();
+        looks.push(PostSettings { tonemap: Tonemap::Aces, grain_size: 2.5, ..c.clone() });
+        looks.push(PostSettings { tonemap: Tonemap::None, bloom: 0.0, halation: 0.0, saturation: 1.0, vignette: 0.0, ..c });
+        for (w, h) in [(203usize, 117usize), (64, 9), (130, 66)] {
+            let mut src = vec![0u8; w * h * 4];
+            let mut r = 0x1234_5678u32;
+            for (i, b) in src.iter_mut().enumerate() {
+                r ^= r << 13;
+                r ^= r >> 17;
+                r ^= r << 5;
+                // Smooth ramps, noise and some saturated highlights for the bloom.
+                *b = if i % 4 == 3 || (i / 4) % 37 < 4 { 255 } else { ((i / 4 % w) * 255 / w) as u8 ^ (r as u8 & 15) };
+            }
+            for (k, p) in looks.iter().enumerate() {
+                let mut fast = src.clone();
+                PostProcessor::default().apply(&mut fast, w, h, p, 7 + k as u64);
+                let mut slow = src.clone();
+                SCALAR_FINAL.with(|c| c.set(true));
+                PostProcessor::default().apply(&mut slow, w, h, p, 7 + k as u64);
+                SCALAR_FINAL.with(|c| c.set(false));
+                assert!(fast == slow, "look {k} at {w}×{h}: fast final pass differs");
+            }
+        }
     }
 
     #[test]

@@ -1,0 +1,194 @@
+{
+  "size": [
+    1920,
+    1080
+  ],
+  "fps": 30,
+  "music": {
+    "style": "ambient",
+    "bpm": 66,
+    "key": "E",
+    "mood": "quiet wonder",
+    "end": "ring"
+  },
+  "scenes": [
+    {
+      "duration": 8,
+      "layers": [
+        {
+          "component": "scene3d",
+          "props": {
+            "env": "night",
+            "camera": {
+              "keys": [
+                {
+                  "t": 0,
+                  "pos": [
+                    0,
+                    1.4,
+                    5.0
+                  ],
+                  "target": [
+                    0,
+                    1.3,
+                    0
+                  ],
+                  "focal": 40,
+                  "fstop": 1.8,
+                  "focus": 4.0
+                },
+                {
+                  "t": 8,
+                  "pos": [
+                    0.9,
+                    1.5,
+                    4.5
+                  ],
+                  "target": [
+                    0,
+                    1.3,
+                    0
+                  ],
+                  "focal": 43,
+                  "fstop": 1.8,
+                  "focus": 3.8
+                }
+              ]
+            },
+            "objects": [
+              {
+                "type": "particles",
+                "count": 180000,
+                "life": 6,
+                "seed": 4,
+                "emit": {
+                  "shape": "box",
+                  "pos": [
+                    0,
+                    2.4,
+                    -1
+                  ],
+                  "size": [
+                    12,
+                    5,
+                    10
+                  ]
+                },
+                "velocity": [
+                  0.15,
+                  -0.6,
+                  0
+                ],
+                "spread": 0.1,
+                "gravity": -0.6,
+                "drag": 0.8,
+                "flow": {
+                  "strength": 0.25,
+                  "scale": 1.5,
+                  "evolve": 0.15
+                },
+                "color": "#eef3ff",
+                "blend": "over",
+                "opacity": 0.9,
+                "emissive": 0.35,
+                "scatter": 0.6,
+                "glint": {
+                  "amount": 1.5,
+                  "sharpness": 120
+                },
+                "layers": [
+                  {
+                    "share": 0.0003,
+                    "emit": {
+                      "pos": [
+                        0,
+                        1.6,
+                        3.2
+                      ],
+                      "size": [
+                        3,
+                        2.4,
+                        1.2
+                      ]
+                    },
+                    "size_dist": {
+                      "min": 0.012,
+                      "max": 0.04,
+                      "power": 2
+                    },
+                    "emissive": 0.8,
+                    "velocity": [
+                      0.25,
+                      -0.9,
+                      0
+                    ],
+                    "opacity": 0.45
+                  },
+                  {
+                    "share": 0.25,
+                    "size_dist": {
+                      "min": 0.003,
+                      "max": 0.012,
+                      "power": 2.5
+                    }
+                  },
+                  {
+                    "share": 0.75,
+                    "emit": {
+                      "pos": [
+                        0,
+                        2.4,
+                        -5
+                      ],
+                      "size": [
+                        16,
+                        5,
+                        6
+                      ]
+                    },
+                    "size_dist": {
+                      "min": 0.002,
+                      "max": 0.006,
+                      "power": 3
+                    },
+                    "opacity": 0.35,
+                    "velocity": [
+                      0.1,
+                      -0.4,
+                      0
+                    ],
+                    "emissive": 0.2
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "text": "First snow",
+          "font": "Instrument Serif",
+          "size": "11vh",
+          "color": "#eef3ff",
+          "x": "50%",
+          "y": "50%",
+          "start": 2.2,
+          "enter": "fade up",
+          "glow": "#9fb8ff"
+        },
+        {
+          "text": "the quiet before everything",
+          "font": "Inter",
+          "weight": 300,
+          "size": "2.6vh",
+          "letterSpacing": "0.3em",
+          "uppercase": true,
+          "color": "#d6def0",
+          "x": "50%",
+          "y": "61%",
+          "start": 3.4,
+          "enter": "fade up"
+        }
+      ]
+    }
+  ]
+}

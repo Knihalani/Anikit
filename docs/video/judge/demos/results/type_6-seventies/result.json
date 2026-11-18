@@ -1,0 +1,513 @@
+{
+  "name": "type_6-seventies",
+  "tags": [
+    "brand-idents",
+    "kinetic-type"
+  ],
+  "refs": [
+    "studio-dumbar-instagram-motion-identity-2024",
+    "dixonbaxi-the-cw-brand-2024",
+    "game-of-thrones"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 2,
+      "composition": 2,
+      "typography": 3,
+      "colour": 3,
+      "light_texture": 1,
+      "motion": 2,
+      "craft": 3,
+      "originality": 2
+    },
+    "overall": 2.25,
+    "judged_professional": "0/3",
+    "pro_rate": 0.0,
+    "mean_rank": 4,
+    "gaps": [
+      "It needs an idea: build a world from the 'slow food, 1974' premise (ingredients, process, period print textures) instead of a wordmark on a flat field",
+      "Introduce real material and light, such as print grain, photographed produce or a lit tactile set, to replace the flat cream fill",
+      "Choreograph actual change across frames: new compositions, scale shifts and transitions, so that it has more than one layout with a slight drift",
+      "No subject or world: build imagery (food, hands, 70s print and halftone textures, kitchen light) so the film has something to look at besides the name",
+      "Motion is a static title card; choreograph scene changes, scale and viewpoint shifts the way A moves from macro mechanism to map to logo",
+      "Typography is a preset; draw or customise lettering with real 70s character (warped, stacked, interacting with objects) and build contrast with a secondary system",
+      "There is no idea at all. It needs a concept specific to 1970s slow food, such as real ingredients, printed ephemera or hand-made process, built into the frame like C's map world",
+      "There is no material or light. Add photographic or physical texture (paper grain, print misregistration, food, a shot set) so the retro claim is earned",
+      "Choreograph real change between frames: shifts of scale, type that builds or deforms, and cuts to new compositions, instead of one layout nudged left and right"
+    ],
+    "tells": [
+      "The textbook generic look: a cream ground, a small tracked-caps label ('EST. 1974 \u00b7 SLOW FOOD'), a bold headline and a single orange accent, with the frame mostly empty",
+      "The same composition in all five frames. Only the headline appears and nudges position, which is effectively a single slide",
+      "A stock retro display face with a default drop shadow. It reads as a font choice, not a typographic idea, and there is no scale play or integration with any image",
+      "No subject, imagery, light, texture or depth, and nothing about food or the 1970s beyond the font",
+      "Textbook generic look: cream ground, a small tracked-caps serif label ('EST. 1974 \u00b7 SLOW FOOD'), a bold retro headline in a single accent orange, and a mostly empty frame",
+      "The same composition across all five frames; the headline only appears and shifts slightly left and right, so the motion amounts to a fade and a nudge",
+      "An off-the-shelf retro display face with a default hard drop shadow; no custom lettering, no relationship between type and image because there is no image",
+      "No light, texture, material or depth, even though the subject (1970s slow food) cries out for grain, print texture and food",
+      "The idea is literal and forgettable: the brand name on a background",
+      "A cream ground, a single orange accent and a small tracked-caps serif label ('EST. 1974 \u00b7 SLOW FOOD'): the textbook generic template look",
+      "The same composition repeats in all five frames. The only motion is the headline appearing and drifting slightly left and right",
+      "The retro display face with a hard drop shadow is a stock 'groovy 70s' choice with no layout idea, scale play or interaction with any image",
+      "There is no image, texture, light or subject. The frames are mostly empty, an effect with nothing behind it"
+    ]
+  },
+  "refs_summary": {
+    "studio-dumbar-instagram-motion-identity-2024": {
+      "overall": 6,
+      "judged_professional": "3/3",
+      "mean_rank": 2.67
+    },
+    "dixonbaxi-the-cw-brand-2024": {
+      "overall": 6.12,
+      "judged_professional": "3/3",
+      "mean_rank": 2.33
+    },
+    "game-of-thrones": {
+      "overall": 9.38,
+      "judged_professional": "3/3",
+      "mean_rank": 1
+    }
+  },
+  "ref_mean": 7.17,
+  "delta": -4.92,
+  "trials": [
+    {
+      "key": {
+        "A": "game-of-thrones",
+        "B": "studio-dumbar-instagram-motion-identity-2024",
+        "C": "candidate",
+        "D": "dixonbaxi-the-cw-brand-2024"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 8,
+              "colour": 9,
+              "light_texture": 10,
+              "motion": 9,
+              "craft": 10,
+              "originality": 10
+            },
+            "tells": [
+              "A specific, ownable idea: the world drawn as a clockwork map, with mechanical cities unfolding out of the terrain. Only this show could have it, and the idea carries the show's themes of power and machinery",
+              "Real material and light: engraved metal astrolabe bands, verdigris and brass, parchment map texture, hard sun flares through the armillary rings, and depth of field across miniature architecture",
+              "Choreography between frames: a camera flies over terrain, mechanisms rise and transform (the spiked tower, gear clusters), and it ends on a lit emblem with the title lockup",
+              "The credits are integrated into the world: each name sits in small spaced Trajan-style caps beside a house sigil and is placed in the scene's space rather than overlaid like a slide",
+              "A warm, deliberate palette (burnt gold, umber, desaturated green), held across every frame"
+            ],
+            "gaps": [
+              "Benchmark entry. The main title lockup is the most conventional frame: centred, symmetrical and flare-heavy",
+              "The credit typography is a classical serif with little scale contrast. It is correct but quiet compared with the world-building",
+              "The bloom and flare on the bookend frames is close to excessive and flattens the metal detail"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.75,
+            "scores": {
+              "idea": 6,
+              "composition": 6,
+              "typography": 6,
+              "colour": 7,
+              "light_texture": 4,
+              "motion": 6,
+              "craft": 7,
+              "originality": 5
+            },
+            "tells": [
+              "Reads as a real brand-system motion case study: it shows the motion techniques, dynamic layouts, animated glyph and physics principles of an established identity",
+              "The custom brand typeface and gradient are used on purpose, and there are systematic labels for each module (MOTION TECHNIQUES, PHYSICS)",
+              "The sticker and location-tag physics behaviour is a real system, not a placeholder",
+              "Weaknesses that drag it towards generic work: centred text on a gradient, a blurred colour blob behind the logo, a grid of placeholder-like cards and grey bars, and an end on the centred logo on white"
+            ],
+            "gaps": [
+              "It documents a system instead of telling a story. There is no single memorable idea or surprise comparable to A's world-as-mechanism",
+              "The frames are flat and shallow: gradients and blur stand in for light and material, with no texture or depth",
+              "The compositions are mostly centred, single-element frames, so little reads as a poster. It needs layered, dense frames where type, image and motion interlock"
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.92,
+            "scores": {
+              "idea": 2,
+              "composition": 2,
+              "typography": 3,
+              "colour": 3,
+              "light_texture": 1,
+              "motion": 1,
+              "craft": 3,
+              "originality": 2
+            },
+            "tells": [
+              "The textbook generic look: a cream ground, a small tracked-caps label ('EST. 1974 \u00b7 SLOW FOOD'), a bold headline and a single orange accent, with the frame mostly empty",
+              "The same composition in all five frames. Only the headline appears and nudges position, which is effectively a single slide",
+              "A stock retro display face with a default drop shadow. It reads as a font choice, not a typographic idea, and there is no scale play or integration with any image",
+              "No subject, imagery, light, texture or depth, and nothing about food or the 1970s beyond the font"
+            ],
+            "gaps": [
+              "It needs an idea: build a world from the 'slow food, 1974' premise (ingredients, process, period print textures) instead of a wordmark on a flat field",
+              "Introduce real material and light, such as print grain, photographed produce or a lit tactile set, to replace the flat cream fill",
+              "Choreograph actual change across frames: new compositions, scale shifts and transitions, so that it has more than one layout with a slight drift"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.82,
+            "scores": {
+              "idea": 6,
+              "composition": 6,
+              "typography": 6,
+              "colour": 7,
+              "light_texture": 6,
+              "motion": 6,
+              "craft": 7,
+              "originality": 5
+            },
+            "tells": [
+              "A real network rebrand: a bracket-shaped graphic device is applied across promos ('ORIGINAL', '9|8c' over live sports footage) and across the streaming UI",
+              "Systematic use of a bold red-orange with a clean sans and a vertical-bar divider in the time slot, consistent across sports, reality and app contexts",
+              "Varied source material (reality footage, sports, a lit living-room TV scene) composited with the brand device, so frames change meaningfully",
+              "Still corporate and conventional: a generic grotesk, end-card and UI-showcase frames, and the bracket device is fairly simple"
+            ],
+            "gaps": [
+              "The idea is a packaging system, not a concept. The bracket device does not create a memorable visual metaphor the way A's mechanical map does",
+              "The typography is a default-feeling grotesk with modest scale contrast. It needs a face or typographic behaviour with a point of view",
+              "The TV-in-a-living-room and app-grid frames are stock marketing. It needs crafted frames where the brand device interacts with the footage in space and light"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "D",
+          "B",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 28.1,
+        "cost_usd": 0.1545834,
+        "tokens": 71786,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "game-of-thrones",
+        "B": "studio-dumbar-instagram-motion-identity-2024",
+        "C": "dixonbaxi-the-cw-brand-2024",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 8,
+              "colour": 9,
+              "light_texture": 10,
+              "motion": 9,
+              "craft": 10,
+              "originality": 10
+            },
+            "tells": [
+              "A specific, memorable idea that belongs only to this piece: the world map rendered as a clockwork tabletop model that builds itself, held inside an astrolabe-like sphere, so the opening credits also work as a map of the story",
+              "Real material and light: engraved bronze bands with relief dragons, carved wood, brass gears, a warm sun-core glow that blows out the highlights and falls off into deep shadow",
+              "The type is integrated rather than placed: small-caps Trajan-like serif credits with sigil glyphs, set into the terrain at the right scale for each shot, then a bold flared logotype locked inside the metal band",
+              "Choreography across frames: an orbital band, then a low camera skimming the cities, a close-up of mechanisms, an overhead cartographic view, and a symmetrical logo resolve. Each frame changes scale and viewpoint and pushes the story forward",
+              "Limited palette of amber, bronze and muted slate-green that suits the subject; every frame works as a poster"
+            ],
+            "gaps": [
+              "Credit type is small and low-contrast against busy terrain in places (the map frame); a little more separation would help it read without hurting the integration",
+              "The logo lockup leans on a familiar bevelled, glowing epic-fantasy treatment that is less inventive than the mechanism sequence before it",
+              "The bloom on the sun-core frames clips heavily; a touch more highlight detail would keep the bronze texture in the brightest moments"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.72,
+            "scores": {
+              "idea": 6,
+              "composition": 6,
+              "typography": 6,
+              "colour": 7,
+              "light_texture": 4,
+              "motion": 7,
+              "craft": 7,
+              "originality": 5
+            },
+            "tells": [
+              "Reads as a brand motion-system case study (motion techniques, physics, dynamic layouts, animated glyph) with real system thinking behind it: physics diagrams, a type-on cursor and a sticker-style location tag",
+              "Uses the brand's own gradient and a custom, characterful grotesk, applied consistently across the system",
+              "But individual frames are close to the tells: a centred line of type on a gradient, a logo on a blurred colour blob, a lone logo on white, and grey placeholder bars in the physics panel",
+              "The structure is a presentation (labelled grid of panels), not a film; it explains the system rather than showing something you would remember"
+            ],
+            "gaps": [
+              "No single idea or moment of surprise; build one scene where the motion principles collide with real content instead of being shown as specimens in labelled boxes",
+              "Flat, effect-driven imagery (blur blob, gradient fill) with no light, material or depth; add tactile or photographic layers to match A's density",
+              "Composition repeats centred logo or line on a plain ground; push scale contrast and layered frames so each one stands as a poster"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.75,
+            "scores": {
+              "idea": 5,
+              "composition": 6,
+              "typography": 6,
+              "colour": 6,
+              "light_texture": 5,
+              "motion": 6,
+              "craft": 7,
+              "originality": 4
+            },
+            "tells": [
+              "A coherent network rebrand toolkit: an orange bracket device that frames 'ORIGINAL' and a '9|8c' timeslot over live sports footage, carried consistently into promo end-cards",
+              "Competent integration of the graphic device with real footage and TV-in-room mockups; the system clearly works in daily broadcast use",
+              "Typography is a clean but generic grotesk with tracked-caps labels; the scale contrast in '9|8c' is the only typographic idea",
+              "Frames are spec showcases and device mockups (a white card with a small logo, product-UI screenshots on a TV) rather than designed images; little that surprises"
+            ],
+            "gaps": [
+              "The idea is the toolkit itself; give the piece a narrative or visual conceit beyond 'here is the bracket on things'",
+              "Mockup frames (TV in a lamp-lit room, UI grid) borrow their light from stock staging; design original images with controlled light and texture",
+              "Typography needs a point of view; a custom or more distinctive face and bolder interaction between bracket, type and footage would lift it beyond standard broadcast work"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.93,
+            "scores": {
+              "idea": 2,
+              "composition": 2,
+              "typography": 3,
+              "colour": 3,
+              "light_texture": 1,
+              "motion": 2,
+              "craft": 3,
+              "originality": 1
+            },
+            "tells": [
+              "Textbook generic look: cream ground, a small tracked-caps serif label ('EST. 1974 \u00b7 SLOW FOOD'), a bold retro headline in a single accent orange, and a mostly empty frame",
+              "The same composition across all five frames; the headline only appears and shifts slightly left and right, so the motion amounts to a fade and a nudge",
+              "An off-the-shelf retro display face with a default hard drop shadow; no custom lettering, no relationship between type and image because there is no image",
+              "No light, texture, material or depth, even though the subject (1970s slow food) cries out for grain, print texture and food",
+              "The idea is literal and forgettable: the brand name on a background"
+            ],
+            "gaps": [
+              "No subject or world: build imagery (food, hands, 70s print and halftone textures, kitchen light) so the film has something to look at besides the name",
+              "Motion is a static title card; choreograph scene changes, scale and viewpoint shifts the way A moves from macro mechanism to map to logo",
+              "Typography is a preset; draw or customise lettering with real 70s character (warped, stacked, interacting with objects) and build contrast with a secondary system"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "B",
+          "C",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 30.6,
+        "cost_usd": 0.1567464,
+        "tokens": 71879,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "dixonbaxi-the-cw-brand-2024",
+        "B": "studio-dumbar-instagram-motion-identity-2024",
+        "C": "game-of-thrones",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 6,
+              "composition": 7,
+              "typography": 6,
+              "colour": 7,
+              "light_texture": 6,
+              "motion": 7,
+              "craft": 7,
+              "originality": 5
+            },
+            "tells": [
+              "A complete network rebrand toolkit: an 'ORIGINAL' bracket bug, a '9|8c' time lockup laid over live football footage, a programme end-card and a streaming UI shown on a TV in a room",
+              "The orange bracket device carries from the bug to the time divider to the end-card. That is a real, consistent system thought through by a broadcast design team",
+              "The live-action plates are graded and composited, and the UI is shown in a believable lived-in setting",
+              "It is let down by a generic grotesk headline ('Fboy Island') set like a slide, and by the empty white 'ORIGINAL' frame. This is solid package work, not a film"
+            ],
+            "gaps": [
+              "There is no central idea beyond 'apply the bracket'. It needs a visual metaphor tied to the network's attitude that runs through every frame, the way C's clockwork map does",
+              "The typography is a default-feeling grotesk. Commission or choose a display face so the time and title lockups have character, not just a logo colour",
+              "The frames are separate deliverables cut together. Choreograph transitions in which the bracket physically drives each cut, so it plays as one continuous piece"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.7,
+            "scores": {
+              "idea": 5,
+              "composition": 6,
+              "typography": 6,
+              "colour": 7,
+              "light_texture": 4,
+              "motion": 7,
+              "craft": 7,
+              "originality": 4
+            },
+            "tells": [
+              "A brand motion-principles film for Instagram, with labelled sections (motion techniques, physics, dynamic layouts, animated glyph) that show a documented motion system",
+              "The physics diagrams, typewriter caret and sticker pop ('TOKYO') suggest considered easing and interaction-level motion design",
+              "The proprietary brand gradient is used confidently, and the glyph resolve is clean",
+              "However, the gradient blob behind a centred logo and the centred headline on a gradient are exactly the generic tells. It is guideline documentation rather than an authored film, and it relies on the existing brand rather than a new idea"
+            ],
+            "gaps": [
+              "The ending of a logo on a gradient blob over white is the most predictable end-frame there is. It needs an image or concept that belongs to this film alone",
+              "The frames are flat UI planes with no material, light or depth. Build at least one moment with tactile texture or physical light",
+              "The grid of explanatory cards reads like a case-study deck. Turn the principles into one choreographed sequence instead of labelled demo tiles"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 8,
+              "colour": 9,
+              "light_texture": 10,
+              "motion": 9,
+              "craft": 10,
+              "originality": 10
+            },
+            "tells": [
+              "A singular idea: the world drawn as a clockwork map whose cities build themselves mechanically. It explains the story's geography and is unforgettable",
+              "Rich materials: engraved metal bands, wooden gears, a parchment map, and warm backlit sun flares with depth of field",
+              "Considered credit typography: a classical engraved Trajan-style serif with house sigils, integrated into the 3D space",
+              "The frames show clear choreography: the astrolabe band, the camera flying over the map, cities unfolding, and the resolve on the title emblem. Every frame works as a poster"
+            ],
+            "gaps": [
+              "The gold-and-sepia palette stays in a narrow range. A colder or contrasting accent region would add rhythm",
+              "Some credit placements are small and dissolve into busy textures, which hurts readability against detailed ground",
+              "The burst-of-light title card relies on a familiar epic-fantasy flare trope that is slightly less original than the rest"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.92,
+            "scores": {
+              "idea": 2,
+              "composition": 3,
+              "typography": 4,
+              "colour": 4,
+              "light_texture": 1,
+              "motion": 2,
+              "craft": 3,
+              "originality": 2
+            },
+            "tells": [
+              "A cream ground, a single orange accent and a small tracked-caps serif label ('EST. 1974 \u00b7 SLOW FOOD'): the textbook generic template look",
+              "The same composition repeats in all five frames. The only motion is the headline appearing and drifting slightly left and right",
+              "The retro display face with a hard drop shadow is a stock 'groovy 70s' choice with no layout idea, scale play or interaction with any image",
+              "There is no image, texture, light or subject. The frames are mostly empty, an effect with nothing behind it"
+            ],
+            "gaps": [
+              "There is no idea at all. It needs a concept specific to 1970s slow food, such as real ingredients, printed ephemera or hand-made process, built into the frame like C's map world",
+              "There is no material or light. Add photographic or physical texture (paper grain, print misregistration, food, a shot set) so the retro claim is earned",
+              "Choreograph real change between frames: shifts of scale, type that builds or deforms, and cuts to new compositions, instead of one layout nudged left and right"
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "A",
+          "B",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 26.6,
+        "cost_usd": 0.151607,
+        "tokens": 71634,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "critic": {
+    "answer": {
+      "scores": {
+        "motion": 2,
+        "sound": null,
+        "craft": 5
+      },
+      "checks": {
+        "idea": false,
+        "invariant": false,
+        "arc": false,
+        "type_meaning": false,
+        "freeze_frame": false,
+        "ending": false,
+        "restraint": true,
+        "material": false,
+        "sync": null
+      },
+      "defects": [
+        "The wordmark appears on a hard cut or pop between frame 1 and frame 2, with no visible build, anticipation or settle. The tagline is already on screen before it.",
+        "About 3 of the 4 seconds are a completely static hold. Per-second change is [16.9, 0, 0], so the film is mostly dead air.",
+        "In every pair, both frames are identical. There is no spacing, easing, overshoot, follow-through or motion blur anywhere.",
+        "The drop shadow is a flat, hard offset duplicate of the type in one solid colour. It has no softness, grain or misregistration, so it reads as a default effect and not as 70s print.",
+        "The background is flat vector cream with no paper texture, ink spread or halftone, even though the subject is a 70s print style.",
+        "A faint vertical seam or band in the background is visible at about x=185 on the left-hand frames. It may be a compositing edge or a gradient step.",
+        "The small tagline 'EST. 1974 \u00b7 SLOW FOOD' is tiny, sits in the lower left with no relationship to the wordmark's grid, and does not move at all."
+      ],
+      "gaps": [
+        "There is no choreography. A top studio would animate the wordmark itself: letters dropping in with squash and overshoot, the shadow sliding out after the face, a staggered wobble or swash suited to a 'groovy' 70s letterform. Here it is a single on/off cut followed by a 3 s freeze.",
+        "There is no arc and no idea. Nothing builds, peaks or resolves. The 'seventies' premise is never shown through motion (bounce, a rotoscope wobble, film gate weave, colour cycling), so the piece is a static logo card, not a film.",
+        "The finish has no material quality. Clean vector edges, a flat cream background and a hard-offset shadow have no print texture, grain, light falloff or registration error. For this period look the surface carries half the craft, and it is missing."
+      ]
+    },
+    "meta": {
+      "seconds": 16.6,
+      "cost_usd": 0.1413616,
+      "tokens": 70183,
+      "models": [
+        "claude-opus-5-5"
+      ]
+    },
+    "pace": "6-seventies.mp4: 4.0s, 2 shots, median 2.00s, longest 3.00s\nper-second change: [16.9, 0.0, 0.0]\nPACE: FAIL \u2014 longest shot 3.0s > 2.5s; median shot 2.0s > 1.5s; 2/3 seconds look like the previous second"
+  },
+  "full_scores": {
+    "idea": 2,
+    "composition": 2,
+    "typography": 3,
+    "colour": 3,
+    "light_texture": 1,
+    "motion": 2.0,
+    "craft": 4.0,
+    "originality": 2
+  },
+  "full_overall": 2.38,
+  "cost_usd": 0.604,
+  "judge_seconds": 101.9,
+  "verdict": "FAIL"
+}

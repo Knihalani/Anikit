@@ -73,6 +73,7 @@ pub(super) fn run(raw: &Value, spec: &Value, cx: &mut Ctx) {
     motion_tells(spec, cx);
     copy(spec, cx);
     world(raw, spec, cx);
+    silent_impacts(raw, cx);
 }
 
 /// A static `blur`, or keyframes that end blurred, on a text layer.
@@ -420,6 +421,24 @@ fn world(raw: &Value, spec: &Value, cx: &mut Ctx) {
     }
 }
 
+/// Camera shakes (impacts) in a piece with no sound design at all: editors reviewing AI ads
+/// flag "a visible impact with no swoosh" (docs/video/craft/ai-tells.md). With `"sound": "auto"`
+/// the engine places cues on landings and shakes itself.
+fn silent_impacts(raw: &Value, cx: &mut Ctx) {
+    if raw.get("sound").is_some() {
+        return;
+    }
+    let has_sfx = raw.get("audio").and_then(|a| a.as_array()).is_some_and(|a| a.iter().any(|c| c.get("sfx").is_some()));
+    if has_sfx {
+        return;
+    }
+    let shakes = raw.get("scenes").and_then(|s| s.as_array()).map(|sc| sc.iter().filter(|s| s.get("camera").and_then(|c| c.get("shake")).is_some()).count()).unwrap_or(0);
+    if shakes > 0 {
+        cx.note("tip", "sound", "sound", format!("{shakes} scene{} shake the camera like an impact, but nothing sounds", if shakes == 1 { "" } else { "s" }),
+            "a visible hit with no sound tends to read as unfinished; `\"sound\": \"auto\"` puts cues on landings and shakes, or add an `sfx` cue on the frame (docs/video/craft/sound-design.md)");
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use serde_json::json;
@@ -504,5 +523,13 @@ mod tests {
         assert!(checks(json!({ "scenes": scenes })).contains(&("label", "tip")));
         let plain: Vec<_> = (0..4).map(|i| json!({ "duration": ds[i], "layers": [ { "text": format!("Headline {i}"), "size": 140, "x": "8%", "anchor": "left" } ] })).collect();
         assert!(!checks(json!({ "scenes": plain })).iter().any(|c| c.0 == "label"));
+    }
+
+    #[test]
+    fn silent_impacts_tip() {
+        let sc = json!([ { "duration": 2, "camera": { "shake": { "amount": 8, "at": 0 } }, "layers": [ { "text": "Hit" } ] } ]);
+        assert!(checks(json!({ "scenes": sc.clone() })).contains(&("sound", "tip")));
+        assert!(!checks(json!({ "sound": "auto", "scenes": sc.clone() })).iter().any(|c| c.0 == "sound"));
+        assert!(!checks(json!({ "audio": [ { "sfx": "impact", "at": 0 } ], "scenes": sc })).iter().any(|c| c.0 == "sound"));
     }
 }
