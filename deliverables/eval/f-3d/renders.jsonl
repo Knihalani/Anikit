@@ -1,0 +1,1 @@
+{"cmd": "anikit-video render spec.json -o final.mp4 --sheet contact.png", "exit": 0, "wall_s": 108.84, "peak_rss_mb": 987.2}
