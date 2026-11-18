@@ -121,11 +121,11 @@ def row(x, y, sender, when, subject, snip, read=None, tag=None, tag_amber=True, 
     if read is not None:
         r = read - arrive
         # the read mark: an amber hairline sweeps the bottom of the card
-        L.append({"shape": "path", "d": "M0 0 L%d 0" % (w - 56), "stroke": AMBER, "strokeWidth": 3,
+        L.append({"shape": "path", "d": "M0 0 L%d 0" % (w - 56), "stroke": AMBER if tag_amber else t3, "strokeWidth": 3,
                   "x": 28, "y": H - 2, "anchor": "topLeft", "start": r,
                   "animate": [{"from": {"trimEnd": 0}, "to": {"trimEnd": 1}, "duration": 0.5, "ease": "outExpo"}]})
         if tag:
-            L.append(text(tag, w - 40, 84, 28, AMBER if tag_amber else t3, 650, anchor="topRight",
+            L.append(text(tag, w - 40, 84, 28, (AMBER if night else "#A0650A") if tag_amber else t3, 650, anchor="topRight",
                           start=r + 0.2, enter={"preset": "fadeUp", "duration": 0.25, "distance": 10}))
     g = group(x, y, L, start=arrive)
     if enter:
@@ -289,7 +289,7 @@ def hero():
 
     t1 = thread("Dana Whitfield", "One small thing before tomorrow",
                 "Can you send the Q3 numbers to the board before 9? I'll be offline until 10.",
-                "Done — Q3 numbers are attached and going to the board this morning.", 2.2, 300)
+                "Done — I'll send the Q3 numbers to the board before 9.", 2.2, 300)
     t1["animate"] = [{"to": {"y": -700}, "duration": 0.5, "ease": "inExpo", "at": 2.75}]
     t2 = thread("Priya Shah", "Design review", "Does Thursday work? Happy to move if not.",
                 "Thursday works. 2:30 at your desk?", 3.9, 1150)
