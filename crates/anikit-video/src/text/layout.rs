@@ -1093,7 +1093,7 @@ fn variations(fam: &(String, bool), axes: &[(String, f32)], size: f32) -> Vec<pa
     if !axes.iter().any(|(t, _)| t == "opsz") {
         if fam.1 {
             css.push_str("\"opsz\" 32");
-        } else if !fam.0.starts_with("\"Inter\"") {
+        } else if !(fam.0.starts_with("\"Inter") || fam.0.starts_with("sans-serif") || fam.0.starts_with("system-ui")) {
             let _ = write!(css, "\"opsz\" {size}");
         }
     }
@@ -1140,7 +1140,7 @@ fn family_css(sh: &mut super::fonts::Shaper, names: &str) -> (String, bool) {
         out.push(format!("\"{f}\""));
     }
     // Per-glyph fallback: characters the chosen face lacks (₂, →, ½…) come from Inter, not tofu.
-    if out.first().is_none_or(|f| f != "sans-serif" && f != "\"Inter\"") {
+    if out.first().is_none_or(|f| f != "sans-serif" && !f.starts_with("\"Inter")) {
         out.push("sans-serif".into());
     }
     (out.join(", "), display)

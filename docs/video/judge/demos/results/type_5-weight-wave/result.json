@@ -1,0 +1,521 @@
+{
+  "name": "type_5-weight-wave",
+  "tags": [
+    "kinetic-type"
+  ],
+  "refs": [
+    "game-of-thrones",
+    "thank-you-for-smoking",
+    "xk-studio-offfmx-2025-main-titles"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 3,
+      "composition": 2,
+      "typography": 4,
+      "colour": 2,
+      "light_texture": 1,
+      "motion": 3,
+      "craft": 4,
+      "originality": 2
+    },
+    "overall": 2.62,
+    "judged_professional": "0/3",
+    "pro_rate": 0.0,
+    "mean_rank": 4,
+    "gaps": [
+      "It needs an idea beyond a weight-axis sweep. The weather should actually affect the letterforms (wind, rain, pressure) as B's and D's concepts shape their worlds.",
+      "Break the single centred lockup: use scale, cropping, layout changes and multiple compositions so each frame is a poster.",
+      "Add material, light and colour. Right now every frame is the same cream slide.",
+      "It needs an idea beyond the pun. Weather could actually act on the letters (wind shearing, rain eroding, heat warping) so the type gains behaviour rather than just weight.",
+      "Composition and scale should change between shots: crop, push in, break the line, set type against image. Right now one centred layout repeats like a slide.",
+      "It needs a palette, material and light. Even a typographic piece needs atmosphere, and nothing here is a poster in its own right.",
+      "The frame has no world. The type needs to interact with actual weather (wind, rain, pressure maps, light changing across the day), the way A's type lives inside the pack art",
+      "There is no scale contrast, layout change or camera movement. Break the centred line: crop it, stack it, push to extreme sizes, and let the composition change shot to shot",
+      "The palette and material are absent. A deliberate colour and texture system (atmospheric gradients, paper, film grain) is needed before this can carry a title"
+    ],
+    "tells": [
+      "The same centred composition repeats in all five frames. Only the font weight changes from letter to letter.",
+      "Cream ground, black text, nothing else in the frame: the generic 'tasteful AI' minimal look.",
+      "The idea is literal. 'Variable weather' is shown by sweeping a variable font's weight axis across the letters, which is a default type-tester demo.",
+      "The face is a competent high-contrast display serif, and the weight interpolation is clean. That is the only craft visible.",
+      "No light, texture, colour or image. There are no scale changes, no layout shifts and no camera.",
+      "Same composition in every frame: one centred lowercase phrase on a flat cream ground. Only the weight axis changes.",
+      "The idea is entirely literal: 'variable weather' animated with a variable-font weight wave is the most obvious possible pun on the feature.",
+      "It uses a generic high-contrast editorial serif (Playfair/Fraunces-style), and the 'tasteful' monochrome cream-and-black look is the default AI or template aesthetic.",
+      "There is no image, texture, light, depth or colour, so it is an effect with no subject.",
+      "The weight sweep is a stock variable-font demo technique, with no evidence of custom type design or choreography beyond a left-to-right ripple.",
+      "It matches the generic 'tasteful AI' look: a cream ground, one centred line of a stock editorial display serif, and an otherwise empty frame",
+      "All five frames use the same composition; only the weight distribution of the letters changes",
+      "The idea is literal: 'variable weather' shown by animating a variable font's weight axis. It is a pun on the font technology and not a concept",
+      "There is no image, texture, light, colour or depth, so it is an effect without a subject",
+      "The weight wave sweeping through the letters is the default demo you get from any variable-font tool"
+    ]
+  },
+  "refs_summary": {
+    "game-of-thrones": {
+      "overall": 9.25,
+      "judged_professional": "3/3",
+      "mean_rank": 1
+    },
+    "thank-you-for-smoking": {
+      "overall": 8.5,
+      "judged_professional": "3/3",
+      "mean_rank": 2
+    },
+    "xk-studio-offfmx-2025-main-titles": {
+      "overall": 7.5,
+      "judged_professional": "3/3",
+      "mean_rank": 3
+    }
+  },
+  "ref_mean": 8.42,
+  "delta": -5.8,
+  "trials": [
+    {
+      "key": {
+        "A": "xk-studio-offfmx-2025-main-titles",
+        "B": "game-of-thrones",
+        "C": "candidate",
+        "D": "thank-you-for-smoking"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "Dense, layered 3D: translucent hand, fleshy coral growths, fibrous mesh, cloth, glass. Every surface has a distinct, art-directed material.",
+              "The palette is deliberate and unusual: dusty rose, sage green, ice blue and amber oxblood against volcanic black terrain.",
+              "The light is motivated: a rim-lit volcanic plume, a backlit horizon glow behind the glass figure, subsurface scattering in the organic forms.",
+              "No two frames share a layout. It moves from landscape to macro to sculptural tangle, which suggests a real camera journey.",
+              "The type is a small bold-sans studio name in the corner, conference-titles style. It does its job but has no typographic idea, and it is the weakest layer."
+            ],
+            "gaps": [
+              "The type is just a label in the corner. It should be built into the 3D world the way B's credits sit on the map and D's credits sit in the packaging.",
+              "There is no single unifying concept. It reads as a run of beautiful organic-surreal vignettes, not a piece only this film could be.",
+              "The organic-surreal 3D look is a crowded genre. It needs one surprising idea that sets it apart from other conference-titles reels."
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 10,
+              "craft": 10,
+              "originality": 10
+            },
+            "tells": [
+              "The specific idea only this piece could have: the world map as a clockwork tabletop, with cities that build themselves. It turns the show's geography into the title sequence.",
+              "Tactile material throughout: tooled leather and bronze on the astrolabe band, wooden gears, bone-white carved towers, an aged parchment map.",
+              "Golden sun-flare light at the opening and closing frames creates bookends. The middle has a warm, low-key tabletop light with real depth of field.",
+              "Credits are set in a classical engraved roman, small caps, each with a house sigil. They sit inside the world as map labels, not on top of it.",
+              "The frames clearly show a choreographed camera flight across the map and a resolve on the logo."
+            ],
+            "gaps": [
+              "It is the benchmark here. The main room to improve is that credit type at frame scale is quite small and sometimes fights the busy background.",
+              "The palette leans heavily on warm sepia and gold. A cooler counterpoint region would sharpen the contrast.",
+              "The title lockup is more conventional than the world around it."
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 3,
+              "composition": 2,
+              "typography": 4,
+              "colour": 2,
+              "light_texture": 1,
+              "motion": 3,
+              "craft": 4,
+              "originality": 2
+            },
+            "tells": [
+              "The same centred composition repeats in all five frames. Only the font weight changes from letter to letter.",
+              "Cream ground, black text, nothing else in the frame: the generic 'tasteful AI' minimal look.",
+              "The idea is literal. 'Variable weather' is shown by sweeping a variable font's weight axis across the letters, which is a default type-tester demo.",
+              "The face is a competent high-contrast display serif, and the weight interpolation is clean. That is the only craft visible.",
+              "No light, texture, colour or image. There are no scale changes, no layout shifts and no camera."
+            ],
+            "gaps": [
+              "It needs an idea beyond a weight-axis sweep. The weather should actually affect the letterforms (wind, rain, pressure) as B's and D's concepts shape their worlds.",
+              "Break the single centred lockup: use scale, cropping, layout changes and multiple compositions so each frame is a poster.",
+              "Add material, light and colour. Right now every frame is the same cream slide."
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 9,
+              "composition": 8,
+              "typography": 10,
+              "colour": 9,
+              "light_texture": 8,
+              "motion": 7,
+              "craft": 9,
+              "originality": 9
+            },
+            "tells": [
+              "A sharp, specific idea: every credit is designed as a period cigarette pack, which fits a satirical film about tobacco lobbying.",
+              "Typography with a point of view: a different historically accurate pack style per credit (ribbon banner serif, brush script, condensed caps, deco), all built carefully into the packaging.",
+              "A bold, deliberate palette: royal blue with gold, orange and cream, red, white and blue stripes, menthol green, and closing on cigarette filters.",
+              "Print texture and warm paper tone make it feel like real lithographed card stock, not flat vector.",
+              "Each frame is a distinct composition and a poster in its own right. The tight, cropped close-ups suggest a camera sliding across the surfaces."
+            ],
+            "gaps": [
+              "The motion range looks narrower than B's: mostly pans across flat packaging, with little depth or spatial choreography.",
+              "The light is fairly even scanned-flat. Gloss, foil and fold highlights would sell the object more.",
+              "Frames sit in a consistent cropped strip. More variety of scale, like a full pack reveal or an extreme macro, would add rhythm."
+            ]
+          }
+        },
+        "ranking": [
+          "B",
+          "D",
+          "A",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 27.5,
+        "cost_usd": 0.1531068,
+        "tokens": 71705,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "xk-studio-offfmx-2025-main-titles",
+        "B": "game-of-thrones",
+        "C": "thank-you-for-smoking",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 9,
+              "originality": 7
+            },
+            "tells": [
+              "Every frame has dense, layered material: subsurface-scattered hands, wet glassy organic forms, mesh fabric, fibres and hair. This is deliberate surface design, not default shaders.",
+              "Lighting is specific to each scene: a dusk rim on a volcanic ridge, a cool studio sky behind a backlit glass totem, a green-tinted bounce through translucent loops.",
+              "The palette is unusual but controlled: dusty pink, acid green, ice blue and rust, with a deliberate tone for each scene.",
+              "Contributor credits (Boldtron, Medusa Lab) and the OFFF MX mark suggest a festival-title format with several artists, each delivering a distinct world.",
+              "Varied scale and camera from frame to frame (macro tangle, wide landscape, hero object) imply real choreography rather than one repeated layout."
+            ],
+            "gaps": [
+              "There is no single unifying idea across the segments. It reads as a showcase of beautiful renders rather than one concept only this piece could have, which is what B has with its clockwork map.",
+              "The typography is a small bold-sans credit dropped in a corner. It never interacts with the image, while B and C carry the type inside the world.",
+              "The 'organic-surreal 3D' look is very familiar from festival titles. It needs one surprising narrative or structural turn to stand out from its peers."
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 10,
+              "craft": 9,
+              "originality": 10
+            },
+            "tells": [
+              "A specific, memorable idea: the world is a clockwork map whose cities mechanically build themselves. The concept doubles as exposition and can belong only to this show.",
+              "The materials tell the story: engraved brass, carved wood and parchment cartography, lit by a warm central sun that also motivates the astrolabe glow.",
+              "The frames progress from engraved astrolabe band to mechanised city to overhead map to logo lockup, which implies a strongly choreographed camera move and a mechanical rhythm.",
+              "The credit type is a set, small-caps Trajan-style serif with house-sigil bullets, placed inside the 3D space. Its restraint fits the period.",
+              "The final lockup returns to the opening astrolabe and closes the loop, which shows structural design."
+            ],
+            "gaps": [
+              "The credit typography is classical and safe. A bespoke face or a more inventive integration with the mechanisms would raise it further.",
+              "Some mid-sequence frames are murky and low-contrast, so the miniature detail gets lost in a brown-grey haze.",
+              "The bloom and flare on the logo lockup lean towards fantasy-trailer convention compared with the restraint of the rest."
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.93,
+            "scores": {
+              "idea": 9,
+              "composition": 8,
+              "typography": 9,
+              "colour": 9,
+              "light_texture": 7,
+              "motion": 7,
+              "craft": 9,
+              "originality": 9
+            },
+            "tells": [
+              "A witty, specific concept: every credit is set as a different period cigarette pack ('David Koechner LIGHTS', 'Honey-toasted tobacco lights'). The joke is the film's satire.",
+              "The typography has a real point of view: script, condensed slab, art-deco caps and engraved serif, each matched to a pack era, with mock legal and fine-print details.",
+              "The palette is deliberate and vintage, with royal blue and gold, orange, cream, and red-white-blue stripes, all pulled from actual packaging vernacular.",
+              "Printed texture, halftone and paper grain plus ephemera (eagles, a hound, a plane, a tax stamp) give it material authenticity.",
+              "The closing row of cigarette filters as a graphic pattern under the director credit is a surprise payoff."
+            ],
+            "gaps": [
+              "The motion is likely mostly flat pans and cuts across 2D artwork. It needs more choreography or dimensional camerawork to match B's sense of a built world.",
+              "Each frame is one pack with the name swapped. The structure risks repetition without escalation or a build.",
+              "Light is limited to the scanned flat print. Real dimensional lighting on foil, cellophane or embossing would add depth."
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 3,
+              "composition": 2,
+              "typography": 4,
+              "colour": 2,
+              "light_texture": 1,
+              "motion": 3,
+              "craft": 4,
+              "originality": 2
+            },
+            "tells": [
+              "Same composition in every frame: one centred lowercase phrase on a flat cream ground. Only the weight axis changes.",
+              "The idea is entirely literal: 'variable weather' animated with a variable-font weight wave is the most obvious possible pun on the feature.",
+              "It uses a generic high-contrast editorial serif (Playfair/Fraunces-style), and the 'tasteful' monochrome cream-and-black look is the default AI or template aesthetic.",
+              "There is no image, texture, light, depth or colour, so it is an effect with no subject.",
+              "The weight sweep is a stock variable-font demo technique, with no evidence of custom type design or choreography beyond a left-to-right ripple."
+            ],
+            "gaps": [
+              "It needs an idea beyond the pun. Weather could actually act on the letters (wind shearing, rain eroding, heat warping) so the type gains behaviour rather than just weight.",
+              "Composition and scale should change between shots: crop, push in, break the line, set type against image. Right now one centred layout repeats like a slide.",
+              "It needs a palette, material and light. Even a typographic piece needs atmosphere, and nothing here is a poster in its own right."
+            ]
+          }
+        },
+        "ranking": [
+          "B",
+          "C",
+          "A",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 31.8,
+        "cost_usd": 0.16041840000000002,
+        "tokens": 72065,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "thank-you-for-smoking",
+        "B": "game-of-thrones",
+        "C": "xk-studio-offfmx-2025-main-titles",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.93,
+            "scores": {
+              "idea": 9,
+              "composition": 8,
+              "typography": 9,
+              "colour": 9,
+              "light_texture": 8,
+              "motion": 7,
+              "craft": 9,
+              "originality": 8
+            },
+            "tells": [
+              "One clear idea that fits the film: each credit is set as a made-up cigarette-pack brand, which reads as satire of tobacco branding",
+              "Typography changes with each pack and sits inside the design: a ribbon banner, a script signature, a 'LIGHTS' serif with stars, Art Deco caps, a red band of condensed sans",
+              "The palette (navy/gold, orange/cream, red/white/blue, menthol green) is drawn from real packaging, so it is specific and not a single tasteful accent colour",
+              "There is print texture: halftone, gold foil, aged paper stock and small details like the tax stamp, the 'underage sale prohibited' line, the crest and the hound illustration",
+              "The final frame of cigarette filters lined up in a row works as a visual punchline"
+            ],
+            "gaps": [
+              "The motion appears to be mostly flat pans across 2D artwork. Push-ins, folds or a reveal that goes physical would add choreography between the packs",
+              "There is little sense of depth or real light falling on the packs. Specular light on foil and cellophane would add richness",
+              "Each frame is one pack in one close crop. Changing the shot scale more between frames would add rhythm, the way B moves from macro to map to emblem"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 10,
+              "motion": 9,
+              "craft": 10,
+              "originality": 9
+            },
+            "tells": [
+              "The idea is specific to this show: a clockwork map that builds its cities, and it also works as a functional orientation device for the series",
+              "The light is warm and motivated by the sun-like astrolabe at the centre. Every surface has material character: engraved bronze, aged parchment, carved wood, gears",
+              "Scale changes a lot across frames, from a macro of the engraved band to the city rising up to the overhead map to the emblem lock-up, which suggests real camera choreography",
+              "Credits are set in small-caps serif with a house sigil, integrated into the scene and kept restrained",
+              "The title card resolves the motifs established earlier, with the dragon and wolf heads on the astrolabe ring"
+            ],
+            "gaps": [
+              "The main title wordmark is a conventional fantasy treatment. A bolder typographic idea would raise the type to the level of the world-building",
+              "The palette sits almost entirely in a sepia/bronze range. A controlled colour contrast per region would sharpen the map sections",
+              "The credits are small and a few lose legibility against the busy model detail. More deliberate placement against negative space would help"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "The 3D materials are dense and specific: knit mesh, translucent jelly, hair-like fibres, glossy tubes, coral-like growths. These are not stock primitives",
+              "The palette is unusual and changes a lot from frame to frame: dusty pink, violet dusk, sky blue, sage, bottle green",
+              "There is real light: rim light on the glass figure, subsurface glow in the coral heart, a believable horizon",
+              "The frames vary in scale and density, from a sparse peak to an overgrown thicket, which implies an evolving sequence",
+              "This reads as a festival-ident or title format (OFFF-style) crediting individual studios"
+            ],
+            "gaps": [
+              "The type is small black or white grotesk name tags dropped into a corner like slide labels, with no integration with the image or any scale idea. This needs a real typographic system",
+              "The idea is an organic-surreal 3D mood and not a specific concept. A through-line connecting the vignettes would help, the way B's clockwork map does",
+              "The craft is high, but this aesthetic is familiar from the current 3D festival circuit. It needs a signature that couldn't belong to another festival's titles"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.82,
+            "scores": {
+              "idea": 3,
+              "composition": 2,
+              "typography": 5,
+              "colour": 2,
+              "light_texture": 1,
+              "motion": 4,
+              "craft": 4,
+              "originality": 2
+            },
+            "tells": [
+              "It matches the generic 'tasteful AI' look: a cream ground, one centred line of a stock editorial display serif, and an otherwise empty frame",
+              "All five frames use the same composition; only the weight distribution of the letters changes",
+              "The idea is literal: 'variable weather' shown by animating a variable font's weight axis. It is a pun on the font technology and not a concept",
+              "There is no image, texture, light, colour or depth, so it is an effect without a subject",
+              "The weight wave sweeping through the letters is the default demo you get from any variable-font tool"
+            ],
+            "gaps": [
+              "The frame has no world. The type needs to interact with actual weather (wind, rain, pressure maps, light changing across the day), the way A's type lives inside the pack art",
+              "There is no scale contrast, layout change or camera movement. Break the centred line: crop it, stack it, push to extreme sizes, and let the composition change shot to shot",
+              "The palette and material are absent. A deliberate colour and texture system (atmospheric gradients, paper, film grain) is needed before this can carry a title"
+            ]
+          }
+        },
+        "ranking": [
+          "B",
+          "A",
+          "C",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 29.0,
+        "cost_usd": 0.1554066,
+        "tokens": 71816,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "critic": {
+    "answer": {
+      "scores": {
+        "motion": 4,
+        "sound": null,
+        "craft": 6
+      },
+      "checks": {
+        "idea": false,
+        "invariant": true,
+        "arc": false,
+        "type_meaning": false,
+        "freeze_frame": false,
+        "ending": true,
+        "restraint": true,
+        "material": false,
+        "sync": null
+      },
+      "defects": [
+        "Text is centred and changes width as the weight changes, so the whole line drifts left and right and the light letters slide with no motivation (compare frame 1 at x\u2248110 with frame 3 at x\u22481375).",
+        "The wave moves at a constant speed across the letters with no easing in or out. It reads as a linear parameter sweep, not something performed.",
+        "The bold-to-light change is steep and nearly binary at each letter edge (the 'vari|able' split), so it reads as a moving bold mask rather than a soft wave of weight.",
+        "No other movement: no scale, tracking, baseline or optical-size change goes with the weight shift, so the whole film is a single parameter.",
+        "Flat off-white background with no grain, light or depth. At 100% the finish is clean vector type and nothing else."
+      ],
+      "gaps": [
+        "Motion: this is a single variable-font weight sweep that loops in 3 s. There's no choreography, no build to a peak, no held beat and no change of speed. A top studio would shape the wave like weather, with gusts, pauses, a storm peak and calm, and would let width, slant or baseline react too.",
+        "Idea and type meaning: 'variable weather' gets only a literal variable-font pun. Weight isn't tied to any weather behaviour like pressure, wind direction or rain, and the frames are near-identical type specimens that don't hold up as posters.",
+        "Finish and composition: the line re-centres and jitters because nothing is anchored, and the frame is a flat background with no material, light or second layer. Best-in-class work would lock letter positions or fit the width on purpose, and add texture or atmosphere."
+      ]
+    },
+    "meta": {
+      "seconds": 17.6,
+      "cost_usd": 0.14395059999999998,
+      "tokens": 70294,
+      "models": [
+        "claude-opus-5-5"
+      ]
+    },
+    "pace": "5-weight-wave.mp4: 3.0s, 1 shots, median 3.00s, longest 3.00s\nper-second change: [9.4, 7.1]\nPACE: FAIL \u2014 longest shot 3.0s > 2.5s; median shot 3.0s > 1.5s"
+  },
+  "full_scores": {
+    "idea": 3,
+    "composition": 2,
+    "typography": 4,
+    "colour": 2,
+    "light_texture": 1,
+    "motion": 3.5,
+    "craft": 5.0,
+    "originality": 2
+  },
+  "full_overall": 2.81,
+  "cost_usd": 0.613,
+  "judge_seconds": 105.9,
+  "verdict": "FAIL"
+}

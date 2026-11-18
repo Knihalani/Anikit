@@ -1,0 +1,151 @@
+{
+ "size": [
+  1920,
+  1080
+ ],
+ "background": "#ffffff",
+ "scenes": [
+  {
+   "duration": 1,
+   "layers": [
+    {
+     "src": "polyhaven:hdri/venice_sunset?yaw=96&pitch=4&fov=58&w=640&h=540",
+     "fit": "cover",
+     "x": 0,
+     "y": 0,
+     "anchor": "topLeft",
+     "width": 640,
+     "height": 540,
+     "print": "photocopy"
+    },
+    {
+     "x": 24,
+     "y": 500,
+     "anchor": "left",
+     "text": "\"print\": \"photocopy\"",
+     "font": "JetBrains Mono",
+     "size": 24,
+     "color": "#111",
+     "stroke": {
+      "color": "#fff",
+      "width": 6
+     }
+    },
+    {
+     "src": "polyhaven:hdri/venice_sunset?yaw=96&pitch=4&fov=58&w=640&h=540",
+     "fit": "cover",
+     "x": 640,
+     "y": 0,
+     "anchor": "topLeft",
+     "width": 640,
+     "height": 540,
+     "print": "newsprint"
+    },
+    {
+     "x": 664,
+     "y": 500,
+     "anchor": "left",
+     "text": "\"print\": \"newsprint\"",
+     "font": "JetBrains Mono",
+     "size": 24,
+     "color": "#111",
+     "stroke": {
+      "color": "#fff",
+      "width": 6
+     }
+    },
+    {
+     "src": "polyhaven:hdri/venice_sunset?yaw=96&pitch=4&fov=58&w=640&h=540",
+     "fit": "cover",
+     "x": 1280,
+     "y": 0,
+     "anchor": "topLeft",
+     "width": 640,
+     "height": 540,
+     "print": "engraving"
+    },
+    {
+     "x": 1304,
+     "y": 500,
+     "anchor": "left",
+     "text": "\"print\": \"engraving\"",
+     "font": "JetBrains Mono",
+     "size": 24,
+     "color": "#111",
+     "stroke": {
+      "color": "#fff",
+      "width": 6
+     }
+    },
+    {
+     "src": "polyhaven:hdri/venice_sunset?yaw=96&pitch=4&fov=58&w=640&h=540",
+     "fit": "cover",
+     "x": 0,
+     "y": 540,
+     "anchor": "topLeft",
+     "width": 640,
+     "height": 540,
+     "print": "riso"
+    },
+    {
+     "x": 24,
+     "y": 1040,
+     "anchor": "left",
+     "text": "\"print\": \"riso\"",
+     "font": "JetBrains Mono",
+     "size": 24,
+     "color": "#111",
+     "stroke": {
+      "color": "#fff",
+      "width": 6
+     }
+    },
+    {
+     "src": "polyhaven:hdri/venice_sunset?yaw=96&pitch=4&fov=58&w=640&h=540",
+     "fit": "cover",
+     "x": 640,
+     "y": 540,
+     "anchor": "topLeft",
+     "width": 640,
+     "height": 540,
+     "print": "screenprint"
+    },
+    {
+     "x": 664,
+     "y": 1040,
+     "anchor": "left",
+     "text": "\"print\": \"screenprint\"",
+     "font": "JetBrains Mono",
+     "size": 24,
+     "color": "#111",
+     "stroke": {
+      "color": "#fff",
+      "width": 6
+     }
+    },
+    {
+     "src": "polyhaven:hdri/venice_sunset?yaw=96&pitch=4&fov=58&w=640&h=540",
+     "fit": "cover",
+     "x": 1280,
+     "y": 540,
+     "anchor": "topLeft",
+     "width": 640,
+     "height": 540
+    },
+    {
+     "x": 1304,
+     "y": 1040,
+     "anchor": "left",
+     "text": "original",
+     "font": "JetBrains Mono",
+     "size": 24,
+     "color": "#111",
+     "stroke": {
+      "color": "#fff",
+      "width": 6
+     }
+    }
+   ]
+  }
+ ]
+}

@@ -489,3 +489,60 @@ fn ak_library_is_included_on_use_and_correct() {
     // A shader that doesn't mention ak_ doesn't get it (and an unknown ak_ name is an error).
     assert!(Shader::compile("void mainImage(out vec4 c, in vec2 p) { c = vec4(ak_nonsense(p), 0, 1); }").is_err());
 }
+
+#[test]
+fn nonfinite_pixels_are_reported() {
+    // NaN only at fragCoord (5.5, 2.5): 0/0 there.
+    let s = Shader::compile("void mainImage(out vec4 c, in vec2 p) { float z = (p.x == 5.5 && p.y == 2.5) ? 0.0 : 1.0; c = vec4(z / z, 0.0, 0.0, 1.0); }").unwrap();
+    let mut out = vec![0u8; 16 * 8 * 4];
+    let f = Frame::new(16, 8, 0.0);
+    s.render(&f, &mut out);
+    assert_eq!(s.take_nonfinite(), Some((5, 2)));
+    assert_eq!(s.take_nonfinite(), None, "cleared once taken");
+    let ok = Shader::compile("void mainImage(out vec4 c, in vec2 p) { c = vec4(p.x / 16.0); }").unwrap();
+    ok.render(&f, &mut out);
+    assert_eq!(ok.take_nonfinite(), None);
+}
+
+#[test]
+fn coord_scale_gives_final_size_coordinates() {
+    // A half-size preview (8×4 for a 16×8 final) sees the final's fragCoord and iResolution.
+    let s = Shader::compile("void mainImage(out vec4 c, in vec2 p) { c = vec4(p.x / 32.0, p.y / 32.0, iResolution.x / 32.0, iResolution.y / 32.0); }").unwrap();
+    let mut f = Frame::new(8, 4, 0.0);
+    f.coord_scale = 2.0;
+    let px = s.render_f32(&f);
+    // Preview pixel (0, 0) is the top-left block of the final: fragCoord (1, 7).
+    assert_eq!(px[0], [1.0 / 32.0, 7.0 / 32.0, 0.5, 0.25]);
+    // Preview pixel (3, 3) (bottom row): fragCoord (7, 1).
+    assert_eq!(px[3 * 8 + 3], [7.0 / 32.0, 1.0 / 32.0, 0.5, 0.25]);
+    f.supersample = true;
+    let ss = s.render_f32(&f);
+    assert!((ss[0][0] - 1.0 / 32.0).abs() < 1e-6 && (ss[0][1] - 7.0 / 32.0).abs() < 1e-6);
+}
+
+#[test]
+fn ak_drawn_blocks_track_tone() {
+    // Mean coverage of stipple and hatch rises with tone; brush, dry and
+    // wedge are inside 0..1 and cover their shapes.
+    let src = "uniform float tone;\nvoid mainImage(out vec4 c, in vec2 p) {\n\
+        c = vec4(ak_stipple(p, tone, 9.0), ak_hatch(p, vec2(1.0, 0.3), tone, 8.0),\n\
+                 ak_brush(p, vec2(20.0, 64.0), vec2(108.0, 64.0), 14.0, 1.0) * ak_dry(length(p - 64.0) - 30.0, ak_paper(p), 4.0),\n\
+                 ak_wedge(p, vec2(0.0), vec2(1.0), 0.4, 200.0, 0.5)); }";
+    let s = Shader::compile(src).unwrap();
+    let mean = |tone: f32| {
+        let t = [tone];
+        let u = [("tone", &t[..])];
+        let mut f = Frame::new(128, 128, 0.0);
+        f.uniforms = &u;
+        let px = s.render_f32(&f);
+        let m = |k: usize| px.iter().map(|p| p[k]).sum::<f32>() / px.len() as f32;
+        (m(0), m(1), m(2), m(3), px.iter().all(|p| p.iter().all(|v| (0.0..=1.0).contains(v))))
+    };
+    let (s0, h0, ..) = mean(0.1);
+    let (s1, h1, ..) = mean(0.4);
+    let (s2, h2, b, w, ok) = mean(0.8);
+    assert!(ok);
+    assert!(s0 < s1 && s1 < s2 && s2 > 0.4, "stipple {s0} {s1} {s2}");
+    assert!(h0 < h1 && h1 < h2 && h2 > 0.4, "hatch {h0} {h1} {h2}");
+    assert!(b > 0.05 && w > 0.05, "brush × dry {b}, wedge {w}");
+}

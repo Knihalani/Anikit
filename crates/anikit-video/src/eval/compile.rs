@@ -623,6 +623,7 @@ fn empty_node(kind: Kind) -> Node {
         treat: Vec::new(),
         treat_slot: 0,
         live_pattern: None,
+        ink_follow: false,
         brush: None,
         step: 0.0,
         boil: None,
@@ -2655,7 +2656,28 @@ impl C<'_> {
                 let maxw = mw.unwrap_or(pc.size[0] * 0.9);
                 if given_w.is_none() && l0.width > maxw && (!pc.in_box || mw.is_some()) {
                     tspec.width = Some(maxw);
-                    self.assets.fonts.layout(&tspec)
+                    let lw = self.assets.fonts.layout(&tspec);
+                    // Balanced breaks for headlines (CSS text-wrap: balance): the narrowest
+                    // width with the same line count, so no line is a stub.
+                    let n_lines = lw.lines.len();
+                    let headline = tspec.style.size >= self.h * 0.04;
+                    if n_lines >= 2 && l.balance.unwrap_or(headline) {
+                        let (mut lo, mut hi) = (maxw / n_lines as f32 * 0.8, maxw);
+                        for _ in 0..10 {
+                            let mid = (lo + hi) * 0.5;
+                            let mut probe = tspec.clone();
+                            probe.width = Some(mid);
+                            if self.assets.fonts.layout(&probe).lines.len() > n_lines {
+                                lo = mid;
+                            } else {
+                                hi = mid;
+                            }
+                        }
+                        tspec.width = Some((hi + 1.0).min(maxw));
+                        self.assets.fonts.layout(&tspec)
+                    } else {
+                        lw
+                    }
                 } else {
                     l0
                 }
@@ -3130,6 +3152,23 @@ impl C<'_> {
 
     /// Image treatments (`duotone`, `gradientMap`, `posterize`, `halftone`) as layer filters.
     fn treatments(&mut self, l: &Layer, path: &str, n: &mut Node) {
+        let expanded;
+        let l = match l.print.as_deref() {
+            Some(p) => match print_preset(l, p) {
+                Some(x) => {
+                    if l.blend.is_none() && x.blend.as_deref() == Some("multiply") {
+                        n.blend = Blend::Multiply;
+                    }
+                    expanded = x;
+                    &expanded
+                }
+                None => {
+                    self.d.push(Diagnostic::error(format!("{path}.print"), format!("unknown print '{p}'")).suggest(suggest(p, PRINTS)));
+                    l
+                }
+            },
+            None => l,
+        };
         let mut ht_nums: Option<(Option<Num>, Option<Num>, Option<Num>)> = None;
         let mut ink_num: Option<Num> = None;
         let mut stops: Option<Vec<(f32, Rgba)>> = None;
@@ -3203,7 +3242,8 @@ impl C<'_> {
                     Some(x) => me.color(x, &format!("{hp}.{key}")).unwrap_or(Rgba([0.0, 0.0, 0.0, 1.0])),
                 }
             };
-            let ink = col(self, &hs.ink, "ink", "source");
+            let cmyk = hs.ink.as_deref() == Some("cmyk");
+            let ink = if cmyk { Rgba([0.0; 4]) } else { col(self, &hs.ink, "ink", "source") };
             let paper = col(self, &hs.paper, "paper", "none");
             let cell = match &hs.cell {
                 Some(Num::Num(c)) => *c as f32,
@@ -3212,7 +3252,7 @@ impl C<'_> {
             if cell < 3.0 {
                 self.d.push(Diagnostic::warning(format!("{hp}.cell"), "cells under 3 px alias into moiré after encoding; use 4 px or more"));
             }
-            n.treat.push(Filter::Halftone(dl::Halftone { cell: cell.max(2.0), angle: 45.0, shape, ink, paper, gain: 1.0, ox: 0.0, oy: 0.0 }));
+            n.treat.push(Filter::Halftone(dl::Halftone { cell: cell.max(2.0), angle: 45.0, shape, ink, paper, gain: 1.0, ox: 0.0, oy: 0.0, cmyk }));
             ht_nums = Some((hs.cell.clone(), hs.angle.clone(), hs.gain.clone()));
         }
         if let Some(iv) = &l.ink_texture {
@@ -3220,6 +3260,7 @@ impl C<'_> {
                 spec::InkValue::Amount(a) => (Num::Num(*a), 28.0, 1),
                 spec::InkValue::Full(o) => (o.amount.clone().unwrap_or(Num::Num(0.35)), o.scale.unwrap_or(28.0), o.seed.unwrap_or(1)),
             };
+            n.ink_follow = !matches!(iv, spec::InkValue::Full(spec::InkSpec { fixed: Some(true), .. }));
             n.treat.push(Filter::Ink { amount: 0.35, scale: scale.max(1.0) as f32, seed, ox: 0.0, oy: 0.0 });
             ink_num = Some(amount);
         }
@@ -4447,14 +4488,31 @@ impl C<'_> {
         let mut slots = Vec::new();
         let mut fixed = Vec::new();
         let mut off = 0;
-        for u in &shader.uniforms {
+        // Animation slots go first to uniforms that need them: given as an
+        // expression, or named by the layer's keyframes/animations; the rest
+        // follow in declaration order. Static values past the slots are fixed.
+        let anim_keys = {
+            let mut v = serde_json::to_value(l).unwrap_or_default();
+            if let Some(o) = v.as_object_mut() {
+                for k in ["uniforms", "shader", "src", "buffers"] {
+                    o.remove(k);
+                }
+            }
+            v.to_string()
+        };
+        let animated = |name: &str| vals.iter().any(|(k, v)| k == name && v.is_err()) || anim_keys.contains(&format!("\"{name}\":"));
+        let mut order: Vec<&anikit_shader::DeclaredUniform> = shader.uniforms.iter().collect();
+        order.sort_by_key(|u| !animated(&u.name));
+        for u in order {
             let len = u.ty.components();
             let given = vals.iter().find(|(k, _)| *k == u.name).map(|(_, v)| v.clone());
             if off + len > UNIFORM_SLOTS {
                 if let Some(Ok(v)) = given.clone().or(u.default.clone().map(Ok)) {
                     fixed.push((u.name.clone(), v));
                 }
-                self.d.push(Diagnostic::warning(format!("{path}.uniforms.{}", u.name), format!("more than {UNIFORM_SLOTS} uniform floats: '{}' can't be animated", u.name)));
+                if animated(&u.name) {
+                    self.d.push(Diagnostic::warning(format!("{path}.uniforms.{}", u.name), format!("more than {UNIFORM_SLOTS} animated uniform floats: '{}' can't be animated (it keeps its first value)", u.name)));
+                }
                 continue;
             }
             if let Some(d) = &u.default {
@@ -4568,6 +4626,7 @@ impl C<'_> {
             alpha: l.alpha.unwrap_or(false),
             label: super::shader::label(path, l.shader.as_deref().or(l.src.as_deref())),
             audio: self.shader_audio(&text, path),
+            faithful: passes.is_none() && !text.contains("texelFetch"),
             passes,
         };
         Some((Kind::Shader(Box::new(sc)), size))
@@ -4639,9 +4698,12 @@ impl C<'_> {
             return None;
         }
         if self.music.is_none() {
-            let r = match self.beat_marks.music() {
-                None => Err("iAudio/iBeat need music: add a top-level `audio` track with a `src` (they stay 0)".to_string()),
-                Some((p, at, trim)) => super::audio_react::AudioFeatures::load(p, *at, *trim).map(Arc::new).map_err(|e| format!("iAudio/iBeat: {e}")),
+            // Generated `music` first (its exact grid, the same one expressions use),
+            // then the first music `audio` track.
+            let r = match (self.beat_marks.generated(), self.beat_marks.music()) {
+                (Some(g), _) => g.map(|(mono, rate, beats, bars, at)| Arc::new(super::audio_react::AudioFeatures::from_mono(&mono, rate, beats, bars, at))).map_err(|e| format!("iAudio/iBeat: {e}")),
+                (None, None) => Err("iAudio/iBeat need music: add generated `music` or a top-level `audio` track with a `src` (they stay 0)".to_string()),
+                (None, Some((p, at, trim))) => super::audio_react::AudioFeatures::load(p, *at, *trim).map(Arc::new).map_err(|e| format!("iAudio/iBeat: {e}")),
             };
             self.music = Some(r);
         }
@@ -4686,6 +4748,7 @@ impl C<'_> {
             label: super::shader::label(path, Some(src)),
             audio: self.shader_audio(&text, path),
             passes: None,
+            faithful: !text.contains("texelFetch"),
         })))
     }
 
@@ -5532,4 +5595,55 @@ fn grid_show(g: &spec::GridSpec) -> u8 {
         Some(serde_json::Value::String(s)) if s == "over" => 1,
         _ => 0,
     }
+}
+
+const PRINTS: &[&str] = &["photocopy", "newsprint", "engraving", "riso", "screenprint"];
+
+/// `print` presets: starting values for the treatment keys the layer doesn't set itself.
+fn print_preset(l: &Layer, p: &str) -> Option<Layer> {
+    let mut o = l.clone();
+    let hs = |cell: f64, angle: f64, shape: &str, ink: &str, paper: &str| {
+        spec::HalftoneValue::Full(spec::HalftoneSpec {
+            cell: Some(Num::Num(cell)),
+            angle: Some(Num::Num(angle)),
+            shape: Some(shape.into()),
+            ink: Some(ink.into()),
+            paper: Some(paper.into()),
+            gain: None,
+        })
+    };
+    let ink = |a: f64, scale: f64| spec::InkValue::Full(spec::InkSpec { amount: Some(Num::Num(a)), scale: Some(scale), seed: None, fixed: None });
+    match p {
+        "photocopy" => {
+            o.duotone.get_or_insert_with(|| vec!["#161616".into(), "#efeee9".into()]);
+            o.posterize.get_or_insert(2);
+            o.tone_range.get_or_insert([0.28, 0.68]);
+            o.ink_texture.get_or_insert_with(|| ink(0.3, 10.0));
+        }
+        "newsprint" => {
+            o.tone_range.get_or_insert([0.05, 0.95]);
+            o.halftone.get_or_insert_with(|| hs(6.0, 45.0, "dot", "#1c1c1c", "#e8e4da"));
+        }
+        "engraving" => {
+            o.tone_range.get_or_insert([0.1, 1.0]);
+            o.halftone.get_or_insert_with(|| hs(5.0, 30.0, "line", "#151515", "#f2ede2"));
+        }
+        "riso" => {
+            o.duotone.get_or_insert_with(|| vec!["riso:medium-blue".into(), "#ffffff".into()]);
+            o.tone_range.get_or_insert([0.15, 0.75]);
+            o.blend.get_or_insert_with(|| "multiply".into());
+            o.ink_texture.get_or_insert_with(|| ink(0.25, 28.0));
+        }
+        "screenprint" => {
+            // Three flat inks on paper: dark, a red and a yellow (override with gradientMap).
+            if o.duotone.is_none() {
+                o.gradient_map.get_or_insert_with(|| ["#1b1a19", "#d7301f", "#f2c230", "#f4efe6"].iter().map(|c| serde_json::Value::String(c.to_string())).collect());
+            }
+            o.posterize.get_or_insert(4);
+            o.tone_range.get_or_insert([0.12, 0.85]);
+            o.ink_texture.get_or_insert_with(|| ink(0.15, 40.0));
+        }
+        _ => return None,
+    }
+    Some(o)
 }

@@ -1,0 +1,521 @@
+{
+  "name": "mograph_lumen-light",
+  "tags": [
+    "event-promo",
+    "kinetic-type",
+    "title-sequence"
+  ],
+  "refs": [
+    "xk-studio-offfmx-2025-main-titles",
+    "studio-river-motion-plus-design-tokyo-2024",
+    "game-of-thrones"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 4,
+      "composition": 4,
+      "typography": 3,
+      "colour": 3,
+      "light_texture": 4,
+      "motion": 3,
+      "craft": 4,
+      "originality": 3
+    },
+    "overall": 3.5,
+    "judged_professional": "0/3",
+    "pro_rate": 0.0,
+    "mean_rank": 4,
+    "gaps": [
+      "It needs a specific concept tied to the real event or place (the harbour, actual installations, water reflections), not a generic metaphor for light.",
+      "Commission or choose a typeface with a point of view, and let light physically interact with the letterforms (casting, refracting, building them) rather than masking a flat texture.",
+      "Vary the compositions and choreography so each frame is a distinct poster, and introduce material, depth and a second colour idea.",
+      "Find an idea only this festival could own (Bristol's harbour, water reflections, real installations, the city at night) instead of 'light shines through the word LUMEN'",
+      "Replace the default grotesk with a drawn or chosen face whose form reacts to light: projected, refracted or cast as shadow, the way A's type lives inside its world",
+      "Choreograph a real progression with varied compositions, colour shifts and depth so that frames 4 and 5 are not the same poster twice",
+      "Find a concept specific to this festival and place (harbour water reflections, actual installations, the city at night) instead of generic god-rays; C builds its whole sequence from one specific world",
+      "Commission or choose a typeface with a point of view, and make light physically interact with the letterforms (projected, refracted, built from light) rather than just showing through a cutout",
+      "Vary composition, scale and palette across shots, and add real material and depth so the piece isn't one dark layout repeated"
+    ],
+    "tells": [
+      "The textbook 'tasteful AI' look: a near-black ground with one warm-beige accent, a generic grotesk (Inter/Helvetica-like) and a mostly empty frame.",
+      "The idea is literal: a 'festival of light' shown as light shafts falling through the word LUMEN and window grids.",
+      "Small date/location text sits in the corners like slide furniture ('18\u201324 March / Bristol Harbourside', 'lumen.fest').",
+      "The last two frames are almost the same composition, so little happens. The same diagonal light shaft is reused in every frame.",
+      "Dust motes are a stock particle overlay. Type has no custom drawing, and its only scale contrast is 'make the word huge and crop it'.",
+      "The textbook 'tasteful AI' recipe: near-black ground, one warm beige accent, a default Inter or Helvetica-style grotesk, and a small secondary line ('a festival of light, Bristol Harbourside') set like a slide",
+      "The idea is literal and obvious: a light festival called Lumen, so light beams fall through the letters. The first thought, not a specific one",
+      "The last two frames are almost the same composition with one URL added, and the small top-left date block repeats as a template; little happens",
+      "Flat, uniform shafts of light with sprinkled dust particles reused in every frame; there is no real atmosphere, material or setting, even though a harbourside light festival begs for water, reflection or place",
+      "Scale contrast exists (the edge-to-edge LUMEN) but is the default 'giant cropped word' move with no typographic craft in spacing, cut or customisation",
+      "The textbook 'tasteful AI' look: near-black ground, a single warm beige accent, a generic default grotesk (Inter/Helvetica-like) for 'Lumen', the dates and the URL",
+      "A literal idea: a festival of light shown as light shafts through windows and letterforms, with no specific relation to Bristol or the harbour",
+      "The last two frames are essentially the same layout of an oversized cropped 'LUMEN' with info in the top corners; the structure repeats like a slide deck",
+      "Info text ('a festival of light, Bristol Harbourside', '18\u201424 March', 'lumen.fest') is placed like a template, with no hierarchy or typographic idea",
+      "The window-grid frame is a stock gobo effect with floating dust specks, applied uniformly: an effect with no subject"
+    ]
+  },
+  "refs_summary": {
+    "xk-studio-offfmx-2025-main-titles": {
+      "overall": 7.75,
+      "judged_professional": "3/3",
+      "mean_rank": 2.33
+    },
+    "studio-river-motion-plus-design-tokyo-2024": {
+      "overall": 7.38,
+      "judged_professional": "3/3",
+      "mean_rank": 2.67
+    },
+    "game-of-thrones": {
+      "overall": 9.25,
+      "judged_professional": "3/3",
+      "mean_rank": 1
+    }
+  },
+  "ref_mean": 8.13,
+  "delta": -4.63,
+  "trials": [
+    {
+      "key": {
+        "A": "game-of-thrones",
+        "B": "xk-studio-offfmx-2025-main-titles",
+        "C": "candidate",
+        "D": "studio-river-motion-plus-design-tokyo-2024"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 10,
+              "motion": 9,
+              "craft": 10,
+              "originality": 9
+            },
+            "tells": [
+              "A specific, memorable idea: the world is a clockwork map that builds itself. It tells you how the story is structured and stands in for a 'previously on'.",
+              "Real material: tooled leather, bronze and brass, wood and bone gears, with motivated light from the central astrolabe sun.",
+              "Choreography carries across frames: the macro band of engraved heraldry gives way to rising cityscapes, then the map flyover, then the band closing into the logotype.",
+              "Credits are set in a carved Trajan-like face with house sigils, sitting inside the 3D world rather than pasted over it.",
+              "The title lock-up repeats the opening frame's band and starburst, so the sequence closes the way it opened."
+            ],
+            "gaps": [
+              "Small credits are a little low-contrast against busy midground detail in the map shots.",
+              "The warm sepia-gold palette is reasonable but expected for the genre, and riskier colour would have added surprise.",
+              "The logotype treatment is more conventional than the world-building that comes before it."
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 6,
+              "colour": 9,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 8,
+              "originality": 8
+            },
+            "tells": [
+              "Dense, tactile 3D with real material variety: translucent silicone hands, coral, glass and mesh fabric, frayed fibres, chrome tubes.",
+              "An unusual and deliberate palette that changes on purpose: salmon/teal dusk, violet night, cyan sky, pistachio/blush, bottle green.",
+              "Varied compositions and scales from frame to frame (macro tangle, wide landscape, single hero object), so it isn't one layout with things swapped.",
+              "Studio name cards (Boldtron, Medusa Lab, OFFF MX logotype) read like a festival opener with contributing studios. That is curated professional context."
+            ],
+            "gaps": [
+              "Typography is mostly a small bold-sans label in a corner and adds nothing beyond attribution. It should be integrated the way A's credits live in its world.",
+              "There's no single connecting idea: it reads as a showcase of separate renders rather than one authored narrative.",
+              "Organic-surreal 3D is a crowded trend, so it needs a more distinct concept to be remembered."
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.6,
+            "scores": {
+              "idea": 5,
+              "composition": 6,
+              "typography": 5,
+              "colour": 7,
+              "light_texture": 7,
+              "motion": 6,
+              "craft": 6,
+              "originality": 4
+            },
+            "tells": [
+              "A consistent red-flesh palette and a body-horror/organic theme are pursued across frames, which suggests an authored title sequence.",
+              "Credits get a small but real touch, with the red first name next to the white surname.",
+              "Imagery leans on familiar stock moves: a macro eye with a reflection in the pupil, a fluid splash with droplets, a neon Tokyo alley with a hero figure in Unreal-style lighting.",
+              "Credits are a centred or offset generic condensed sans laid over the image with little integration.",
+              "Frames feel like separate effects (sim splash, fluid blob, eye, alley, ripple) rather than one world, and the motion is implied only through effect changes."
+            ],
+            "gaps": [
+              "Find one governing idea, the way A has its clockwork map, instead of a sequence of effect shots.",
+              "Replace clich\u00e9s (the macro eye, the cyberpunk neon alley) with imagery only this piece could own.",
+              "Make the type part of the world, carved, embedded or deformed by the material, instead of default labels over the image."
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.75,
+            "scores": {
+              "idea": 4,
+              "composition": 4,
+              "typography": 3,
+              "colour": 3,
+              "light_texture": 4,
+              "motion": 3,
+              "craft": 4,
+              "originality": 3
+            },
+            "tells": [
+              "The textbook 'tasteful AI' look: a near-black ground with one warm-beige accent, a generic grotesk (Inter/Helvetica-like) and a mostly empty frame.",
+              "The idea is literal: a 'festival of light' shown as light shafts falling through the word LUMEN and window grids.",
+              "Small date/location text sits in the corners like slide furniture ('18\u201324 March / Bristol Harbourside', 'lumen.fest').",
+              "The last two frames are almost the same composition, so little happens. The same diagonal light shaft is reused in every frame.",
+              "Dust motes are a stock particle overlay. Type has no custom drawing, and its only scale contrast is 'make the word huge and crop it'."
+            ],
+            "gaps": [
+              "It needs a specific concept tied to the real event or place (the harbour, actual installations, water reflections), not a generic metaphor for light.",
+              "Commission or choose a typeface with a point of view, and let light physically interact with the letterforms (casting, refracting, building them) rather than masking a flat texture.",
+              "Vary the compositions and choreography so each frame is a distinct poster, and introduce material, depth and a second colour idea."
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "B",
+          "D",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 29.8,
+        "cost_usd": 0.1561148,
+        "tokens": 71853,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "game-of-thrones",
+        "B": "xk-studio-offfmx-2025-main-titles",
+        "C": "studio-river-motion-plus-design-tokyo-2024",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 10,
+              "motion": 9,
+              "craft": 10,
+              "originality": 10
+            },
+            "tells": [
+              "A single idea that belongs only to this piece: the world is a clockwork map that unfolds itself, so the opening titles also work as geography and story",
+              "Engraved astrolabe band with relief dragon imagery, lit by a hot sun core with blown-out highlights: real material, patina and depth",
+              "Brass, wood and gear miniatures with tilt-shift depth of field and dusty, overcast light; every frame is built like a set",
+              "Credits sit inside the world beside house sigils, in a carefully chosen inscriptional serif with small caps and wide tracking",
+              "Choreography across frames: the band opens into a flyover, cities rise mechanically, the camera drops to the map at King's Landing, and it resolves to a symmetrical logo lockup that echoes the first frame",
+              "Warm sepia-gold palette consistently tied to the period and material"
+            ],
+            "gaps": [
+              "Benchmark entry; the main-title lockup leans on a conventional glowing burst that is less inventive than the mechanism shots",
+              "Credit type is small and sometimes fights busy set detail, which hurts legibility on some cards",
+              "The palette is very consistent but stays mostly in one warm register; a colder counterpoint could give one region more contrast"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 6,
+              "colour": 9,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 8,
+              "originality": 8
+            },
+            "tells": [
+              "Dense, layered, tactile 3D: mesh fabric, hair-like fibres, translucent glass, coral sponge, tubes with chrome and enamel finishes; nothing here is a stock primitive",
+              "Each frame has its own unusual palette (dusty pink against basalt, violet volcanic night, sky blue against amber glass, pistachio and blush, bottle green and ice blue), and the palettes still read as one family",
+              "Surreal sculptural subjects (a hand cradling a glowing organ, a figure made of glass entrails) look like the work of an author",
+              "Light reads as real: rim light, subsurface glow and caustic-like transmission"
+            ],
+            "gaps": [
+              "The ident or reel structure ('Boldtron', 'Medusa Lab', OFFF MX) is a collection of separate vignettes rather than one choreographed idea like A's mechanical world",
+              "Typography is near-default bold grotesque dropped into the top-left corner like a label, with no integration into the image or scale play; the OFFF wordmark is the only typographic gesture",
+              "The motion implied between frames is mostly cut-to-cut; there is no visible transformation or continuity linking one sculpture to the next"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 8,
+              "motion": 8,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "Committed monochrome-red world built from flesh, fluid, iris and city, so the colour carries the concept",
+              "Strong scale journey: a macro organic landscape, a liquid sculpture with teeth, an extreme close-up of an iris reflecting a street, a neon alley with a figure, then a cellular ring. The match-cut logic (eye to city to cell) points to real choreography",
+              "Simulated liquids, translucent organic forms and a volumetric, fogged neon alley show real FX and lighting craft",
+              "Credits name actual crew with a two-tone first/last-name treatment, which is consistent with a festival title sequence"
+            ],
+            "gaps": [
+              "Credit type is a generic condensed sans, centred or floating, with no relationship to the forms; A integrates its credits into the world",
+              "The motifs (eye close-up, cyberpunk neon alley with Japanese signage, slow-mo droplets) are familiar genre tropes, so the piece is less memorable and specific than A",
+              "The aspect ratio and framing change between frames, and the shots feel like separate demos; the piece needs a single through-line object or mechanism to bind the eye, flesh and city"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 4,
+              "composition": 4,
+              "typography": 3,
+              "colour": 3,
+              "light_texture": 4,
+              "motion": 3,
+              "craft": 4,
+              "originality": 3
+            },
+            "tells": [
+              "The textbook 'tasteful AI' recipe: near-black ground, one warm beige accent, a default Inter or Helvetica-style grotesk, and a small secondary line ('a festival of light, Bristol Harbourside') set like a slide",
+              "The idea is literal and obvious: a light festival called Lumen, so light beams fall through the letters. The first thought, not a specific one",
+              "The last two frames are almost the same composition with one URL added, and the small top-left date block repeats as a template; little happens",
+              "Flat, uniform shafts of light with sprinkled dust particles reused in every frame; there is no real atmosphere, material or setting, even though a harbourside light festival begs for water, reflection or place",
+              "Scale contrast exists (the edge-to-edge LUMEN) but is the default 'giant cropped word' move with no typographic craft in spacing, cut or customisation"
+            ],
+            "gaps": [
+              "Find an idea only this festival could own (Bristol's harbour, water reflections, real installations, the city at night) instead of 'light shines through the word LUMEN'",
+              "Replace the default grotesk with a drawn or chosen face whose form reacts to light: projected, refracted or cast as shadow, the way A's type lives inside its world",
+              "Choreograph a real progression with varied compositions, colour shifts and depth so that frames 4 and 5 are not the same poster twice"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "B",
+          "C",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 31.2,
+        "cost_usd": 0.1584856,
+        "tokens": 71962,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "studio-river-motion-plus-design-tokyo-2024",
+        "B": "xk-studio-offfmx-2025-main-titles",
+        "C": "game-of-thrones",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "Committed monochrome-red world carried through very different subjects (flesh-like terrain, liquid-chrome splash, glass/organic sculpture, macro iris, neon alley with figure, cellular ripple field), so it holds together as one piece without repeating itself",
+              "Heavy, tactile simulation work: fluid droplets with real refraction, sub-surface flesh textures, volumetric haze in the alley, granular ripple surface",
+              "Credits sit inside the 3D scenes and use a two-tone name treatment (red first name, white surname), which is a real convention of festival title sequences",
+              "Each frame uses a different scale, from macro eye to wide street to top-down field, which points to an edit planned around a visual journey"
+            ],
+            "gaps": [
+              "The type is a plain condensed sans dropped into the frame; unlike C, it is never built out of the world's own material",
+              "The idea reads as a moodboard of 'red, visceral, organic' imagery more than one specific concept; it needs a single governing device the way C has the clockwork map",
+              "The neon-alley cyberpunk frame is the most generic image in the set and weakens the uniqueness of the whole; cut it or rework it into the organic language"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 8,
+              "motion": 7,
+              "craft": 8,
+              "originality": 8
+            },
+            "tells": [
+              "Surreal hybrid sculptures (wireframe hands holding coral hearts, glass-and-amber totems, mesh and textile thickets, knotted tubes around beaded cores) that each look like a different artist's study",
+              "Deliberate, unusual palette moves: dusty pink to violet dusk to sky blue to pistachio and fabric green, with material contrast between frosted glass, chrome, knit and fur",
+              "Branded festival identity (an OFFF-style wordmark) plus studio-name credits suggests a real conference title sequence that combines contributors' segments",
+              "Asymmetric compositions with tight crops and figures bleeding off the frame; every frame works as a poster"
+            ],
+            "gaps": [
+              "The bold-sans studio labels are set like captions in the corner and do nothing typographically; credits could be integrated into the sculptures in the way C engraves them",
+              "The segments feel like separate vignettes; the piece needs a connecting device or transition logic so the motion between worlds is choreographed, not cut",
+              "The 'surreal 3D organic' language is widespread in the current conference-titles scene; it needs a sharper conceptual hook to stand out from its peers"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.98,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 9,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 10,
+              "craft": 10,
+              "originality": 10
+            },
+            "tells": [
+              "One specific idea that belongs to this piece alone: a clockwork world map that builds itself mechanically, so the title becomes an orientation tool for the story's geography",
+              "Engraved astrolabe band with dragon reliefs and a burst of sun-flare light; real metal, wood and parchment materiality throughout",
+              "Credits set in a custom-feeling flared Roman with small-caps role labels and heraldic sigil bullets, sitting inside the miniature world",
+              "Clear choreography: the camera flies over the map, cities rise from cogs, then the piece resolves into the title lockup as the climax of the same astrolabe device",
+              "Iconic, memorable and shareable; benchmark-level title design"
+            ],
+            "gaps": [
+              "The palette is almost entirely warm sepia and bronze; one cold counterpoint (for the North) would add colour drama",
+              "The map frame is the flattest image in the set and could carry more depth and light",
+              "Some credit placements are small and low-contrast against busy mechanical detail"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 4,
+              "composition": 4,
+              "typography": 3,
+              "colour": 3,
+              "light_texture": 4,
+              "motion": 3,
+              "craft": 4,
+              "originality": 3
+            },
+            "tells": [
+              "The textbook 'tasteful AI' look: near-black ground, a single warm beige accent, a generic default grotesk (Inter/Helvetica-like) for 'Lumen', the dates and the URL",
+              "A literal idea: a festival of light shown as light shafts through windows and letterforms, with no specific relation to Bristol or the harbour",
+              "The last two frames are essentially the same layout of an oversized cropped 'LUMEN' with info in the top corners; the structure repeats like a slide deck",
+              "Info text ('a festival of light, Bristol Harbourside', '18\u201424 March', 'lumen.fest') is placed like a template, with no hierarchy or typographic idea",
+              "The window-grid frame is a stock gobo effect with floating dust specks, applied uniformly: an effect with no subject"
+            ],
+            "gaps": [
+              "Find a concept specific to this festival and place (harbour water reflections, actual installations, the city at night) instead of generic god-rays; C builds its whole sequence from one specific world",
+              "Commission or choose a typeface with a point of view, and make light physically interact with the letterforms (projected, refracted, built from light) rather than just showing through a cutout",
+              "Vary composition, scale and palette across shots, and add real material and depth so the piece isn't one dark layout repeated"
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "A",
+          "B",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 30.3,
+        "cost_usd": 0.15623140000000002,
+        "tokens": 71866,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "critic": {
+    "answer": {
+      "scores": {
+        "motion": 5,
+        "sound": null,
+        "craft": 7
+      },
+      "checks": {
+        "idea": true,
+        "invariant": true,
+        "arc": false,
+        "type_meaning": false,
+        "freeze_frame": false,
+        "ending": true,
+        "restraint": true,
+        "material": true,
+        "sync": null
+      },
+      "defects": [
+        "Pairs 1/6 s apart are almost identical. Within each shot, motion is a slow, constant drift of the light and dust motes, with no visible acceleration or settle, so it reads as linear.",
+        "The window-grid shot has its wordmark 'Lumen' sitting on top of the lit apertures. The title and the grid compete, and the lower-left windows are cut off behind the type.",
+        "The water-caustic panel shows a faint rectilinear tile seam or grid behind the pattern at 1:1, which reads as a texture repeat or compositing artefact.",
+        "In the caustic shot the small credit lines ('Anna Voss \u2014 projection\u2026') are low-contrast tan over a busy, moving caustic. They are close to illegible and slightly soft at 100%.",
+        "The end card tiles the word as 'LUMENLUMEN' with the letters cropped at the frame edge and almost no gap at the join. 'lumen.fest' is caught mid-reveal ('lumen.fes'), so the type-on is a plain linear wipe.",
+        "Frame 1 is a single vertical beam on near-black with nothing else in frame: dead air that won't hold as a poster.",
+        "The caustic shot breaks the raking-beam-and-dust-mote language. Its lighting is flat and its colour is a muddy olive-brown that doesn't match the warm sodium beams elsewhere."
+      ],
+      "gaps": [
+        "Choreography: nothing is driven by a force. The beam, grid and wordmark each just drift or wipe, with no light sweep that actually reveals the type on cue, no overshoot or settle, and no handoff where one shot's light becomes the next shot's aperture. The 'light through letterforms' idea is stated, but the film never stages it as an event.",
+        "Arc and pacing: three loosely related shots with a flat energy curve, a near-static opening beam and no peak at 60-80%. The caustic programme card is a different visual world dropped into the middle rather than a build toward the L/LUMEN payoff.",
+        "Finish: the light needs real volumetric depth (layered haze, beam falloff, bloom on the lit type edges) and the caustic plate needs to be seamless. Hierarchy also needs work: tiny tan captions over busy texture and a wordmark that collides with the grid fall short of the typographic precision top studios hold."
+      ]
+    },
+    "meta": {
+      "seconds": 21.8,
+      "cost_usd": 0.149138,
+      "tokens": 70575,
+      "models": [
+        "claude-opus-5-5"
+      ]
+    },
+    "pace": "lumen-light.mp4: 6.4s, 3 shots, median 1.90s, longest 2.80s\nper-second change: [30.6, 30.6, 45.3, 17.5, 42.4]\nPACE: FAIL \u2014 longest shot 2.8s > 2.5s; median shot 1.9s > 1.5s"
+  },
+  "full_scores": {
+    "idea": 4,
+    "composition": 4,
+    "typography": 3,
+    "colour": 3,
+    "light_texture": 4,
+    "motion": 4.0,
+    "craft": 5.5,
+    "originality": 3
+  },
+  "full_overall": 3.81,
+  "cost_usd": 0.62,
+  "judge_seconds": 113.1,
+  "verdict": "FAIL"
+}

@@ -1,0 +1,526 @@
+{
+  "name": "mograph_rainwell-fluid",
+  "tags": [
+    "brand-idents",
+    "motion-design"
+  ],
+  "refs": [
+    "bbc-two-ident",
+    "adobe-cc-ident",
+    "game-of-thrones"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 3,
+      "composition": 3,
+      "typography": 3,
+      "colour": 5,
+      "light_texture": 2,
+      "motion": 3,
+      "craft": 4,
+      "originality": 2
+    },
+    "overall": 3.12,
+    "judged_professional": "0/3",
+    "pro_rate": 0.0,
+    "mean_rank": 4,
+    "gaps": [
+      "It needs a specific idea beyond 'we measure moisture', for example something tactile about thirst, soil or rain that only this brand could own, the way A builds a world",
+      "It needs real material and light (soil, water, glass, leaf translucency) instead of flat vector fills on empty grounds",
+      "The typography needs a point of view: a custom or characterful wordmark integrated with the image and real scale contrast, not a default grotesk centred on a flat colour",
+      "It needs a real concept beyond showing the feature, such as a visual metaphor for thirst or time, or an actual plant and water filmed or rendered with material and light",
+      "The type needs a point of view: a custom or carefully chosen face, layout that interacts with the image, and scale contrast that is designed rather than 'big number + caption'",
+      "It needs choreography and variety between frames (camera, scale, transitions) instead of reusing one centred layout with swapped values",
+      "It needs a real idea that conveys 'thirst' memorably, such as water, soil or roots as a material subject, instead of a dashboard gauge and a logo reveal",
+      "It needs typography with a point of view: a custom or characterful wordmark, expressive scale contrast, and type integrated with the image rather than default sans captions beside a circle",
+      "It needs light, texture and depth (tactile soil, droplets, real plant matter) and varied, choreographed compositions instead of one centred layout repeated with swapped values"
+    ],
+    "tells": [
+      "Literal, obvious idea: product name plus a diagram of the feature (a moisture-percentage gauge, then a plant, then the logo)",
+      "Default bold grotesk headline with small default sans captions, placed like slides; the lowercase 'next water: thursday' label is generic UI-copy styling",
+      "Flat vector clip-art plant that is symmetrical and has no texture, light or depth",
+      "The 31% and 62% frames are the same layout with the numbers swapped, which is slide-deck structure",
+      "The tasteful-startup palette of forest green, coral and mint, used as flat fills on mostly empty frames",
+      "The only 'motion' ideas are a falling leaf, a rising fill level and a baseline bounce on 'well', all of them template-grade transitions",
+      "A literal, obvious product explainer: product name + a circle gauge showing soil moisture % + a vector plant + logo with tagline",
+      "Default geometric-grotesk type (Inter/S\u00f6hne-like), with small lowercase labels sitting next to a big number like a dashboard slide",
+      "Slide-deck structure: two near-identical frames (31% \u2192 62%) with only the number and the fill changed; the same centred logo lockup repeated twice",
+      "Flat vector, symmetrical clip-art plant and pot. No light, texture or depth anywhere",
+      "The colour palette (forest green / coral / mint) is a safe startup-brand trio. Most of the frame is empty, and frame 1 is a single leaf on a flat ground",
+      "The 'rain' baseline-shift gag in the logo is the only typographic idea, and it is a common one",
+      "The idea is literal: product name, a moisture-percentage circle diagram, and a plant icon, with nothing a viewer would remember",
+      "The type is default geometric/grotesk sans in lowercase with tiny body captions ('soil moisture \u00b7 fern, kitchen', 'next water: thursday'), placed like slide labels",
+      "Frames 2 and 3 are the same layout with the number swapped (31% to 62%), which is slide-deck structure",
+      "The illustration is flat vector clip-art: a symmetrical pot and leaves with no texture, light, material or depth",
+      "The 'raining' bounce of the wordmark ('rain\u02b7\u1d49\u02e1\u02e1') and the dot falling onto it is the only typographic gesture, a stock kinetic-type trick",
+      "Big flat colour fields, mostly empty frames, and a single coral accent on green and mint: the generic 'tasteful' template palette"
+    ]
+  },
+  "refs_summary": {
+    "bbc-two-ident": {
+      "overall": 7.38,
+      "judged_professional": "3/3",
+      "mean_rank": 2.33
+    },
+    "adobe-cc-ident": {
+      "overall": 7.38,
+      "judged_professional": "3/3",
+      "mean_rank": 2.67
+    },
+    "game-of-thrones": {
+      "overall": 9.25,
+      "judged_professional": "3/3",
+      "mean_rank": 1
+    }
+  },
+  "ref_mean": 8.0,
+  "delta": -4.88,
+  "trials": [
+    {
+      "key": {
+        "A": "game-of-thrones",
+        "B": "bbc-two-ident",
+        "C": "candidate",
+        "D": "adobe-cc-ident"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 10,
+              "motion": 9,
+              "craft": 10,
+              "originality": 10
+            },
+            "tells": [
+              "A specific, memorable idea: the world map is built as a clockwork mechanism of cities unfolding from the terrain, so the title sequence works as orientation for the story",
+              "Real material and light: tarnished brass, carved wood and a blown-out sun glow at the core of the armillary sphere, with shallow depth of field that makes the models feel miniature",
+              "The armillary band with engraved dragon friezes opens and closes the piece, so the first and last frames answer each other",
+              "Credits are set in a period-appropriate engraved serif with small heraldic sigils and placed in negative space inside each tableau, so they belong to the world rather than sitting on top of it",
+              "The frames move from macro band to city mechanism to flat map with a camera path, then pull back to the logo. Every frame is a different composition with clear camera choreography"
+            ],
+            "gaps": [
+              "It is the benchmark entry. The muted sepia palette is tonally narrow in places",
+              "The flat map frame is visually weaker than the mechanical tableaux around it",
+              "The credit type is small and conventional next to how inventive the imagery is"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 9,
+              "originality": 7
+            },
+            "tells": [
+              "Rich material vocabulary: quilted fabric, crinkled foil, foam, knurled metal, wireframe solids, all lit with soft studio light and believable contact shadows",
+              "A deliberate per-variant palette system (rust/blue, pink/magenta, green, lilac/acid yellow), so each ident is a colourway of one kit",
+              "The flat-lay 'inventory' frames work as the payoff against the dense physics-pile frames, with a rolling ball implying a chain-reaction mechanic",
+              "Pegboard ground and the small broadcaster logo show restraint suited to a channel ident system",
+              "Different aspect crops suggest the system was built for several deliverables"
+            ],
+            "gaps": [
+              "The idea is a tactile toybox, which is pleasant but less specific: the shapes have no meaning tied to the channel or its content, unlike A's map-as-world",
+              "Type is only a small stock channel logo with no typographic idea integrated into the objects",
+              "The dark grey ground and centred piles repeat across variants. It needs a camera move or a reveal with more surprise to match A's choreography"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.7,
+            "scores": {
+              "idea": 6,
+              "composition": 7,
+              "typography": 5,
+              "colour": 8,
+              "light_texture": 7,
+              "motion": 5,
+              "craft": 7,
+              "originality": 6
+            },
+            "tells": [
+              "A commissioned-artist format: one logo mark reinterpreted in very different hands (embossed UI gradient, iridescent chrome 3D, risograph/punk collage, kinetic letter geometry, floral vector, photo-collage with butterflies)",
+              "Several frames have real texture and point of view, notably the halftone/paper collage and the photo-montage",
+              "The variety is the point, but there is no choreography between frames. Each frame stands alone like a poster rather than a moment in a film"
+            ],
+            "gaps": [
+              "There is no through-line or transition logic. A links every frame with one camera path, while D reads as a gallery of separate executions",
+              "The logo is centred in almost every frame, so the composition is repeated and only the style changes",
+              "Some executions (the pink gradient emboss and the iridescent chrome blobs) lean on trend-default effects with no subject behind them"
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 3,
+              "composition": 3,
+              "typography": 3,
+              "colour": 5,
+              "light_texture": 1,
+              "motion": 3,
+              "craft": 4,
+              "originality": 2
+            },
+            "tells": [
+              "Literal, obvious idea: product name plus a diagram of the feature (a moisture-percentage gauge, then a plant, then the logo)",
+              "Default bold grotesk headline with small default sans captions, placed like slides; the lowercase 'next water: thursday' label is generic UI-copy styling",
+              "Flat vector clip-art plant that is symmetrical and has no texture, light or depth",
+              "The 31% and 62% frames are the same layout with the numbers swapped, which is slide-deck structure",
+              "The tasteful-startup palette of forest green, coral and mint, used as flat fills on mostly empty frames",
+              "The only 'motion' ideas are a falling leaf, a rising fill level and a baseline bounce on 'well', all of them template-grade transitions"
+            ],
+            "gaps": [
+              "It needs a specific idea beyond 'we measure moisture', for example something tactile about thirst, soil or rain that only this brand could own, the way A builds a world",
+              "It needs real material and light (soil, water, glass, leaf translucency) instead of flat vector fills on empty grounds",
+              "The typography needs a point of view: a custom or characterful wordmark integrated with the image and real scale contrast, not a default grotesk centred on a flat colour"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "B",
+          "D",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 27.7,
+        "cost_usd": 0.1530552,
+        "tokens": 71708,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "game-of-thrones",
+        "B": "bbc-two-ident",
+        "C": "adobe-cc-ident",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 8,
+              "colour": 9,
+              "light_texture": 10,
+              "motion": 9,
+              "craft": 10,
+              "originality": 10
+            },
+            "tells": [
+              "A distinctive core idea: the world is a clockwork map built on the inside of a sphere (an astrolabe), so the title sequence is also a guide to the geography of the story",
+              "Real material work: tooled, engraved metal bands with dragon reliefs, wood and brass gears, a weathered parchment map, all with surface wear",
+              "Motivated light from a central sun-core that blows out the frame. Atmospheric haze and shallow depth of field give real depth",
+              "The frames show choreography: macro band \u2192 city pushing up out of the ground \u2192 mechanism detail \u2192 armillary rings \u2192 map with a location tag \u2192 emblem lockup. The same object is seen from very different scales and angles",
+              "Credits are set in a classical engraved-caps face with small caps for the roles, each paired with a house sigil. The type sits in the world and is not laid over it like a slide",
+              "The title lockup is built into the same engraved ring, so the logo comes out of the world it introduces"
+            ],
+            "gaps": [
+              "Benchmark entry. The credit type is small against busy textures in places (e.g. 'Oral Norrie Ottey' over the rings) and could hold its own space better",
+              "The palette stays in one warm sepia band across every frame. A cold counterpoint for some locations would add range",
+              "The final lockup goes back to a symmetrical, centred, sunburst emblem. It is more conventional than the mechanism sequence before it"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 7,
+              "colour": 9,
+              "light_texture": 8,
+              "motion": 7,
+              "craft": 8,
+              "originality": 8
+            },
+            "tells": [
+              "The brand mark is a fixed armature and each frame reinterprets it in a fully different medium: debossed soft-plastic UI, iridescent chrome 3D, gritty xerox/risograph collage, a kinetic letter structure, flat floral illustration, photo collage with butterflies and figures",
+              "Deliberate, saturated palettes that change with each style (hot pink gradient, acid rainbow chrome, fluoro coral and green on black, violet botanicals)",
+              "Real texture variety: halftone and photocopy grain, emboss, glossy specular highlights, paper cut-outs",
+              "Typography is used as image: letterforms built around the mark in frame 4 and 'BOOM' type in the collage frame",
+              "It reads as a curated series by several artists, each working with the same constraint"
+            ],
+            "gaps": [
+              "The mark is centred in almost every frame. It is an anthology of styles rather than one choreographed film, and nothing visibly transitions from one frame to the next",
+              "The pink embossed frame is close to a generic gradient-on-logo treatment and is the weakest of the set",
+              "It lacks A's single world-building idea. The concept ('many artists, one mark') is a well-known brand-campaign formula"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 6,
+              "colour": 7,
+              "light_texture": 8,
+              "motion": 7,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "A tactile 3D object world: quilted fabric, foil, foam, ribbed and padded forms, chrome springs and wireframe outlines, all lying on a pegboard surface",
+              "A complete flat-lay 'catalogue' of the same objects in two palettes (green, then lilac with acid yellow). It is a controlled system with colourway variations, typical of a broadcast ident package",
+              "Implied motion: objects tumble and pile in a chain, with a light point and focus pulls that suggest a chain-reaction, physics-driven sequence",
+              "Shading reads as real soft-studio light with contact shadows and depth of field",
+              "The network wordmark is placed small and in one consistent spot, as broadcast-ident discipline requires"
+            ],
+            "gaps": [
+              "The idea is 'pleasing pile of textured shapes'. This contemporary 3D trope comes close to the 'stock primitives' tell and has no narrative or surprise like A's mechanism",
+              "Type is only the channel logo dropped onto the render. There is no typographic integration with the objects",
+              "The dark grey ground and centred clusters repeat across frames. It needs bolder camera grammar and scale contrast to make every frame a poster"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.88,
+            "scores": {
+              "idea": 3,
+              "composition": 3,
+              "typography": 3,
+              "colour": 5,
+              "light_texture": 2,
+              "motion": 3,
+              "craft": 3,
+              "originality": 2
+            },
+            "tells": [
+              "A literal, obvious product explainer: product name + a circle gauge showing soil moisture % + a vector plant + logo with tagline",
+              "Default geometric-grotesk type (Inter/S\u00f6hne-like), with small lowercase labels sitting next to a big number like a dashboard slide",
+              "Slide-deck structure: two near-identical frames (31% \u2192 62%) with only the number and the fill changed; the same centred logo lockup repeated twice",
+              "Flat vector, symmetrical clip-art plant and pot. No light, texture or depth anywhere",
+              "The colour palette (forest green / coral / mint) is a safe startup-brand trio. Most of the frame is empty, and frame 1 is a single leaf on a flat ground",
+              "The 'rain' baseline-shift gag in the logo is the only typographic idea, and it is a common one"
+            ],
+            "gaps": [
+              "It needs a real concept beyond showing the feature, such as a visual metaphor for thirst or time, or an actual plant and water filmed or rendered with material and light",
+              "The type needs a point of view: a custom or carefully chosen face, layout that interacts with the image, and scale contrast that is designed rather than 'big number + caption'",
+              "It needs choreography and variety between frames (camera, scale, transitions) instead of reusing one centred layout with swapped values"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "C",
+          "B",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 30.6,
+        "cost_usd": 0.1568466,
+        "tokens": 71888,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "adobe-cc-ident",
+        "B": "bbc-two-ident",
+        "C": "game-of-thrones",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 8,
+              "motion": 7,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "One brand mark reinterpreted through very different visual languages: embossed gradient relief, iridescent chrome 3D, riso/collage grit with hand-painted 'BOOM', a kinetic letterform lattice, a symmetrical floral vector piece, and a photo-collage with butterflies and tropical leaves",
+              "Each frame commits fully to its own material logic (paper grain, halftone, specular chrome, torn-edge collage), which suggests several illustrators were commissioned rather than one template run with different filters",
+              "The ring is dimensional in every frame: it threads over and under other elements and is integrated with them, not pasted on top",
+              "Deliberately clashing, saturated palettes that change from frame to frame and still hold together as a set"
+            ],
+            "gaps": [
+              "The structure is an anthology, the same logo shown in six styles, so there is no single idea or story building across the film the way C's clockwork map builds",
+              "The centred logo repeats in almost every frame, so the composition changes little and the choreography between frames reads as cuts between styles rather than motion with weight",
+              "Type appears only as texture ('BOOM', the scattered letterforms). There is no typographic system that ties the piece together or lands an end line"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 6,
+              "colour": 7,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 9,
+              "originality": 7
+            },
+            "tells": [
+              "The materials are exceptional: quilted foil, ribbed knit, foam, felt, padded vinyl and coiled springs, each with believable microsurface detail and soft contact shadows on a dark pegboard ground",
+              "The flat-lay grids are deliberately recoloured (green to violet/acid yellow), which points to a system of variations rather than a single render",
+              "The frames suggest physical choreography: a small light ball rolls along the pegs and the objects pile up, tumble and sort, so the motion has weight",
+              "The broadcast logo is placed small and held with restraint, as a confident channel ident would do"
+            ],
+            "gaps": [
+              "It is a materials-and-physics showcase without a narrative turn. It needs a moment of surprise or meaning beyond objects piling up and then laid out in a grid",
+              "Some of the forms (cubes, wireframe pyramids, cylinders) lean towards primitive vocabulary. More bespoke object design would make the world feel owned rather than kit-built",
+              "The dark-grey ground with the same low key light in every frame limits mood. C uses light dramatically (backlit flares, warm and cool contrast) and B never does"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 9,
+              "colour": 8,
+              "light_texture": 10,
+              "motion": 10,
+              "craft": 10,
+              "originality": 10
+            },
+            "tells": [
+              "The idea belongs only to this piece: the world is a clockwork tabletop map whose cities wind up out of the terrain, so the title sequence works as an orientation device for the show",
+              "The light is real and theatrical: a blown-out sun inside an armillary sphere, warm-gold flares against cold slate terrain, and tilt-shift depth of field",
+              "Every surface has texture: engraved bronze bands with dragon relief, weathered parchment map, carved wood and brass gears",
+              "The credits are set in a carefully chosen inscriptional serif with small heraldic sigils, and the type sits inside the 3D space instead of floating over it",
+              "The camera choreography is legible across the frames: it flies over the map, dives into a city, cogs build the towers, and it resolves on the emblem lockup"
+            ],
+            "gaps": [
+              "Colour stays within a warm sepia/bronze range. A sharper accent could separate the regions even more",
+              "The end lockup is the most conventional frame in the film, a centred emblem with the title, and less inventive than the world-building before it",
+              "No serious gaps. This is the benchmark entry"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 3,
+              "composition": 4,
+              "typography": 3,
+              "colour": 5,
+              "light_texture": 2,
+              "motion": 4,
+              "craft": 4,
+              "originality": 2
+            },
+            "tells": [
+              "The idea is literal: product name, a moisture-percentage circle diagram, and a plant icon, with nothing a viewer would remember",
+              "The type is default geometric/grotesk sans in lowercase with tiny body captions ('soil moisture \u00b7 fern, kitchen', 'next water: thursday'), placed like slide labels",
+              "Frames 2 and 3 are the same layout with the number swapped (31% to 62%), which is slide-deck structure",
+              "The illustration is flat vector clip-art: a symmetrical pot and leaves with no texture, light, material or depth",
+              "The 'raining' bounce of the wordmark ('rain\u02b7\u1d49\u02e1\u02e1') and the dot falling onto it is the only typographic gesture, a stock kinetic-type trick",
+              "Big flat colour fields, mostly empty frames, and a single coral accent on green and mint: the generic 'tasteful' template palette"
+            ],
+            "gaps": [
+              "It needs a real idea that conveys 'thirst' memorably, such as water, soil or roots as a material subject, instead of a dashboard gauge and a logo reveal",
+              "It needs typography with a point of view: a custom or characterful wordmark, expressive scale contrast, and type integrated with the image rather than default sans captions beside a circle",
+              "It needs light, texture and depth (tactile soil, droplets, real plant matter) and varied, choreographed compositions instead of one centred layout repeated with swapped values"
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "B",
+          "A",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 30.5,
+        "cost_usd": 0.15625060000000002,
+        "tokens": 71863,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "critic": {
+    "answer": {
+      "scores": {
+        "motion": 5,
+        "sound": null,
+        "craft": 6
+      },
+      "checks": {
+        "idea": true,
+        "invariant": true,
+        "arc": false,
+        "type_meaning": true,
+        "freeze_frame": false,
+        "ending": true,
+        "restraint": true,
+        "material": false,
+        "sync": null
+      },
+      "defects": [
+        "Third second is nearly dead (per-second change 6.2): the plant/'next water' shot holds almost still with only tiny leaf sway, which reads as dead air",
+        "Opening frame is a lone small drop on an empty field; it has no composition and doesn't work as a poster",
+        "The gauge's liquid surface is a thin, low-amplitude wobble with no slosh or overshoot when the fill level jumps 31\u219243\u219262%, so the liquid has no weight",
+        "Caption word 'kitchen' arrives on a dropped baseline with lighter weight and pops into place; the stagger looks like a glitch rather than a choice",
+        "The 'well' letters bounce on raised baselines and settle in a uniform, mechanical way with no per-letter overlap visible in the 1/6 s pair",
+        "Surfaces are fully flat vector: no grain, no light and no falloff on the gauge sphere or plant; at 100% it reads as a UI kit, not a film"
+      ],
+      "gaps": [
+        "Energy curve: two busy seconds, then a near-static third, then everything piles into the logo. There's no build to a peak at 60-80% and no deliberate release. The drop\u2192gauge\u2192plant\u2192logo chain needs continuous transforms (the drop becoming the liquid, the liquid feeding the plant) instead of cuts between still compositions",
+        "Weight and physics: the hero material is water, but nothing behaves like it. No splash on impact, no slosh or overshoot in the gauge, no squash on the falling drop, no drip timing into the i-dot. Top studios would sell the whole piece on fluid secondary motion",
+        "Finish and material: flat fills, no texture, no lighting on the sphere, generic sans captions at small sizes. Adding subtle grain, a meniscus highlight and refraction, and one more deliberate typographic voice would lift it from clean template to authored work"
+      ]
+    },
+    "meta": {
+      "seconds": 19.6,
+      "cost_usd": 0.1456218,
+      "tokens": 70334,
+      "models": [
+        "claude-opus-5-5"
+      ]
+    },
+    "pace": "rainwell-fluid.mp4: 5.1s, 4 shots, median 1.21s, longest 1.50s\nper-second change: [110.4, 104.2, 6.2, 142.2]\nPACE: PASS"
+  },
+  "full_scores": {
+    "idea": 3,
+    "composition": 3,
+    "typography": 3,
+    "colour": 5,
+    "light_texture": 2,
+    "motion": 4.0,
+    "craft": 5.0,
+    "originality": 2
+  },
+  "full_overall": 3.38,
+  "cost_usd": 0.612,
+  "judge_seconds": 108.4,
+  "verdict": "FAIL"
+}

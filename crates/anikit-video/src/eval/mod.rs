@@ -370,6 +370,8 @@ pub(crate) struct Node {
     pub brush: Option<Arc<graphic::Brush>>,
     /// A pattern whose `field` reads `t`: regenerated every frame (pattern, box size).
     pub live_pattern: Option<Arc<(graphic::Pat, [f64; 2])>>,
+    /// Ink texture follows the layer (its wear moves with it) rather than the frame.
+    pub ink_follow: bool,
     /// First of 5 animatable slots for the treatments (toneAmount, halftone cell/angle/gain, ink amount); 0 = none.
     pub treat_slot: u8,
     /// Stepped time in fps (0 = smooth): the layer animates "on twos" etc.
@@ -483,6 +485,17 @@ thread_local! {
 /// Whether this is the scale-collecting pass (shader layers emit nothing).
 pub(crate) fn collecting_scales() -> bool {
     COMP_SCALE.with(|c| matches!(&*c.borrow(), Some((true, _))))
+}
+
+/// Run `f` outside any composition-scale pass of this thread. A composition
+/// rendered on its own (as a 3D texture) must emit its shader layers even when
+/// the frame that asked for it is in the scale-collecting pass; otherwise the
+/// texture cache stores an empty list and the texture stays blank.
+pub(crate) fn outside_scale_pass<R>(f: impl FnOnce() -> R) -> R {
+    let saved = COMP_SCALE.with(|c| c.borrow_mut().take());
+    let r = f();
+    COMP_SCALE.with(|c| *c.borrow_mut() = saved);
+    r
 }
 
 thread_local! {
@@ -1518,6 +1531,15 @@ impl Evaluator {
         let mut alpha = opacity;
         if needs_layer {
             let mut filters = n.treat.clone();
+            if n.ink_follow {
+                // Wear locked to the object: the noise origin rides with the layer's position.
+                for f in filters.iter_mut() {
+                    if let Filter::Ink { ox, oy, .. } = f {
+                        *ox = -xf[4];
+                        *oy = -xf[5];
+                    }
+                }
+            }
             if n.treat_slot != 0 {
                 let b = n.treat_slot as usize;
                 for f in filters.iter_mut() {
@@ -2100,7 +2122,11 @@ pub(crate) fn scale_filters(ops: &mut [Op], s: f32) {
                     }
                     Filter::Glow { radius, .. } => *radius *= s,
                     Filter::Halftone(h) => h.cell *= s,
-                    Filter::Ink { scale, .. } => *scale *= s,
+                    Filter::Ink { scale, ox, oy, .. } => {
+                        *scale *= s;
+                        *ox *= s;
+                        *oy *= s;
+                    }
                     Filter::ColorMatrix(_) | Filter::Tone(_) => {}
                 }
             }

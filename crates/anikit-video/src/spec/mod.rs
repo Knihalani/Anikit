@@ -222,6 +222,8 @@ pub struct InkSpec {
     /// Size of the blotches in px. Default 28.
     pub scale: Option<f64>,
     pub seed: Option<u32>,
+    /// Pin the wear to the frame (the paper is the screen) instead of the layer (default: it moves with the layer).
+    pub fixed: Option<bool>,
 }
 
 /// `brush`: on, or the full settings.
@@ -283,7 +285,8 @@ pub struct HalftoneSpec {
     pub angle: Option<Num>,
     /// `dot` (default), `line` or `square`.
     pub shape: Option<String>,
-    /// Ink colour. Default `"source"`: each dot keeps the layer's colour there.
+    /// Ink colour. Default `"source"`: each dot keeps the layer's colour there. `"cmyk"`: a four-colour
+    /// separation (C, M, Y, K screens at angle + 15/75/0/45°) multiplied on the paper (default white).
     pub ink: Option<String>,
     /// Paper colour under the dots, or `"none"` (default): only the dots remain.
     pub paper: Option<String>,
@@ -796,8 +799,11 @@ pub struct Layer {
     pub tone_range: Option<[f64; 2]>,
     /// Print halftone screen: a cell size in px, or `{ "cell", "angle", "shape", "ink", "paper", "gain" }`.
     pub halftone: Option<HalftoneValue>,
+    /// A print treatment in one word, as starting values for the keys above (any key you give wins):
+    /// `photocopy`, `newsprint`, `engraving`, `riso`, `screenprint`.
+    pub print: Option<String>,
     /// Uneven ink coverage (riso, screenprint, letterpress): amount 0..1, or `{ "amount", "scale": px, "seed" }`.
-    /// Fixed to the frame like the paper, so moving shapes travel through it.
+    /// The wear moves with the layer (material locked to the object); `fixed: true` pins it to the frame.
     pub ink_texture: Option<InkValue>,
     /// Collage cut-out: `"torn"`, `"scissor"` or `"clean"`, or `{ "edge", "amount": px, "rim": px, "rimColor", "shadow": bool, "seed" }`.
     /// Cuts the layer's box with that edge, backs it with a paper rim and a printed shadow. Needs a numeric `width`/`height` (or a `cell`).
@@ -857,6 +863,9 @@ pub struct Layer {
     /// Text: wrap at this width (px, `"40vw"`, `"60%"`) without fixing the box
     /// width (`width` wraps *and* sets the box).
     pub max_width: Option<Num>,
+    /// Balanced line breaks when the text wraps (default on for headlines,
+    /// 4% of the frame height and up): every line about the same length.
+    pub balance: Option<bool>,
     /// `chars`, `words`, `lines`.
     pub split: Option<String>,
     pub reveal: Option<Num>,
