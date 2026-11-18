@@ -1,0 +1,382 @@
+{
+  "name": "pass2",
+  "tags": [
+    "product-launch",
+    "explainer-2d"
+  ],
+  "refs": [
+    "wealthsimple-trade",
+    "tiffany-holiday",
+    "vertigo"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 8.0,
+      "composition": 8.0,
+      "typography": 6.0,
+      "colour": 7.0,
+      "light_texture": 7.0,
+      "motion": 8.5,
+      "craft": 8.0,
+      "originality": 7.5
+    },
+    "overall": 7.5,
+    "judged_professional": "2/2",
+    "pro_rate": 1.0,
+    "mean_rank": 2,
+    "gaps": [
+      "The end-card type is weak: a thin outlined 'ANIKIT' built from figures, over a default slab 'VIDEO' that is centred like a slide. Compare A's typography, which is fully integrated with the image",
+      "The palette is the expected green turf plus maroon, and it needs a bolder colour decision to become an image that stays with the viewer",
+      "There is no emotional or thematic layer beyond the ident gag; A ties every visual to the meaning of its subject",
+      "The end-card type is weak: thin outline caps spelled out in band members over a generic slab 'VIDEO' read as a default rather than a typographic idea, and fall well short of A's slab-serif credits",
+      "The colour is pleasant but literal, and none of it has the unsettling, deliberate tension of A's red, magenta and green",
+      "The idea serves a logo reveal; the formations could carry more surprise or meaning, for example a formation that comments on the brand rather than just leading up to it"
+    ],
+    "tells": [
+      "A specific, memorable idea: an overhead marching-band drill on a football field whose formations finally spell the brand name. The reveal is earned by the choreography",
+      "Clear choreography between frames: a grid, then diagonal ranks, then concentric rings, then a spiral, then sine-wave files, then the lettering. Each formation is different and the movement reads as continuous",
+      "Considered top-down light: long cast shadows from the performers, tonal striping on the turf, and gold and white accents for the instrument and flag sections",
+      "Stylised mushroom-like performers give the piece a voice of its own rather than looking like generic crowd simulation",
+      "A specific, witty concept: a top-down marching band whose formations spell out the brand name at the end",
+      "Real choreography across frames: diagonal ranks, then concentric rings, a spiral, sine-wave files, and finally letterforms. Every frame is a different formation",
+      "Considered top-down lighting: long consistent drop shadows, mowed-stripe turf texture and vignetting give the miniature tabletop feel weight",
+      "The palette is limited and grounded in the subject (turf greens, maroon uniforms, gold brass)"
+    ]
+  },
+  "refs_summary": {
+    "wealthsimple-trade": {
+      "overall": 2.75,
+      "judged_professional": "0/2",
+      "mean_rank": 4
+    },
+    "tiffany-holiday": {
+      "overall": 6.25,
+      "judged_professional": "2/2",
+      "mean_rank": 3
+    },
+    "vertigo": {
+      "overall": 9.5,
+      "judged_professional": "2/2",
+      "mean_rank": 1
+    }
+  },
+  "ref_mean": 6.17,
+  "delta": 1.33,
+  "trials": [
+    {
+      "key": {
+        "A": "vertigo",
+        "B": "wealthsimple-trade",
+        "C": "candidate",
+        "D": "tiffany-holiday"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 10,
+              "composition": 10,
+              "typography": 10,
+              "colour": 10,
+              "light_texture": 9,
+              "motion": 9,
+              "craft": 10,
+              "originality": 10
+            },
+            "tells": [
+              "A specific conceptual idea: the extreme close-up of an eye becomes the source of the spirograph spirals, so the title sequence shows the film's theme (obsession, dizziness, looking) instead of illustrating it",
+              "Lissajous/spirograph forms change between frames: a magenta rosette, then a green M\u00f6bius-like twist, then a tilted green disc. This shows a choreographed progression, not one repeated layout",
+              "Deliberate, unusual palette: monochrome blood-red photography against a black ground with magenta and acid-green line work",
+              "Typography with a point of view: an outlined slab-serif title, small caps for roles against large caps for names, and a ragged right-aligned credit stack that sits against the spiral as a counterweight",
+              "Bookended structure: the piece opens and closes on the eye, which shows intent across the whole sequence"
+            ],
+            "gaps": [
+              "This is the benchmark entry, so there is no gap above it",
+              "Credit-block density in frame 4 crowds the spiral slightly; the type could be given more air",
+              "The flat black grounds in the mid-section are austere next to the photographic eye frames, and a little more texture there would connect the two worlds"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 6,
+              "colour": 7,
+              "light_texture": 7,
+              "motion": 9,
+              "craft": 8,
+              "originality": 8
+            },
+            "tells": [
+              "A specific, memorable idea: an overhead marching-band drill on a football field whose formations finally spell the brand name. The reveal is earned by the choreography",
+              "Clear choreography between frames: a grid, then diagonal ranks, then concentric rings, then a spiral, then sine-wave files, then the lettering. Each formation is different and the movement reads as continuous",
+              "Considered top-down light: long cast shadows from the performers, tonal striping on the turf, and gold and white accents for the instrument and flag sections",
+              "Stylised mushroom-like performers give the piece a voice of its own rather than looking like generic crowd simulation"
+            ],
+            "gaps": [
+              "The end-card type is weak: a thin outlined 'ANIKIT' built from figures, over a default slab 'VIDEO' that is centred like a slide. Compare A's typography, which is fully integrated with the image",
+              "The palette is the expected green turf plus maroon, and it needs a bolder colour decision to become an image that stays with the viewer",
+              "There is no emotional or thematic layer beyond the ident gag; A ties every visual to the meaning of its subject"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.55,
+            "scores": {
+              "idea": 6,
+              "composition": 7,
+              "typography": 4,
+              "colour": 7,
+              "light_texture": 7,
+              "motion": 6,
+              "craft": 6,
+              "originality": 5
+            },
+            "tells": [
+              "A jewelled bird (it reads as a brand's signature brooch) flies through a holiday New York: a clock face, a yellow cab seen from overhead, a brownstone, a ballerina, a set dining table. This is a coherent luxury-holiday narrative device with real lighting and depth of field",
+              "Practical-feeling light: bokeh, candlelight and fairy lights, with a warm/cool split between interiors and the night city",
+              "The final frame (a painterly Monument Valley scene with a shirtless figure, in a different aspect ratio) breaks the style and the world completely. Either the edit is inconsistent or the frame comes from a different source, and this lowers confidence",
+              "The sparkle-trail-through-the-city idea is the genre's expected trope, and the overhead street frame has muddled, tiny figure staging"
+            ],
+            "gaps": [
+              "No visible typography, and the absence does not serve a concept the way A's integrated credits do. A typographic or graphic system is needed to give the piece a signature",
+              "Stylistic consistency: the last frame belongs to a different film. Hold one world, palette and rendering language from start to finish",
+              "The idea is the conventional 'magic sparkle tours the city at Christmas'. It needs a specific, ownable twist comparable to A's eye-to-spiral transformation or C's drill-to-logo payoff"
+            ]
+          },
+          "B": {
+            "verdict": "not professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 2,
+              "composition": 3,
+              "typography": 2,
+              "colour": 4,
+              "light_texture": 4,
+              "motion": 2,
+              "craft": 3,
+              "originality": 2
+            },
+            "tells": [
+              "Every frame repeats the same composition: one centred, roughly circular object on a flat cream, beige or pastel seamless ground. This is slide-deck structure with the subject swapped",
+              "No through-line: earbuds, a steering wheel with floating traffic-sign pills, a cannabis bud, a plug in a glowing porthole, a ball-shaped CRT with a chess board, a sci-fi reactor ring. The subjects are unrelated, as if generated from prompts",
+              "A placeholder-UI tell: generic circular icon badges (an arrow, a yield sign, a stop sign, a traffic light) float around the wheel",
+              "Soft, unmotivated studio light with a generic 'tasteful AI render' finish, and inconsistent frame aspect ratios",
+              "No type at all, and nothing replaces it as a carrier of meaning, so the absence works against the piece",
+              "Nothing changes between frames except the object, so no choreography can be inferred"
+            ],
+            "gaps": [
+              "There is no idea. It needs a single concept that links the objects and pays off, as A's eye-to-spiral metaphor does",
+              "Break the centred-object-on-seamless template by building compositions with scale contrast, cropping, layering and depth that differ from frame to frame",
+              "Introduce designed typography and a deliberate palette and material language, instead of default pastel grounds and generic soft-box lighting"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "C",
+          "D",
+          "B"
+        ]
+      },
+      "meta": {
+        "seconds": 34.3,
+        "cost_usd": 0.1666532,
+        "tokens": 72399,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "vertigo",
+        "B": "wealthsimple-trade",
+        "C": "tiffany-holiday",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 9,
+              "colour": 10,
+              "light_texture": 8,
+              "motion": 9,
+              "craft": 9,
+              "originality": 10
+            },
+            "tells": [
+              "One idea runs through the whole film and belongs only to it: an extreme close-up of an eye gives way to spirograph spirals, so vertigo is the subject and also the motion",
+              "Monochrome red tint on the face, then magenta and acid-green line figures on black. The palette is deliberate, strange and unsettling",
+              "Wide slab-serif outline type for the title and the director's name, credits stacked to the right against a figure on the left; scale contrast and placement change from card to card",
+              "The film opens and closes on the eye, and the spirals change form and colour from card to card (pink rosette to green twisted ribbon), so the frames show real choreography",
+              "This is Saul Bass's title sequence for Vertigo (1958), credited on screen; it is the canonical reference for the form"
+            ],
+            "gaps": [
+              "Nothing important; the credit cards are dense and have the period look of hot-metal type, which some viewers will read as busy",
+              "The black interstitial cards are flat and lack the photographic texture of the eye frames",
+              "The spirals are clean mechanical drawings with no material quality, which is by design"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 6,
+              "colour": 7,
+              "light_texture": 7,
+              "motion": 8,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "A specific, witty concept: a top-down marching band whose formations spell out the brand name at the end",
+              "Real choreography across frames: diagonal ranks, then concentric rings, a spiral, sine-wave files, and finally letterforms. Every frame is a different formation",
+              "Considered top-down lighting: long consistent drop shadows, mowed-stripe turf texture and vignetting give the miniature tabletop feel weight",
+              "The palette is limited and grounded in the subject (turf greens, maroon uniforms, gold brass)"
+            ],
+            "gaps": [
+              "The end-card type is weak: thin outline caps spelled out in band members over a generic slab 'VIDEO' read as a default rather than a typographic idea, and fall well short of A's slab-serif credits",
+              "The colour is pleasant but literal, and none of it has the unsettling, deliberate tension of A's red, magenta and green",
+              "The idea serves a logo reveal; the formations could carry more surprise or meaning, for example a formation that comments on the brand rather than just leading up to it"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.7,
+            "scores": {
+              "idea": 6,
+              "composition": 7,
+              "typography": 5,
+              "colour": 7,
+              "light_texture": 8,
+              "motion": 7,
+              "craft": 7,
+              "originality": 5
+            },
+            "tells": [
+              "A narrative luxury-holiday spot: a jewelled bird flies through a New York of clock faces, a yellow cab seen from above, a ballet stage and a set dinner table",
+              "Real cinematic light: shallow depth of field, practical bokeh, a spotlit stage, warm interiors against blue dusk",
+              "Camera variety is high (overhead, macro, wide, interior), which suggests an expensive, choreographed production",
+              "Weakness: the last painterly desert frame clashes stylistically with the photoreal CG, and the jewelled-bird-with-sparkle-trail motif is a holiday-ad clich\u00e9"
+            ],
+            "gaps": [
+              "The idea is a familiar luxury-Christmas trope (magic sparkle trail through the city); it needs something only this brand or story could own, the way A's eye-and-spiral is unique to its film",
+              "No typography is visible; its absence costs nothing in these frames, but there is no graphic signature or end card with a point of view",
+              "The style is inconsistent (the painterly desert against photoreal CG) and the sparkle effects are generic; one unified world and a more unusual palette are needed"
+            ]
+          },
+          "B": {
+            "verdict": "not professional",
+            "confidence": 0.88,
+            "scores": {
+              "idea": 2,
+              "composition": 3,
+              "typography": 2,
+              "colour": 4,
+              "light_texture": 4,
+              "motion": 2,
+              "craft": 3,
+              "originality": 2
+            },
+            "tells": [
+              "The same composition repeats in every frame: one circular object dead centre on a flat pastel or cream seamless ground, mostly empty frame",
+              "The objects are unrelated (earbuds, a steering wheel with floating icon pills, a cannabis ball, a plug-in porthole, a chess-ball TV, a glowing chip ring), so there is no idea connecting them",
+              "The frames have inconsistent aspect ratios and render styles, which reads as a gallery of separate generations rather than one film",
+              "The look is generic 'tasteful AI': soft even studio light, plastic material finish, placeholder UI icons (a yield sign, a traffic light, an arrow in pills)",
+              "There is no typography at all, and nothing replaces it as a graphic system"
+            ],
+            "gaps": [
+              "There is no idea: it needs a single concept that links the frames and gives the viewer something to remember (compare A's eye-to-spiral)",
+              "There is no choreography: every frame is a centred object on a backdrop, with no transformation, camera movement or relationship between shots",
+              "The image design is generic: flat soft light, default pastel grounds and plastic materials; it needs a deliberate palette, real texture and type or graphics with a point of view"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "D",
+          "C",
+          "B"
+        ]
+      },
+      "meta": {
+        "seconds": 28.1,
+        "cost_usd": 0.1551764,
+        "tokens": 71814,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "critic": {
+    "answer": {
+      "scores": {
+        "motion": 6,
+        "sound": 5,
+        "craft": 6
+      },
+      "checks": {
+        "idea": true,
+        "invariant": true,
+        "arc": true,
+        "type_meaning": false,
+        "freeze_frame": false,
+        "ending": true,
+        "restraint": true,
+        "material": true,
+        "sync": null
+      },
+      "defects": [
+        "Shots are 4.7 s on median and up to 7.5 s long. Most of that is the camera drifting slowly over a formation that is barely changing, so there are long stretches of near-dead air (per-second change drops to 11\u201316 between about 11 s and 18 s).",
+        "Every marcher is the same sprite on a strict grid and they move in lockstep. There is no offset, no per-row delay and no follow-through, so the band looks like a copied array rather than a group of people.",
+        "The yellow tuba bells and white instrument rectangles are flat, untextured shapes. Next to the textured grass and soft shadows they look unfinished.",
+        "Instruments and shadows jump between frames in the pairs (row 1: white to gold rectangles; row 3: the shadow lattice). That reads as stepped colour or position changes rather than motion with blur.",
+        "In the concentric-ring frame, a hard-edged light-green panel intrudes at the right edge. It looks like an unplanned transition or a compositing artifact.",
+        "In the 'ANIKIT' end card the letterforms are only implied by marcher dots, with ragged spacing, and 'VIDEO' is a separate serif set flat on top. The two type treatments don't match, and the end card doesn't hold up as a finished lockup.",
+        "Middle frames, such as the swirl formation, are crowded and have no single focal point. Separate frames would not work as posters."
+      ],
+      "gaps": [
+        "Choreography: top marching-band and crowd-sim pieces move formations with follow-the-leader waves, staggered peels and counter-marches timed to the beat. Here each block translates rigidly and the camera drift does most of the work. The piece needs moves that resolve on hits, followed by real holds.",
+        "Pacing and edit: the riser and drop at about 19\u201323 s is the only real structural event. Shots should be cut to around 2 s and hard-cut on the drum accents, with the formation change between shots acting as the transition, instead of slow dissolves and pans.",
+        "Sound: the spectrogram shows a steady, unvaried percussion grid, a single white-noise riser and a thin outro. There is no layered brass, no crowd or field ambience, and no foley for footsteps or instrument hits. Marching-band subject matter is asking for detailed, foley-led sound design."
+      ]
+    },
+    "meta": {
+      "seconds": 20.9,
+      "cost_usd": 0.1595292,
+      "tokens": 72137,
+      "models": [
+        "claude-opus-5-5"
+      ]
+    },
+    "pace": "pass2.mp4: 30.0s, 6 shots, median 4.68s, longest 7.50s\nper-second change: [28.1, 28.2, 28.5, 29.9, 31.7, 31.1, 21.3, 31.0, 27.4, 26.3, 26.4, 13.5, 16.3, 15.9, 19.1, 13.1, 15.1, 11.2, 28.7, 33.4, 32.4, 30.0, 31.6, 35.4, 34.8, 33.3, 14.4, 13.1, 13.4]\nPACE: FAIL \u2014 longest shot 7.5s > 2.5s; median shot 4.7s > 2.0s"
+  },
+  "full_scores": {
+    "idea": 8.0,
+    "composition": 8.0,
+    "typography": 6.0,
+    "colour": 7.0,
+    "light_texture": 7.0,
+    "motion": 7.25,
+    "craft": 7.0,
+    "originality": 7.5,
+    "sound": 5
+  },
+  "full_overall": 6.97,
+  "cost_usd": 0.481,
+  "judge_seconds": 83.3,
+  "verdict": "PASS"
+}

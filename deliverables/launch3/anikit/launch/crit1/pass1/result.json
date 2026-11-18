@@ -1,0 +1,384 @@
+{
+  "name": "pass1",
+  "tags": [
+    "product-launch",
+    "explainer-2d"
+  ],
+  "refs": [
+    "wealthsimple-trade",
+    "tiffany-holiday",
+    "vertigo"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 7.5,
+      "composition": 7.5,
+      "typography": 6.0,
+      "colour": 6.5,
+      "light_texture": 6.5,
+      "motion": 8.0,
+      "craft": 7.5,
+      "originality": 7.0
+    },
+    "overall": 7.06,
+    "judged_professional": "2/2",
+    "pro_rate": 1.0,
+    "mean_rank": 2,
+    "gaps": [
+      "Give the overlaid type the same idea as the formation lettering, for example forming every word from performers or field markings, instead of laying a default slab over the image",
+      "Push the palette beyond the expected field green with red and gold. Neither the light nor the colour carries any mood or story",
+      "The tagline idea ('Same page') is literal. Add a turn or surprise in the formations, comparable to how A's eye opens into abstraction",
+      "The characters are simple, symmetrical vector figures; they need more material detail and individual variation to match A's richness",
+      "Lighting is flat and even across the field; a stadium-light pass, haze or a time-of-day mood would add drama",
+      "The end card and the tagline are set fairly plainly; a more distinctive typographic treatment would lift the ending"
+    ],
+    "tells": [
+      "There is a clear, ownable idea: a marching band seen from above forms shapes and finally spells the studio name. The idea is the motion itself",
+      "The choreography is evident: the camera changes from close-up rotated grids to wide formations, concentric rings, a speech-bubble shape and finally the lettering. There is real variety and build",
+      "The stylised figures are consistent, with directional shadows, grass texture and yard-line detail, which shows considered world-building",
+      "The typography is the weak point: a generic slab ('Same page. Same show.' and 'VIDEO') is placed like a caption, with no integration beyond the band-formed letters",
+      "Specific, witty concept: a top-down marching band whose formations make a brand mark, and the tagline 'Same page. Same show.' turns the band into a metaphor for a team in sync",
+      "Real choreography over time: rows, a diagonal sweep, concentric rings, a formation in perspective, and finally the letterforms. The motion is varied and has weight",
+      "The camera angle changes (overhead, tilted, rotated), and strong cast shadows and field texture give depth",
+      "The type comes out of the subject itself, letters spelled by band members, with a collegiate slab for 'VIDEO' and the tagline set in perspective on the turf",
+      "The palette of field greens, crimson plumes and gold sousaphones fits the subject and stays consistent"
+    ]
+  },
+  "refs_summary": {
+    "wealthsimple-trade": {
+      "overall": 2.75,
+      "judged_professional": "0/2",
+      "mean_rank": 4
+    },
+    "tiffany-holiday": {
+      "overall": 6.5,
+      "judged_professional": "2/2",
+      "mean_rank": 3
+    },
+    "vertigo": {
+      "overall": 9.25,
+      "judged_professional": "2/2",
+      "mean_rank": 1
+    }
+  },
+  "ref_mean": 6.17,
+  "delta": 0.89,
+  "trials": [
+    {
+      "key": {
+        "A": "vertigo",
+        "B": "wealthsimple-trade",
+        "C": "candidate",
+        "D": "tiffany-holiday"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 9,
+              "colour": 10,
+              "light_texture": 8,
+              "motion": 9,
+              "craft": 9,
+              "originality": 10
+            },
+            "tells": [
+              "A specific idea that belongs to this film alone: the extreme close-up of an eye becomes the source of spirals, so the title's theme of obsession and dizziness is shown as an image instead of being stated",
+              "The monochrome red wash over live action is cut against pure black fields of Lissajous/spirograph forms that change from violet to green. The palette is deliberate and unusual, and the colour changes carry the story",
+              "The slab-serif display type with an inline outline is set in tight, stepped ragged-right credit stacks with clear scale contrast between role and name. The layout and the forms are composed together",
+              "The structure is choreographed across frames: eye, spiral emerging from the pupil, abstract figures that grow in complexity, then back to the eye for the director credit. The circular form matches the subject",
+              "Real photographic grain and skin texture are set against precise mechanical line work, a deliberate contrast of materials"
+            ],
+            "gaps": [
+              "Benchmark entry. The flat black grounds in the abstract section are austere, and a little more depth or texture there would hold the frame between credits",
+              "The credit blocks in frame 4 crowd the spiral and reduce how much it can breathe",
+              "The palette moves from red to violet to green, which risks reading as sequential sections rather than one continuous change"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.75,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 5,
+              "colour": 6,
+              "light_texture": 6,
+              "motion": 8,
+              "craft": 7,
+              "originality": 6
+            },
+            "tells": [
+              "There is a clear, ownable idea: a marching band seen from above forms shapes and finally spells the studio name. The idea is the motion itself",
+              "The choreography is evident: the camera changes from close-up rotated grids to wide formations, concentric rings, a speech-bubble shape and finally the lettering. There is real variety and build",
+              "The stylised figures are consistent, with directional shadows, grass texture and yard-line detail, which shows considered world-building",
+              "The typography is the weak point: a generic slab ('Same page. Same show.' and 'VIDEO') is placed like a caption, with no integration beyond the band-formed letters"
+            ],
+            "gaps": [
+              "Give the overlaid type the same idea as the formation lettering, for example forming every word from performers or field markings, instead of laying a default slab over the image",
+              "Push the palette beyond the expected field green with red and gold. Neither the light nor the colour carries any mood or story",
+              "The tagline idea ('Same page') is literal. Add a turn or surprise in the formations, comparable to how A's eye opens into abstraction"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.6,
+            "scores": {
+              "idea": 6,
+              "composition": 7,
+              "typography": 4,
+              "colour": 7,
+              "light_texture": 8,
+              "motion": 6,
+              "craft": 6,
+              "originality": 5
+            },
+            "tells": [
+              "High-end CG: a jewelled bird follows a holiday-luxury narrative path through a clock, a top-down NYC street with a taxi, a ballet stage, brownstones and a dinner table",
+              "The light is real and motivated: practical sparkles, candle warmth, stage backlight and window glow, with strong depth of field",
+              "There is no type, which suits a mood-driven brand film but leaves the piece without any typographic voice",
+              "Consistency fails: the final painted desert frame with a different aspect ratio breaks the style of the world, and the concept follows a familiar sparkle-trail luxury holiday trope"
+            ],
+            "gaps": [
+              "Find an idea specific to the piece beyond 'magic sparkle travels through a city', a recognisable trope for luxury holiday ads",
+              "Unify the visual world: the painterly desert frame and the CG city do not read as one film",
+              "Bring in graphic or typographic structure, or a composed end frame, so that each frame works as a poster rather than a pretty plate"
+            ]
+          },
+          "B": {
+            "verdict": "not professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 2,
+              "composition": 3,
+              "typography": 2,
+              "colour": 4,
+              "light_texture": 4,
+              "motion": 2,
+              "craft": 3,
+              "originality": 2
+            },
+            "tells": [
+              "The same composition repeats in every frame: one centred circular object on a flat pastel ground, so the structure works like a slide deck",
+              "There is no connecting idea across earbuds, a steering wheel with floating UI icons, a cannabis ball, a plug, a chess TV and a glowing reactor ring. These look like unrelated generated product renders",
+              "Aspect ratios and backgrounds are inconsistent between frames, which shows no design system and points to an automated or AI compilation",
+              "The light is a generic soft studio fill with typical AI-render sheen. The steering wheel's pill icons are placeholder UI",
+              "There is no type at all, and nothing replaces it with a narrative or graphic voice"
+            ],
+            "gaps": [
+              "Find a single idea that links the objects, for example A's eye-to-spiral transformation, so the circular motif means something",
+              "Choreograph between frames with transitions, scale changes and off-centre compositions instead of repeating one centred still",
+              "Commit to one format, palette and lighting world, and add typography with a point of view"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "C",
+          "D",
+          "B"
+        ]
+      },
+      "meta": {
+        "seconds": 32.5,
+        "cost_usd": 0.1725844,
+        "tokens": 72046,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "vertigo",
+        "B": "wealthsimple-trade",
+        "C": "tiffany-holiday",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 9,
+              "colour": 10,
+              "light_texture": 8,
+              "motion": 9,
+              "craft": 9,
+              "originality": 10
+            },
+            "tells": [
+              "One idea carries the whole piece: an extreme close-up of an eye, washed in monochrome red, gives way to Lissajous/spirograph spirals that act out the film's theme of vertigo and obsession",
+              "The palette is deliberate and unusual: blood-red flesh, black voids, violet and then acid-green line work, so colour changes mark the acts of the sequence",
+              "The type is a slab serif with an outline/inline treatment, and the credits are set in a clear hierarchy (small caps for roles, large caps for names) and placed with the image: the credit block hugs the right edge to make room for the spiral, and the title sits across the eye",
+              "The frames show choreography: eye, spiral rising from the pupil, spirals that grow and rotate and change colour, then a return to the eye. It is built as a loop, not as slides",
+              "Live photography against mechanical geometry gives real texture and contrast: skin, lashes and catchlights next to precise line work"
+            ],
+            "gaps": [
+              "This is the benchmark entry. Late frames lean on black-ground spiral cards, which could be varied more in scale and framing",
+              "Some credit cards are dense blocks of text that compete with the spiral",
+              "The geometric line work reads as uniform in places; varying its weight or depth would help"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 7,
+              "colour": 7,
+              "light_texture": 7,
+              "motion": 8,
+              "craft": 8,
+              "originality": 8
+            },
+            "tells": [
+              "Specific, witty concept: a top-down marching band whose formations make a brand mark, and the tagline 'Same page. Same show.' turns the band into a metaphor for a team in sync",
+              "Real choreography over time: rows, a diagonal sweep, concentric rings, a formation in perspective, and finally the letterforms. The motion is varied and has weight",
+              "The camera angle changes (overhead, tilted, rotated), and strong cast shadows and field texture give depth",
+              "The type comes out of the subject itself, letters spelled by band members, with a collegiate slab for 'VIDEO' and the tagline set in perspective on the turf",
+              "The palette of field greens, crimson plumes and gold sousaphones fits the subject and stays consistent"
+            ],
+            "gaps": [
+              "The characters are simple, symmetrical vector figures; they need more material detail and individual variation to match A's richness",
+              "Lighting is flat and even across the field; a stadium-light pass, haze or a time-of-day mood would add drama",
+              "The end card and the tagline are set fairly plainly; a more distinctive typographic treatment would lift the ending"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.72,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 5,
+              "colour": 7,
+              "light_texture": 8,
+              "motion": 7,
+              "craft": 7,
+              "originality": 6
+            },
+            "tells": [
+              "A jewelled bird acts as a guide, carrying a narrative through a city at night, a ballet stage, a dinner table and a desert. That gives it a through-line and a sense of journey",
+              "The frames are cinematic and layered: shallow depth of field, practical lights such as candles, fairy lights and stage strips, a top-down street shot with a yellow cab, and real atmosphere",
+              "The variety of scale and camera angle suggests a choreographed camera path",
+              "The type is absent and the piece relies on image alone, which is acceptable for a luxury spot but takes away a tool",
+              "Against: the final painterly desert frame breaks the visual language, and the sparkle-trail-plus-New-York-holiday premise is a familiar luxury Christmas trope"
+            ],
+            "gaps": [
+              "The idea is a well-worn holiday-luxury formula (magic sparkle trail through the city); it needs a twist only this piece could have",
+              "The look is inconsistent: the photoreal 3D scenes and the painted desert frame do not sit together, so the grade and rendering style need unifying",
+              "There is no typographic or graphic layer; A integrates type with image, and this piece offers no equivalent signature"
+            ]
+          },
+          "B": {
+            "verdict": "not professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 2,
+              "composition": 3,
+              "typography": 2,
+              "colour": 4,
+              "light_texture": 4,
+              "motion": 2,
+              "craft": 3,
+              "originality": 2
+            },
+            "tells": [
+              "The same composition repeats in every frame: one centred, roundish object on a plain pastel or cream ground with a mostly empty frame. It reads like a slideshow of unrelated renders",
+              "There is no through-line: earbuds, a steering wheel with icon badges, a cannabis bud, a plug socket, a ball-shaped TV with chess and a glowing chip ring are unrelated subjects with no idea connecting them",
+              "Generic 'tasteful AI' render look: soft, unmotivated studio light, smooth CG materials, placeholder-like UI icons (yield sign, minus, traffic light, arrow) stuck onto the steering wheel",
+              "The aspect ratios are inconsistent across frames (square, wide, portrait-ish), which points to assembled outputs rather than a designed film",
+              "There is no typography and no evidence of choreography between frames, so nothing changes except the subject"
+            ],
+            "gaps": [
+              "It needs a single concept that links the objects and gives the film a reason to exist; A builds its whole film around one idea",
+              "It needs real composition and staging: break the centred-object-on-pastel formula with scale contrast, cropping and layered depth",
+              "It needs designed motion and type: transitions that connect one object to the next, and a typographic voice"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "D",
+          "C",
+          "B"
+        ]
+      },
+      "meta": {
+        "seconds": 29.7,
+        "cost_usd": 0.1582038,
+        "tokens": 71963,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "critic": {
+    "answer": {
+      "scores": {
+        "motion": 5,
+        "sound": 5,
+        "craft": 6
+      },
+      "checks": {
+        "idea": true,
+        "invariant": true,
+        "arc": false,
+        "type_meaning": true,
+        "freeze_frame": false,
+        "ending": true,
+        "restraint": true,
+        "material": false,
+        "sync": false
+      },
+      "defects": [
+        "Tagline 'Same page. Same show.' is laid over the marchers and their shadows. Bodies cut through 'page' and 'Same', and the line is hard to read.",
+        "Marchers in the pairs barely change position over 1/6 s and look like they slide at constant speed. There is no step cycle, no stagger and no ease into the set points, so the band glides rather than marches.",
+        "The ANIKIT end formation reads thin and gappy. The orange/white flag elements sit unevenly on the K, I and T strokes, so the letters look half-formed instead of locked in.",
+        "Two shots are cropped close on a few repeating figures (frames 1 and 5) with large flat drop shadows. The scale jump makes them look like a different, cheaper illustration style than the wide shots.",
+        "The 7.5 s longest shot and a 3.8 s median give stretches with nothing new happening (per-second change falls to 11-16 from about 11 s to 18 s), and the final 2 s are nearly static (4.5, 2.9).",
+        "Shading is flat vector: one hard offset shadow per figure and a uniform grass noise, with no light falloff or depth across the field. At 100% the grass texture repeats in visible stripes.",
+        "The soundtrack is a steady percussive loop of identical transients with a single dropout around 22.5-24 s. It has no build, no orchestration change at the logo reveal, and the tail just decays."
+      ],
+      "gaps": [
+        "Choreography: a marching band only sells with drill. That means the counts actually landing (step-off, halt on beat 8), ranks peeling off one after another, and formations morphing with arrival overshoot and settle. Here dots drift into shapes with linear timing and no handoffs between formations.",
+        "Arc and pacing: energy stays flat from start to finish, and the long shots have no reason to be long. The piece needs a build to a showpiece formation at 60-80%, with the camera pulling up or whipping to show it, and then a crisp halt into the logo. Instead it plods to the end card.",
+        "Sound and finish: the music is a looped drum track with no stingers and nothing that meets the picture. Formation snaps and the logo lock-up need audible hits, plus field ambience and crowd. On the picture side, the flat vector shading and hard shadows need real light (stadium light pools, falloff, soft contact shadows) to reach studio finish."
+      ]
+    },
+    "meta": {
+      "seconds": 24.6,
+      "cost_usd": 0.16313899999999998,
+      "tokens": 72282,
+      "models": [
+        "claude-opus-5-5"
+      ]
+    },
+    "pace": "pass1.mp4: 30.0s, 7 shots, median 3.77s, longest 7.50s\nper-second change: [28.7, 30.6, 31.6, 32.2, 32.7, 31.9, 21.7, 31.7, 28.9, 28.6, 27.9, 14.0, 16.8, 16.4, 21.4, 13.0, 14.3, 11.0, 31.8, 29.1, 28.7, 26.3, 27.5, 33.9, 34.0, 30.0, 11.3, 4.5, 2.9]\nPACE: FAIL \u2014 longest shot 7.5s > 2.5s; median shot 3.8s > 2.0s"
+  },
+  "full_scores": {
+    "idea": 7.5,
+    "composition": 7.5,
+    "typography": 6.0,
+    "colour": 6.5,
+    "light_texture": 6.5,
+    "motion": 6.5,
+    "craft": 6.75,
+    "originality": 7.0,
+    "sound": 5
+  },
+  "full_overall": 6.58,
+  "cost_usd": 0.494,
+  "judge_seconds": 86.8,
+  "verdict": "PASS"
+}

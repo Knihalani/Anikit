@@ -1,0 +1,4 @@
+{"size":"16:9","scenes":[{"duration":1,"background":"#0E1A0B","layers":[
+ {"src":"f13.png","fit":"cover","opacity":0.25},
+ {"id":"word","text":"ANIKIT","font":"Alfa Slab One","size":"40vh","color":"#fff","x":"50%","y":"50%"},
+ {"src":"f21.png","fit":"cover","matte":"word"}]}]}
