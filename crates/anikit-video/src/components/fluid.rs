@@ -129,6 +129,8 @@ pub struct Fluid {
     pub granulation: f32,
     #[serde(skip)]
     sim: OnceLock<Sim>,
+    #[serde(skip)]
+    key_hash: OnceLock<u64>,
 }
 
 impl Default for Fluid {
@@ -161,6 +163,7 @@ impl Default for Fluid {
             chroma: 0.0,
             granulation: 0.0,
             sim: OnceLock::new(),
+            key_hash: OnceLock::new(),
         }
     }
 }
@@ -218,6 +221,7 @@ impl Prepare for Fluid {
         if self.look != "ink" && self.buoyancy == 0.0 {
             self.buoyancy = 0.9;
         }
+        self.key_hash = OnceLock::new();
         Ok(())
     }
 }
@@ -944,8 +948,12 @@ pub(crate) fn word_mask(w: &Word, dx: usize, dy: usize, aspect: f32) -> Vec<f32>
 }
 
 impl Fluid {
-    /// Identity of this fluid's look and motion (image cache key).
+    /// Identity of this fluid's look and motion (image cache key), computed once.
     fn key(&self) -> u64 {
+        *self.key_hash.get_or_init(|| self.compute_key())
+    }
+
+    fn compute_key(&self) -> u64 {
         let src: Vec<String> = self.sources.iter().map(|s| format!("{:?}{:?}{}{}{}{:?}{}{}{}{}", s.pos, s.to, s.radius, s.angle, s.speed, s.color.map(|c| c.0 .0), s.amount, s.heat, s.start, s.end)).collect();
         let word = self.text.as_ref().map(|w| format!("{}{}{}{:?}{}{:?}{}{}{}", w.text, w.font, w.weight, w.pos, w.size, w.color.map(|c| c.0 .0), w.amount, w.heat, w.at)).unwrap_or_default();
         let all = format!(
@@ -1035,5 +1043,16 @@ mod tests {
         let (w, h) = (s.dx, s.dy);
         let right: f32 = (0..h).map(|y| fr.dye[0][y * w + w * 6 / 10]).sum();
         assert!(right > 0.01, "no dye reached x = 0.6: {right}");
+    }
+
+    #[test]
+    fn cached_key_matches_spec() {
+        let spec = serde_json::json!({ "look": "ink", "text": { "text": "AB" }, "sources": [ { "pos": [0.2, 0.5] } ] });
+        let a = fluid(spec.clone());
+        assert_eq!(a.key(), a.compute_key());
+        assert_eq!(a.key(), a.key());
+        assert_eq!(a.key(), fluid(spec).key());
+        let b = fluid(serde_json::json!({ "look": "ink", "text": { "text": "AC" }, "sources": [ { "pos": [0.2, 0.5] } ] }));
+        assert_ne!(a.key(), b.key());
     }
 }
