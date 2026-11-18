@@ -947,8 +947,19 @@ pub(crate) fn word_mask(w: &Word, dx: usize, dy: usize, aspect: f32) -> Vec<f32>
     mask
 }
 
+fn color_bytes(c: Option<Color>) -> [u8; 17] {
+    let mut bytes = [0; 17];
+    if let Some(c) = c {
+        bytes[0] = 1;
+        for (i, value) in c.0 .0.into_iter().enumerate() {
+            bytes[1 + i * 4..1 + (i + 1) * 4].copy_from_slice(&value.to_bits().to_le_bytes());
+        }
+    }
+    bytes
+}
+
 impl Fluid {
-    /// Identity of this fluid's look and motion (image cache key), computed once.
+    /// Identity of this fluid's spec (cached; render-only fields are also hashed per frame by `render_key`).
     fn key(&self) -> u64 {
         *self.key_hash.get_or_init(|| self.compute_key())
     }
@@ -981,6 +992,39 @@ impl Fluid {
         let more = format!("{}{}{}{}{:?}{}{}", self.advection, self.turbulence, self.octaves, self.edge, self.thin_color.map(|c| c.0 .0), self.chroma, self.granulation);
         fnv(&[all.as_bytes(), more.as_bytes()])
     }
+
+    fn render_key(&self) -> u64 {
+        let background = color_bytes(self.background);
+        let thin_color = color_bytes(self.thin_color);
+        let density = self.density.to_bits().to_le_bytes();
+        let light = self.light.to_bits().to_le_bytes();
+        let edge = self.edge.to_bits().to_le_bytes();
+        let chroma = self.chroma.to_bits().to_le_bytes();
+        let granulation = self.granulation.to_bits().to_le_bytes();
+        fnv(&[
+            self.look.as_bytes(),
+            &background,
+            &thin_color,
+            &density,
+            &light,
+            &edge,
+            &chroma,
+            &granulation,
+            &self.seed.to_le_bytes(),
+        ])
+    }
+
+    fn frame_key(&self, frame: u64, fps: f32, w: usize, h: usize) -> u64 {
+        fnv(&[
+            b"fluid",
+            &self.key().to_le_bytes(),
+            &self.render_key().to_le_bytes(),
+            &frame.to_le_bytes(),
+            &fps.to_bits().to_le_bytes(),
+            &(w as u32).to_le_bytes(),
+            &(h as u32).to_le_bytes(),
+        ])
+    }
 }
 
 impl Component for Fluid {
@@ -991,7 +1035,7 @@ impl Component for Fluid {
         let fps = ctx.fps.max(1.0);
         let frame = (t * fps).round().max(0.0) as u64;
         let s = self.sim(aspect);
-        let key = fnv(&[b"fluid", &self.key().to_le_bytes(), &frame.to_le_bytes(), &fps.to_bits().to_le_bytes(), &(w as u32).to_le_bytes(), &(h as u32).to_le_bytes()]);
+        let key = self.frame_key(frame, fps, w, h);
         let image = ctx.assets.image(key, w as u32, h as u32, &mut || {
             let fr = self.frame(s, frame, fps);
             self.render(s, &fr, w, h)
@@ -1054,5 +1098,17 @@ mod tests {
         assert_eq!(a.key(), fluid(spec).key());
         let b = fluid(serde_json::json!({ "look": "ink", "text": { "text": "AC" }, "sources": [ { "pos": [0.2, 0.5] } ] }));
         assert_ne!(a.key(), b.key());
+    }
+
+    #[test]
+    fn render_fields_change_frame_key_after_first_use() {
+        let mut f = fluid(serde_json::json!({"look":"ink","resolution":48,"detail":1}));
+        let k0 = f.frame_key(10, 30.0, 160, 90);
+        f.background = Some(Color::hex("#000000"));
+        let k1 = f.frame_key(10, 30.0, 160, 90);
+        assert_ne!(k0, k1);
+        f.density = 2.0;
+        assert_ne!(k1, f.frame_key(10, 30.0, 160, 90));
+        assert_eq!(f.frame_key(10, 30.0, 160, 90), f.frame_key(10, 30.0, 160, 90));
     }
 }
