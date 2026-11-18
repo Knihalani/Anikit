@@ -1,0 +1,4 @@
+{ "background": "#111418", "theme": { "colors": { "primary": "#ffb000", "text": "#f2efe9", "muted": "#8a9199", "bg": "#111418" } },
+  "scenes": [ { "duration": 3, "layers": [
+ { "component": "bar-chart", "x": 960, "y": 560, "width": 1400, "height": 640, "props": { "look": "editorial", "highlight": 3, "format": { "suffix": "%" },
+   "values": [24, 22, 16, 38], "compare": [61, 19, 16, 4], "compareLabels": ["2016", "2026"], "labels": ["Car", "Bus", "Walking", "Bike"] } } ] } ] }

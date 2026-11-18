@@ -86,6 +86,10 @@ struct C<'a> {
     /// Audio from video clips.
     audio_extra: Vec<crate::audio::Track>,
     layer_info: Vec<(String, String)>,
+    /// Layers with an `sfx` key: (tag, value, path).
+    layer_sfx: Vec<(u32, serde_json::Value, String)>,
+    /// `audio[].sfx` cues naming sound-design effects (placed by their hit point).
+    design_cues: Vec<crate::audio::design::Cue>,
     beat_marks: super::beat_markers::BeatMarkers,
     /// Music analysed for `iAudio`/`iBeat` (once, on first use).
     music: Option<Result<Arc<super::audio_react::AudioFeatures>, String>>,
@@ -104,6 +108,9 @@ struct C<'a> {
     /// The video's grid, and the grid in force for the layers being compiled.
     video_grid: Option<spec::GridSpec>,
     grid: Option<spec::GridSpec>,
+    /// The layer being compiled: its anchor and whether it is text (for `cell` tweens).
+    cur_anchor: [f32; 2],
+    cur_text: bool,
     /// Resting boxes `[left, top, right, bottom]` of the earlier siblings with an `id`, for `"=title.bottom + 24"`.
     sib: Vec<(String, [f32; 4])>,
     /// The generated music's notes (video seconds) and beats per bar, for `onNotes`.
@@ -282,6 +289,8 @@ impl Evaluator {
             image_ids: HashMap::new(),
             audio_extra: Vec::new(),
             layer_info: Vec::new(),
+            layer_sfx: Vec::new(),
+            design_cues: Vec::new(),
             beat_marks: super::beat_markers::BeatMarkers::new(spec, &opts.base_dir),
             music: None,
             assets: opts.assets.clone().unwrap_or_else(|| Arc::new(SharedAssets::new(opts.fonts.clone().unwrap_or_else(|| Arc::new(FontStore::new()))))),
@@ -293,6 +302,8 @@ impl Evaluator {
             uniform_slots: Vec::new(),
             video_grid: spec.grid.clone(),
             grid: None,
+            cur_anchor: [0.5, 0.5],
+            cur_text: false,
             sib: Vec::new(),
             score: None,
             pinned_music: None,
@@ -324,7 +335,11 @@ impl Evaluator {
         let (theme, bad) = Theme::resolve(spec.theme.as_ref());
         c.theme = theme;
         for (k, v) in bad {
-            c.d.push(Diagnostic::error(format!("theme.colors.{k}"), format!("invalid colour '{v}'")));
+            if k == "palette" {
+                c.d.push(Diagnostic::error("theme.palette", v));
+            } else {
+                c.d.push(Diagnostic::error(format!("theme.colors.{k}"), format!("invalid colour '{v}' ({COLOUR_FORMS})")));
+            }
         }
         c.load_fonts(spec);
         if let Some(m) = &spec.markers {
@@ -388,7 +403,7 @@ impl Evaluator {
             let path = format!("scenes[{i}]");
             let id = s.id.clone().unwrap_or_else(|| format!("scene{}", i + 1));
             let trans = if i == 0 {
-                TransC { kind: TransKind::Cut, dur: 0.0, ease: 0, dir: [-1.0, 0.0], color: Rgba([0.0, 0.0, 0.0, 1.0]), origin: [0.0; 2], amount: 0.0, shader: None, layer: None, shape: 0, count: 0 }
+                TransC { kind: TransKind::Cut, dur: 0.0, ease: 0, dir: [-1.0, 0.0], color: Rgba([0.0, 0.0, 0.0, 1.0]), origin: [0.0; 2], amount: 0.0, shader: None, layer: None, shape: 0, count: 0, carry: Vec::new() }
             } else {
                 let (tr, tp) = match (&s.transition, &default_trans) {
                     (Some(t), _) => (Some(t), format!("{path}.transition")),
@@ -495,6 +510,7 @@ impl Evaluator {
             },
             (None, None) => None,
         };
+        let sound = c.sound_plan(spec, duration);
         c.smarkers.clear();
         c.scene_start = 0.0;
         c.scene_dur = duration;
@@ -508,6 +524,7 @@ impl Evaluator {
             diagnostics: Vec::new(),
             audio,
             music,
+            sound,
             assets: c.assets,
             easings: c.easings,
             scenes,
@@ -526,6 +543,8 @@ impl Evaluator {
         (Some(ev), c.d)
     }
 }
+
+const COLOUR_FORMS: &str = "use \"#ff5a1f\", \"#f51\", \"#ff5a1f80\" (with alpha), a name like \"white\", a theme token like \"$accent\", \"rgb(255, 90, 31)\", \"hsl(20, 100, 56)\", \"oklch(0.7, 0.19, 40)\", or a per-frame expression \"=mix($primary, $accent, p)\"";
 
 fn any_on_notes(ls: &[Layer]) -> bool {
     ls.iter().any(|l| l.on_notes.is_some() || l.layers.as_deref().is_some_and(any_on_notes) || l.children.as_deref().is_some_and(any_on_notes))
@@ -591,6 +610,7 @@ fn empty_node(kind: Kind) -> Node {
         treat: Vec::new(),
         treat_slot: 0,
         live_pattern: None,
+        brush: None,
         step: 0.0,
         boil: None,
         clip: false,
@@ -642,6 +662,27 @@ impl C<'_> {
                 if let Some(t) = self.musical(s, path) {
                     return (t, None);
                 }
+                // `"=1.2 + 0.1 * 3"`: an expression, worked out once (a time can't change per frame).
+                if let Some(e) = s.strip_prefix('=') {
+                    return match Expr::compile(e, 1.0, self.w as f64, self.h as f64) {
+                        Ok(x) if !x.dynamic => (x.eval(&super::expr::Vars { w: self.w as f64, h: self.h as f64, fps: self.fps as f64, ..Default::default() }) as f32, None),
+                        Ok(x) => match x.constant() {
+                            Some(v) => (v as f32, None),
+                            None if x.music => {
+                                self.d.push(Diagnostic::error(path, format!("'{s}': a time is fixed when the spec loads, so it can't read beat/bar/level; use a marker (\"@beat17\", \"@bar5+0.25\") or a musical length (\"2 beats\")")));
+                                (0.0, None)
+                            }
+                            None => {
+                                self.d.push(Diagnostic::error(path, format!("'{s}': a time is fixed when the spec loads, so it can't use t/gt/p/frame (w, h, fps and maths are fine, e.g. \"=12 / fps\")")));
+                                (0.0, None)
+                            }
+                        },
+                        Err(m) => {
+                            self.d.push(Diagnostic::error(path, format!("time expression '{s}': {m}")));
+                            (0.0, None)
+                        }
+                    };
+                }
                 if let Some(m) = s.strip_prefix('@') {
                     let (name, off) = match m.find(['+', '-']) {
                         Some(i) => (&m[..i], m[i..].parse::<f32>().ok()),
@@ -682,7 +723,7 @@ impl C<'_> {
                 match num.trim().parse::<f32>() {
                     Ok(v) => (v * mul, None),
                     Err(_) => {
-                        self.d.push(Diagnostic::error(path, format!("invalid time '{s}' (use 1.5, \"1.5s\", \"500ms\", \"12f\" or \"@marker\")")));
+                        self.d.push(Diagnostic::error(path, format!("invalid time '{s}' (use seconds 1.5, \"1.5s\", \"500ms\", frames \"12f\", a marker \"@intro\" / \"@beat17\" / \"@bar5+0.25\", music \"2 beats\", or arithmetic \"=12 / fps\")")));
                         (0.0, None)
                     }
                 }
@@ -749,7 +790,7 @@ impl C<'_> {
                         None => {
                             self.d.push(Diagnostic::error(
                                 path,
-                                format!("invalid value '{s}' (use a number, \"50%\", \"10vw\", \"8vh\" or an expression \"=…\")"),
+                                format!("invalid value '{s}' (use a number like 960, \"50%\" of the parent, \"10vw\" / \"8vh\" / \"5vmin\", \"24px\", \"1.5em\", or an expression like \"=w / 2 + 100 * sin(t)\")"),
                             ));
                             V::C(0.0)
                         }
@@ -1042,6 +1083,26 @@ impl C<'_> {
 
     // ---------- paint ----------
 
+    /// A colour function written without `=`: `oklch(0.7, 0.15, 30)`, CSS's `oklch(70% 0.15 30 / 0.5)`, `hsl(…)`, `mix(…)`.
+    fn color_fn(&self, s: &str) -> Option<Rgba> {
+        let s = s.trim();
+        let open = s.find('(')?;
+        if !s.ends_with(')') {
+            return None;
+        }
+        let inner = &s[open + 1..s.len() - 1];
+        let args = if inner.contains(',') {
+            inner.to_string()
+        } else {
+            // CSS level 4: spaces between channels, `/ alpha`, percentages.
+            inner.replace('/', " ").split_whitespace().map(|a| a.trim_end_matches('%').to_string()).collect::<Vec<_>>().join(", ")
+        };
+        let src = format!("{}({args})", &s[..open]);
+        let theme = &self.theme;
+        let e = super::expr::ColorExpr::compile(&src, &mut |x: &str| theme.color(x).map(|c| c.0)).ok()?;
+        Some(Rgba(e.eval(&super::expr::Vars::default())))
+    }
+
     fn color(&mut self, s: &str, path: &str) -> Option<Rgba> {
         match self.theme.color(s) {
             Some(c) => Some(c),
@@ -1049,8 +1110,10 @@ impl C<'_> {
                 if let Some(t) = s.trim().strip_prefix('$') {
                     let names: Vec<&String> = self.theme.colors.keys().collect();
                     self.d.push(Diagnostic::error(path, format!("unknown colour token '${t}'")).suggest(suggest(t, &names).map(|x| format!("${x}"))));
+                } else if let Some(c) = self.color_fn(s) {
+                    return Some(c);
                 } else {
-                    self.d.push(Diagnostic::error(path, format!("invalid colour '{s}'")));
+                    self.d.push(Diagnostic::error(path, format!("invalid colour '{s}' ({COLOUR_FORMS})")));
                 }
                 None
             }
@@ -1310,7 +1373,11 @@ impl C<'_> {
         if kind == TransKind::ZoomThrough && o.layer.is_none() {
             self.d.push(Diagnostic::error(format!("{path}.layer"), "zoomThrough needs 'layer': the id of a layer in the previous scene to fly into"));
         }
-        TransC { kind, dur, ease, dir, color, origin, amount, shader, layer: o.layer.clone(), shape, count: o.count.unwrap_or(8).clamp(1, 64) }
+        let carry = o.carry.clone().unwrap_or_default();
+        if !carry.is_empty() && kind == TransKind::Cut {
+            self.d.push(Diagnostic::warning(format!("{path}.carry"), "a cut has no duration to carry layers across; give the transition a type and duration"));
+        }
+        TransC { kind, dur, ease, dir, color, origin, amount, shader, layer: o.layer.clone(), shape, count: o.count.unwrap_or(8).clamp(1, 64), carry }
     }
 
     fn scene(&mut self, s: &spec::Scene, path: &str, dur: f32, default_bg: &spec::Paint) -> Built {
@@ -1643,6 +1710,9 @@ impl C<'_> {
         };
         let tag = self.layer_info.len() as u32;
         self.layer_info.push((path.to_string(), label));
+        if let Some(v) = &l.sfx {
+            self.layer_sfx.push((tag, v.clone(), path.to_string()));
+        }
         if l.visible == Some(false) {
             return None;
         }
@@ -1949,6 +2019,8 @@ impl C<'_> {
         }
 
         // Animation.
+        self.cur_anchor = n.anchor;
+        self.cur_text = matches!(n.kind, Kind::Text { .. });
         let refs = [pw, ph];
         let mut tw: Vec<TweenC> = Vec::new();
         let life_end = if end.is_finite() { end - start } else { self.scene_dur - start };
@@ -2122,7 +2194,7 @@ impl C<'_> {
                     m
                 }
                 Err(e) => {
-                    me.d.push(Diagnostic::error(format!("{path}.{key}"), format!("invalid SVG path: {e}")));
+                    me.d.push(Diagnostic::error(format!("{path}.{key}"), format!("invalid SVG path: {e} (SVG path data like \"M0 0 L100 0 L50 80 Z\" or \"M10 80 C40 10 65 10 95 80\")")));
                     None
                 }
             }
@@ -2187,6 +2259,29 @@ impl C<'_> {
                 }
             } else {
                 self.d.push(Diagnostic::warning(path, "shape modifiers (roundCorners, zigzag, puckerBloat, offsetPath, twist, wigglePath) apply to shape layers"));
+            }
+        }
+        if let Some(bv) = &l.brush {
+            let o = match bv {
+                spec::BrushValue::On(false) => None,
+                spec::BrushValue::On(true) => Some(spec::BrushSpec::default()),
+                spec::BrushValue::Full(f) => Some(f.clone()),
+            };
+            if let Some(o) = o {
+                let (w, h) = (n.base[prop::W] as f64, n.base[prop::H] as f64);
+                match &n.kind {
+                    Kind::Shape { shape, path: p, stroke: Some(_), .. } => {
+                        let src = match shape {
+                            ShapeKind::Rect => kurbo::Shape::to_path(&kurbo::RoundedRect::new(0.0, 0.0, w, h, (n.base[prop::RADIUS] as f64).min(w.min(h) * 0.5).max(0.0)), 0.1),
+                            ShapeKind::Ellipse => kurbo::Shape::to_path(&kurbo::Ellipse::new((w * 0.5, h * 0.5), (w * 0.5, h * 0.5), 0.0), 0.1),
+                            ShapeKind::Path => p.clone(),
+                        };
+                        let t = o.taper.unwrap_or([0.12, 0.25]);
+                        n.brush = super::graphic::Brush::new(&src, [t[0] as f32, t[1] as f32], o.pressure.unwrap_or(0.35) as f32, o.dry.unwrap_or(0.0) as f32, o.seed.unwrap_or(1)).map(Arc::new);
+                    }
+                    Kind::Shape { .. } => self.d.push(Diagnostic::warning(format!("{path}.brush"), "a brush paints the stroke: add \"stroke\" (and \"strokeWidth\")")),
+                    _ => self.d.push(Diagnostic::warning(format!("{path}.brush"), "brush applies to shape layers (lines, paths, any outline)")),
+                }
             }
         }
         if let Some(a) = &l.animator {
@@ -2759,6 +2854,38 @@ impl C<'_> {
         }
     }
 
+    /// The rect of a cell value in the current grid (for tweens).
+    fn cell_rect(&mut self, c: &serde_json::Value, path: &str, size: [f32; 2]) -> Option<[f32; 4]> {
+        let Some(g) = self.grid.clone() else {
+            self.d.push(Diagnostic::error(path, "'cell' needs a grid on the video, the scene or a parent group"));
+            return None;
+        };
+        let gc = self.grid_c(&g, size, path);
+        let r = match c {
+            serde_json::Value::String(s) => match g.areas.as_ref().and_then(|a| a.get(s.as_str())) {
+                Some(r) => super::graphic::parse_cell(r, gc.cols, gc.rows),
+                None => super::graphic::parse_cell(s, gc.cols, gc.rows),
+            },
+            serde_json::Value::Array(a) if (2..=4).contains(&a.len()) => {
+                let v: Vec<u32> = a.iter().map(|x| x.as_f64().unwrap_or(1.0).max(1.0) as u32).collect();
+                let (nc, nr) = (v.get(2).copied().unwrap_or(1), v.get(3).copied().unwrap_or(1));
+                if v[0] + nc - 1 > gc.cols || v[1] + nr - 1 > gc.rows {
+                    Err("runs past the grid".into())
+                } else {
+                    Ok((v[0], v[0] + nc - 1, v[1], v[1] + nr - 1))
+                }
+            }
+            _ => Err("expected an area name, a range like \"1-6/2-4\" or [col, row, cols, rows]".into()),
+        };
+        match r {
+            Ok((c0, c1, r0, r1)) => Some(gc.rect(c0, c1, r0, r1)),
+            Err(e) => {
+                self.d.push(Diagnostic::error(path, e));
+                None
+            }
+        }
+    }
+
     /// A copy of `l` placed in its grid cell.
     fn place_in_cell(&mut self, l: &Layer, c: &serde_json::Value, path: &str, size: [f32; 2]) -> Layer {
         let cp = format!("{path}.cell");
@@ -3164,7 +3291,7 @@ impl C<'_> {
                         let mut it = s.split_whitespace();
                         let kind = it.next().unwrap_or("dots").to_string();
                         let spacing = it.next().and_then(|x| x.trim_end_matches("px").parse::<f64>().ok()).unwrap_or(40.0);
-                        Some(super::graphic::Pat { kind, spacing, mark: None, angle: 0.0, seed: l.seed.unwrap_or(1), jitter: 0.0, ramp: None, tile: None, turns: 0, stagger: false, tile_stroke: 0.0, field: None, t: 0.0 })
+                        Some(super::graphic::Pat { kind, spacing, mark: None, angle: 0.0, seed: l.seed.unwrap_or(1), jitter: 0.0, ramp: None, tile: None, turns: 0, stagger: false, tile_stroke: 0.0, field: None, t: 0.0, cover: None })
                     }
                     Some(spec::PatternValue::Full(f)) => Some(super::graphic::Pat {
                         kind: if f.kind.is_empty() && f.tile.is_some() { "tile".into() } else { f.kind.clone() },
@@ -3172,7 +3299,7 @@ impl C<'_> {
                             Some(d) => match Path::from_svg(d) {
                                 Ok(p) => Some(p),
                                 Err(e) => {
-                                    self.d.push(Diagnostic::error(format!("{pp}.tile"), format!("invalid SVG path: {e}")));
+                                    self.d.push(Diagnostic::error(format!("{pp}.tile"), format!("invalid SVG path: {e} (SVG path data like \"M0 0 L100 0 L50 80 Z\" or \"M10 80 C40 10 65 10 95 80\")")));
                                     None
                                 }
                             },
@@ -3181,6 +3308,7 @@ impl C<'_> {
                         turns: f.turns.unwrap_or(0).min(360),
                         stagger: f.stagger.unwrap_or(false),
                         tile_stroke: f.tile_stroke.unwrap_or(0.0).max(0.0),
+                        cover: None,
                         field: match &f.field {
                             Some(src) => match super::expr::Expr::compile_field(src.trim().trim_start_matches('='), self.w as f64, self.h as f64) {
                                 Ok(e) => Some(e),
@@ -3211,6 +3339,11 @@ impl C<'_> {
                         }
                         if pt.spacing < 4.0 {
                             self.d.push(Diagnostic::warning(&pp, "spacing under 4 px turns to moiré after encoding"));
+                        }
+                        // If the size animates (cell tweens, width/height, scale), cover the whole frame: marks are clipped anyway.
+                        let anim = format!("{:?} {:?}", l.animate, l.update);
+                        if ["\"cell\"", "\"width\"", "\"height\"", "\"scale", "\"zoom", "width:", "height:", "scale"].iter().any(|k| anim.contains(k)) || matches!(&l.width, Some(Num::Str(_))) || matches!(&l.height, Some(Num::Str(_))) {
+                            pt.cover = Some([self.w as f64 * 1.2, self.h as f64 * 1.2]);
                         }
                         if pt.field.as_ref().is_some_and(|e| e.dynamic) {
                             n.live_pattern = Some(Arc::new((pt.clone(), [w as f64, h as f64])));
@@ -3262,7 +3395,7 @@ impl C<'_> {
                 let bp = match Path::from_svg(d) {
                     Ok(p) => p,
                     Err(e) => {
-                        self.d.push(Diagnostic::error(format!("{path}.d"), format!("invalid SVG path: {e}")));
+                        self.d.push(Diagnostic::error(format!("{path}.d"), format!("invalid SVG path: {e} (SVG path data like \"M0 0 L100 0 L50 80 Z\" or \"M10 80 C40 10 65 10 95 80\")")));
                         Path::new()
                     }
                 };
@@ -3781,7 +3914,7 @@ impl C<'_> {
                 match Path::from_svg(d) {
                     Ok(b) => bp = b,
                     Err(e) => {
-                        self.d.push(Diagnostic::error(format!("{p}.d"), format!("invalid SVG path: {e}")));
+                        self.d.push(Diagnostic::error(format!("{p}.d"), format!("invalid SVG path: {e} (SVG path data like \"M0 0 L100 0 L50 80 Z\" or \"M10 80 C40 10 65 10 95 80\")")));
                         continue;
                     }
                 }
@@ -4631,7 +4764,7 @@ impl C<'_> {
     }
 
     fn bad_val(&mut self, path: &str, s: &str) -> Option<ValS> {
-        self.d.push(Diagnostic::error(path, format!("invalid value {s} (use a number, a unit string, \"+40\", \"-40\" or \"*1.5\")")));
+        self.d.push(Diagnostic::error(path, format!("invalid value {s} (use a number like 120, a unit string like \"50%\" or \"10vw\", a relative change \"+40\" / \"-40\" / \"*1.5\", or a colour for fill/stroke)")));
         None
     }
 
@@ -4639,6 +4772,19 @@ impl C<'_> {
         let mut out = Vec::new();
         for (k, v) in m {
             let p = format!("{path}.{k}");
+            if k == "cell" {
+                // Tween to (or from) a grid field: x, y, width (and height, except text).
+                if let Some([x, y, w, h]) = self.cell_rect(v, &p, refs) {
+                    let a = self.cur_anchor;
+                    out.push((prop::X, 1, ValS::Abs(x + a[0] * w)));
+                    out.push((prop::Y, 1, ValS::Abs(y + a[1] * h)));
+                    out.push((prop::W, 1, ValS::Abs(w)));
+                    if !self.cur_text {
+                        out.push((prop::H, 1, ValS::Abs(h)));
+                    }
+                }
+                continue;
+            }
             if let (Some((slot, n)), Some(arr)) = (self.uniform_lookup(k), v.as_array()) {
                 // A vector uniform: one track per component.
                 for (i, x) in arr.iter().take(n).enumerate() {
@@ -5038,6 +5184,49 @@ impl C<'_> {
 
     // ---------- audio & captions ----------
 
+    /// The spec's `sound` and layers' `sfx`, compiled (`None` when neither is used).
+    fn sound_plan(&mut self, spec: &Spec, duration: f32) -> Option<Arc<crate::audio::design::spec::SoundPlan>> {
+        use crate::audio::design::spec::{LayerSfx, SoundPlan};
+        if spec.sound.is_none() && self.layer_sfx.is_empty() && self.design_cues.is_empty() {
+            return None;
+        }
+        let mut plan = match SoundPlan::new(spec.sound.as_ref(), spec.music.as_ref()) {
+            Ok(p) => p,
+            Err(e) => {
+                self.d.push(Diagnostic::error("sound", e));
+                return None;
+            }
+        };
+        if spec.sound.is_none() {
+            // Only `audio[].sfx` / layer `sfx` asked for sound design: keep the
+            // mix as it was (no loudness change, no shared space).
+            plan.target_lufs = None;
+            plan.space = None;
+        }
+        plan.extra = std::mem::take(&mut self.design_cues);
+        for (tag, v, path) in std::mem::take(&mut self.layer_sfx) {
+            match LayerSfx::parse(&v) {
+                Ok(l) => plan.layers.push((tag, l)),
+                Err(e) => self.d.push(Diagnostic::error(format!("{path}.sfx"), e)),
+            }
+        }
+        for (i, c) in plan.spec.cues.clone().into_iter().enumerate() {
+            let path = format!("sound.cues[{i}].at");
+            let at = match serde_json::from_value::<Num>(c.at.clone()) {
+                Ok(n) => self.time_raw(&n, &path),
+                Err(_) => {
+                    self.d.push(Diagnostic::error(path, "seconds or a marker like \"@beat9\""));
+                    continue;
+                }
+            };
+            if at > duration + 0.5 {
+                self.d.push(Diagnostic::warning(format!("sound.cues[{i}].at"), format!("{at:.2}s is after the end of the video ({duration:.2}s)")));
+            }
+            plan.cues.push((c, at as f64));
+        }
+        Some(Arc::new(plan))
+    }
+
     fn audio(&mut self, a: &spec::AudioCue, path: &str, scene_start: f32) -> Option<crate::audio::Track> {
         use crate::audio::{Duck, Role, SfxParams, Source, SFX_NAMES};
         let src = match (&a.src, &a.sfx) {
@@ -5050,7 +5239,24 @@ impl C<'_> {
             }
             (None, Some(n)) => {
                 if !SFX_NAMES.contains(&n.as_str()) {
-                    self.d.push(Diagnostic::error(format!("{path}.sfx"), format!("unknown sound effect '{n}'")).suggest(suggest(n, SFX_NAMES)));
+                    // Sound-design names (foley, cinematic, packs, layers): the hit lands on `at`.
+                    if crate::audio::design::is_known(n) {
+                        let at = scene_start + a.at.as_ref().map(|x| self.time_rel(x, &format!("{path}.at"), 0.0)).unwrap_or(0.0);
+                        let mut c = crate::audio::design::Cue::new(n, at as f64);
+                        c.params.duration = a.duration.as_ref().map(|x| self.time_raw(x, &format!("{path}.duration")));
+                        c.params.pitch = 12.0 * (a.pitch.unwrap_or(1.0).max(0.01) as f32).log2();
+                        c.params.seed = 1 + self.design_cues.len() as u64;
+                        c.gain_db = match &a.volume {
+                            Some(Num::Num(v)) => 20.0 * (v.max(1e-4) as f32).log10(),
+                            Some(Num::Str(s)) => s.trim().trim_end_matches("dB").trim_end_matches("db").trim().parse().unwrap_or(0.0),
+                            None => 0.0,
+                        };
+                        c.why = path.to_string();
+                        self.design_cues.push(c);
+                        return None;
+                    }
+                    let names = crate::audio::design::all_names();
+                    self.d.push(Diagnostic::error(format!("{path}.sfx"), format!("unknown sound effect '{n}'")).suggest(suggest(n, &names)));
                     return None;
                 }
                 let duration = a.duration.as_ref().map(|x| self.time_raw(x, &format!("{path}.duration")) as f64);

@@ -894,7 +894,7 @@ impl Fluid {
 }
 
 /// The word as a dye mask on the fine grid (1 inside the letters).
-fn word_mask(w: &Word, dx: usize, dy: usize, aspect: f32) -> Vec<f32> {
+pub(crate) fn word_mask(w: &Word, dx: usize, dy: usize, aspect: f32) -> Vec<f32> {
     let mut mask = vec![0.0f32; dx * dy];
     let Ok(mesh) = crate::scene3d::geom::text(&w.text, &w.font, w.weight, 0.02, 1.0, 0.1, 0.0, 0.5) else { return mask };
     // Centre the word's bounds on `pos`, cap height `size`.

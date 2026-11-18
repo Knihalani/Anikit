@@ -1,0 +1,6 @@
+{ "size": "1080p", "scenes": [ { "duration": 4, "background": "#f4e3c3", "layers": [
+  { "text": "Groovy\nGoods", "font": "Shrikhand", "size": "26vh", "lineHeight": 0.9, "color": "#e8542a", "align": "left", "x": "8vw", "y": "48vh", "anchor": "left",
+    "shadow": { "x": 14, "y": 14, "blur": 0, "color": "#2c1a10" },
+    "animator": { "by": "char", "y": -60, "opacity": 0, "rotation": -8, "duration": 1.2, "smooth": 0.3, "ease": "outBack" } },
+  { "text": "EST. 1974 · SLOW FOOD", "font": "Fraunces", "size": "3vh", "weight": 600, "axes": { "SOFT": 100, "WONK": 1 }, "letterSpacing": "0.14em",
+    "color": "#2c1a10", "align": "left", "x": "8.5vw", "y": "86vh", "anchor": "left" } ] } ] }
