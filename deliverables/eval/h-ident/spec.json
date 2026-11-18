@@ -1,0 +1,270 @@
+{
+ "size": "16:9",
+ "fps": 30,
+ "background": "#050404",
+ "intent": {
+  "pace": "calm"
+ },
+ "defs": {
+  "kestrel": {
+   "type": "group",
+   "x": 960,
+   "y": 625,
+   "width": 800,
+   "height": 500,
+   "scale": 0.86,
+   "layers": [
+    {
+     "type": "group",
+     "x": 420,
+     "y": 186,
+     "width": 300,
+     "height": 100,
+     "anchor": [
+      0,
+      0.6
+     ],
+     "rotation": "=-5 + 27*(1-smoothstep(3.2,4.3,gt))*sin(gt*33)",
+     "scaleY": "=1 - 0.35*(1-smoothstep(3.2,4.3,gt))*max(0, sin(gt*33 + 1.3))",
+     "layers": [
+      {
+       "shape": "path",
+       "x": 0,
+       "y": 0,
+       "anchor": "topLeft",
+       "fill": "$ink",
+       "d": "M0 42 C 50 18, 130 2, 214 6 C 240 7, 266 11, 294 18 L 268 27 L 288 34 L 258 39 L 276 48 L 244 50 L 258 61 L 222 60 L 228 72 L 190 68 C 140 78, 76 92, 0 96 Z"
+      }
+     ]
+    },
+    {
+     "type": "group",
+     "x": 380,
+     "y": 186,
+     "width": 300,
+     "height": 100,
+     "anchor": [
+      1,
+      0.6
+     ],
+     "rotation": "=5 - 27*(1-smoothstep(3.2,4.3,gt))*sin(gt*33)",
+     "scaleY": "=1 - 0.35*(1-smoothstep(3.2,4.3,gt))*max(0, sin(gt*33 + 1.3))",
+     "layers": [
+      {
+       "shape": "path",
+       "x": 0,
+       "y": 0,
+       "anchor": "topLeft",
+       "fill": "$ink",
+       "d": "M300 42 C 250 18, 170 2, 86 6 C 60 7, 34 11, 6 18 L 32 27 L 12 34 L 42 39 L 24 48 L 56 50 L 42 61 L 78 60 L 72 72 L 110 68 C 160 78, 224 92, 300 96 Z"
+      }
+     ]
+    },
+    {
+     "type": "group",
+     "x": 400,
+     "y": 200,
+     "width": 100,
+     "height": 260,
+     "anchor": [
+      0.5,
+      0.25
+     ],
+     "rotation": "=1.2*sin(gt*2.1)*(1-smoothstep(3.2,4.3,gt))",
+     "layers": [
+      {
+       "shape": "path",
+       "x": 6,
+       "y": 0,
+       "anchor": "topLeft",
+       "fill": "$ink",
+       "d": "M44 12 C 56 12, 63 20, 63 30 C 63 35, 61 38, 59 40 C 72 50, 78 72, 75 98 C 72 122, 62 140, 58 152 L 104 226 C 98 236, 88 240, 80 236 C 70 244, 58 244, 50 240 C 46 244, 42 244, 38 240 C 30 244, 18 244, 8 236 C 0 240, -10 236, -16 226 L 30 152 C 26 140, 16 122, 13 98 C 10 72, 16 50, 29 40 C 27 38, 25 35, 25 30 C 25 20, 32 12, 44 12 Z"
+      }
+     ]
+    }
+   ],
+   "rotation": "=-3 + 1.5*noise(gt*1.3)*(1-smoothstep(3.2,4.3,gt))"
+  }
+ },
+ "post": {
+  "grain": 0.035,
+  "vignette": 0.35,
+  "halation": 0.25,
+  "bloom": 0.12
+ },
+ "music": {
+  "bpm": 60,
+  "key": "Dm",
+  "master": {
+   "reverb": "hall"
+  },
+  "end": "ring",
+  "tracks": [
+   {
+    "inst": "cello",
+    "notes": "o2 D2:3.7 D2:2.3",
+    "at": 0.15,
+    "gain": -5
+   },
+   {
+    "inst": "strings",
+    "notes": "[A3 D4 E4]:3.7 [D3 A3 D4 F#4 A4]:2.3",
+    "at": 0.3,
+    "gain": -6,
+    "reverb": 0.5
+   },
+   {
+    "inst": "harp",
+    "notes": "o4 D3:0.07 A3:0.07 D4:0.07 F#4:0.07 A4:0.07 D5:2",
+    "at": 3.72,
+    "gain": -4,
+    "reverb": 0.5
+   },
+   {
+    "inst": "celesta",
+    "notes": "F#5:0.5 A5:2",
+    "at": 4.25,
+    "gain": -12,
+    "reverb": 0.6
+   }
+  ],
+  "sfx": [
+   {
+    "sfx": "reverse-cymbal",
+    "at": 3.75,
+    "gain": -10
+   }
+  ]
+ },
+ "sound": {
+  "palette": "organic",
+  "ambience": {
+   "type": "wind",
+   "level": -10
+  },
+  "density": 0.3,
+  "space": "hall"
+ },
+ "scenes": [
+  {
+   "duration": 6,
+   "camera": {
+    "animate": [
+     {
+      "from": {
+       "zoom": 1.0
+      },
+      "to": {
+       "zoom": 1.07
+      },
+      "duration": 6,
+      "ease": "inOutSine"
+     }
+    ]
+   },
+   "layers": [
+    {
+     "id": "world",
+     "type": "shader",
+     "src": "sky.glsl",
+     "uniforms": {
+      "dusk": 0,
+      "grass": 1
+     },
+     "animate": [
+      {
+       "from": {
+        "opacity": 0
+       },
+       "to": {
+        "opacity": 1
+       },
+       "duration": 0.6,
+       "ease": "outCubic"
+      }
+     ]
+    },
+    {
+     "id": "night",
+     "shape": "rect",
+     "x": 960,
+     "y": 540,
+     "width": 2400,
+     "height": 1500,
+     "fill": "#060404",
+     "matte": {
+      "layer": "mask",
+      "mode": "alphaInverted"
+     },
+     "animate": [
+      {
+       "from": {
+        "opacity": 0
+       },
+       "to": {
+        "opacity": 1
+       },
+       "at": 3.3,
+       "duration": 0.9,
+       "ease": "inOutCubic"
+      }
+     ]
+    },
+    {
+     "id": "mask",
+     "use": "kestrel",
+     "with": {
+      "ink": "#FFFFFF"
+     }
+    },
+    {
+     "id": "silhouette",
+     "use": "kestrel",
+     "with": {
+      "ink": "#120B09"
+     },
+     "animate": [
+      {
+       "from": {
+        "opacity": 1
+       },
+       "to": {
+        "opacity": 0
+       },
+       "at": 3.15,
+       "duration": 0.5,
+       "ease": "inOutSine"
+      }
+     ]
+    },
+    {
+     "text": "KESTREL",
+     "font": "Cormorant Garamond",
+     "weight": 500,
+     "size": 88,
+     "letterSpacing": 37,
+     "color": "#EFE4D2",
+     "x": 960,
+     "y": 930,
+     "start": 4.0,
+     "animate": [
+      {
+       "from": {
+        "opacity": 0,
+        "blur": 6,
+        "letterSpacing": 64
+       },
+       "to": {
+        "opacity": 1,
+        "blur": 0,
+        "letterSpacing": 37
+       },
+       "duration": 1.9,
+       "ease": "outQuart"
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}
