@@ -379,6 +379,34 @@ fn dither_keeps_exact_values_and_breaks_bands() {
 }
 
 #[test]
+fn adaptive_render_reuses_scratch_across_sizes() {
+    let src = "void mainImage(out vec4 c, in vec2 p) {
+        float a = step(0.5, fract(p.x * 0.137 + sin(p.y * 0.31) * 0.2));
+        float b = step(0.5, fract(p.y * 0.173 + sin(p.x * 0.27) * 0.2));
+        c = vec4(a, b, a * b, 0.2 + 0.8 * step(0.5, fract(p.x * 0.071 + p.y * 0.113)));
+    }";
+    let shader = Shader::compile(src).unwrap();
+    for max_refine in [1.0, 0.2] {
+        let mut f = Frame::new(97, 61, 0.0);
+        f.supersample = true;
+        f.adaptive = true;
+        f.max_refine = max_refine;
+        f.alpha = true;
+        f.dither = true;
+        for (w, h) in [(97, 61), (40, 30), (97, 61)] {
+            f.width = w;
+            f.height = h;
+            let mut reused = vec![0u8; w as usize * h as usize * 4];
+            shader.render(&f, &mut reused);
+            let fresh = Shader::compile(src).unwrap();
+            let mut expected = vec![0u8; reused.len()];
+            fresh.render(&f, &mut expected);
+            assert_eq!(reused, expected, "size {w}×{h}, max_refine {max_refine}");
+        }
+    }
+}
+
+#[test]
 fn unrolled_loops_keep_glsl_semantics() {
     // Counter value after the loop, divergent ifs around it, nested and
     // decreasing loops, loops with a break (not unrolled), <= bounds.
