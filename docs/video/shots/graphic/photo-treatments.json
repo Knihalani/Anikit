@@ -1,0 +1,7 @@
+{ "size": [1920, 1080], "background": "#f2ede2", "scenes": [ { "duration": 1, "layers": [
+  { "src": "polyhaven:hdri/venice_sunset?yaw=96&pitch=4&fov=58&w=960&h=540", "fit": "cover", "x": 0, "y": 0, "anchor": "topLeft", "width": 960, "height": 540 },
+  { "src": "polyhaven:hdri/venice_sunset?yaw=96&pitch=4&fov=58&w=960&h=540", "fit": "cover", "x": 960, "y": 0, "anchor": "topLeft", "width": 960, "height": 540, "duotone": ["#14213d", "#ffb703"], "toneRange": [0.05, 0.85] },
+  { "src": "polyhaven:hdri/venice_sunset?yaw=96&pitch=4&fov=58&w=960&h=540", "fit": "cover", "x": 0, "y": 540, "anchor": "topLeft", "width": 960, "height": 540, "toneRange": [0.12, 1.0], "halftone": { "cell": 5, "angle": 30, "shape": "line", "ink": "#151515", "paper": "#f2ede2", "gain": 0.9 } },
+  { "src": "polyhaven:hdri/venice_sunset?yaw=96&pitch=4&fov=58&w=960&h=540", "fit": "cover", "x": 960, "y": 540, "anchor": "topLeft", "width": 960, "height": 540, "duotone": ["#3255a4", "#ffffff"], "toneRange": [0.1, 0.7], "blend": "multiply", "inkTexture": { "amount": 0.2, "seed": 1 } },
+  { "src": "polyhaven:hdri/venice_sunset?yaw=96&pitch=4&fov=58&w=960&h=540", "fit": "cover", "x": 966, "y": 545, "anchor": "topLeft", "width": 960, "height": 540, "gradientMap": ["#ff48b0", "#ffffff"], "toneRange": [0.3, 0.95], "halftone": { "cell": 8, "angle": 75, "ink": "#ff48b0" }, "blend": "multiply", "clip": true }
+] } ] }

@@ -108,6 +108,9 @@ struct C<'a> {
     /// The video's grid, and the grid in force for the layers being compiled.
     video_grid: Option<spec::GridSpec>,
     grid: Option<spec::GridSpec>,
+    /// The layer being compiled: its anchor and whether it is text (for `cell` tweens).
+    cur_anchor: [f32; 2],
+    cur_text: bool,
     /// Resting boxes `[left, top, right, bottom]` of the earlier siblings with an `id`, for `"=title.bottom + 24"`.
     sib: Vec<(String, [f32; 4])>,
     /// The generated music's notes (video seconds) and beats per bar, for `onNotes`.
@@ -299,6 +302,8 @@ impl Evaluator {
             uniform_slots: Vec::new(),
             video_grid: spec.grid.clone(),
             grid: None,
+            cur_anchor: [0.5, 0.5],
+            cur_text: false,
             sib: Vec::new(),
             score: None,
             pinned_music: None,
@@ -330,7 +335,11 @@ impl Evaluator {
         let (theme, bad) = Theme::resolve(spec.theme.as_ref());
         c.theme = theme;
         for (k, v) in bad {
-            c.d.push(Diagnostic::error(format!("theme.colors.{k}"), format!("invalid colour '{v}'")));
+            if k == "palette" {
+                c.d.push(Diagnostic::error("theme.palette", v));
+            } else {
+                c.d.push(Diagnostic::error(format!("theme.colors.{k}"), format!("invalid colour '{v}' ({COLOUR_FORMS})")));
+            }
         }
         c.load_fonts(spec);
         if let Some(m) = &spec.markers {
@@ -394,7 +403,7 @@ impl Evaluator {
             let path = format!("scenes[{i}]");
             let id = s.id.clone().unwrap_or_else(|| format!("scene{}", i + 1));
             let trans = if i == 0 {
-                TransC { kind: TransKind::Cut, dur: 0.0, ease: 0, dir: [-1.0, 0.0], color: Rgba([0.0, 0.0, 0.0, 1.0]), origin: [0.0; 2], amount: 0.0, shader: None, layer: None, shape: 0, count: 0 }
+                TransC { kind: TransKind::Cut, dur: 0.0, ease: 0, dir: [-1.0, 0.0], color: Rgba([0.0, 0.0, 0.0, 1.0]), origin: [0.0; 2], amount: 0.0, shader: None, layer: None, shape: 0, count: 0, carry: Vec::new() }
             } else {
                 let (tr, tp) = match (&s.transition, &default_trans) {
                     (Some(t), _) => (Some(t), format!("{path}.transition")),
@@ -458,6 +467,9 @@ impl Evaluator {
             }
             let depth = camera.base[prop::APERTURE] != 0.0
                 || camera.tracks.iter().any(|t| t.slot as usize == prop::APERTURE)
+                || camera.base[prop::DOLLY] != 0.0
+                || camera.tracks.iter().any(|t| t.slot as usize == prop::DOLLY)
+                || camera.exprs.iter().any(|e| e.0 as usize == prop::DOLLY)
                 || layers.iter().any(|n| n.base[prop::DEPTH] != 0.0 || n.tracks.iter().any(|t| t.slot as usize == prop::DEPTH) || n.exprs.iter().any(|e| e.0 as usize == prop::DEPTH));
             // Leading layers that fill the frame and don't move are the backdrop.
             let (fw, fh) = (c.w, c.h);
@@ -535,6 +547,8 @@ impl Evaluator {
     }
 }
 
+const COLOUR_FORMS: &str = "use \"#ff5a1f\", \"#f51\", \"#ff5a1f80\" (with alpha), a name like \"white\", a theme token like \"$accent\", \"rgb(255, 90, 31)\", \"hsl(20, 100, 56)\", \"oklch(0.7, 0.19, 40)\", or a per-frame expression \"=mix($primary, $accent, p)\"";
+
 fn any_on_notes(ls: &[Layer]) -> bool {
     ls.iter().any(|l| l.on_notes.is_some() || l.layers.as_deref().is_some_and(any_on_notes) || l.children.as_deref().is_some_and(any_on_notes))
 }
@@ -581,6 +595,16 @@ impl Built {
     }
 }
 
+/// Spring names whose anikit-core defaults overshoot more than motion design wants by default:
+/// `bouncy` lands at ~8% here (core's is ~39%); `springy` keeps the big bounce on request.
+fn spring_alias(name: &str) -> Option<&'static str> {
+    match name {
+        "bouncy" | "spring.bouncy" => Some("spring(300, 22)"),
+        "springy" => Some("spring(300, 10)"),
+        _ => None,
+    }
+}
+
 fn empty_node(kind: Kind) -> Node {
     Node {
         kind,
@@ -599,6 +623,7 @@ fn empty_node(kind: Kind) -> Node {
         treat: Vec::new(),
         treat_slot: 0,
         live_pattern: None,
+        ink_follow: false,
         brush: None,
         step: 0.0,
         boil: None,
@@ -651,6 +676,27 @@ impl C<'_> {
                 if let Some(t) = self.musical(s, path) {
                     return (t, None);
                 }
+                // `"=1.2 + 0.1 * 3"`: an expression, worked out once (a time can't change per frame).
+                if let Some(e) = s.strip_prefix('=') {
+                    return match Expr::compile(e, 1.0, self.w as f64, self.h as f64) {
+                        Ok(x) if !x.dynamic => (x.eval(&super::expr::Vars { w: self.w as f64, h: self.h as f64, fps: self.fps as f64, ..Default::default() }) as f32, None),
+                        Ok(x) => match x.constant() {
+                            Some(v) => (v as f32, None),
+                            None if x.music => {
+                                self.d.push(Diagnostic::error(path, format!("'{s}': a time is fixed when the spec loads, so it can't read beat/bar/level; use a marker (\"@beat17\", \"@bar5+0.25\") or a musical length (\"2 beats\")")));
+                                (0.0, None)
+                            }
+                            None => {
+                                self.d.push(Diagnostic::error(path, format!("'{s}': a time is fixed when the spec loads, so it can't use t/gt/p/frame (w, h, fps and maths are fine, e.g. \"=12 / fps\")")));
+                                (0.0, None)
+                            }
+                        },
+                        Err(m) => {
+                            self.d.push(Diagnostic::error(path, format!("time expression '{s}': {m}")));
+                            (0.0, None)
+                        }
+                    };
+                }
                 if let Some(m) = s.strip_prefix('@') {
                     let (name, off) = match m.find(['+', '-']) {
                         Some(i) => (&m[..i], m[i..].parse::<f32>().ok()),
@@ -691,7 +737,7 @@ impl C<'_> {
                 match num.trim().parse::<f32>() {
                     Ok(v) => (v * mul, None),
                     Err(_) => {
-                        self.d.push(Diagnostic::error(path, format!("invalid time '{s}' (use 1.5, \"1.5s\", \"500ms\", \"12f\" or \"@marker\")")));
+                        self.d.push(Diagnostic::error(path, format!("invalid time '{s}' (use seconds 1.5, \"1.5s\", \"500ms\", frames \"12f\", a marker \"@intro\" / \"@beat17\" / \"@bar5+0.25\", music \"2 beats\", or arithmetic \"=12 / fps\")")));
                         (0.0, None)
                     }
                 }
@@ -758,7 +804,7 @@ impl C<'_> {
                         None => {
                             self.d.push(Diagnostic::error(
                                 path,
-                                format!("invalid value '{s}' (use a number, \"50%\", \"10vw\", \"8vh\" or an expression \"=…\")"),
+                                format!("invalid value '{s}' (use a number like 960, \"50%\" of the parent, \"10vw\" / \"8vh\" / \"5vmin\", \"24px\", \"1.5em\", or an expression like \"=w / 2 + 100 * sin(t)\")"),
                             ));
                             V::C(0.0)
                         }
@@ -797,6 +843,7 @@ impl C<'_> {
         self.score = Some((|| {
             let mut cue = crate::music::parse_with_cuts(v, &self.o.base_dir, &cuts)?;
             cue.pinned = Some((t, voice));
+            self.beat_marks.pin(t);
             let notes = crate::music::score(&cue, t, voice)?;
             let bpb = anikit_music::beat_grid(&cue.spec)?.beats_per_bar;
             self.pinned_music = Some(Arc::new(cue));
@@ -1012,7 +1059,7 @@ impl C<'_> {
             "expressiveExit" => Some("cubic-bezier(0.4, 0.14, 1, 1)"),
             _ => None,
         };
-        match Easing::parse(named.unwrap_or(name)) {
+        match Easing::parse(named.or(spring_alias(name)).unwrap_or(name)) {
             Some(e) => {
                 let i = self.easings.len() as u32;
                 self.easings.push(e);
@@ -1029,6 +1076,7 @@ impl C<'_> {
     /// Spring easing and its settle duration.
     fn spring(&mut self, s: &spec::SpringSpec, path: &str) -> (u32, f32) {
         let e = match s {
+            spec::SpringSpec::Name(n) if spring_alias(n).is_some() => Easing::parse(spring_alias(n).unwrap()),
             spec::SpringSpec::Name(n) => {
                 if val::check_word(n, val::SPRINGS).is_err() {
                     self.d.push(Diagnostic::error(path, format!("unknown spring '{n}'")).suggest(suggest(n, val::SPRINGS)));
@@ -1051,6 +1099,26 @@ impl C<'_> {
 
     // ---------- paint ----------
 
+    /// A colour function written without `=`: `oklch(0.7, 0.15, 30)`, CSS's `oklch(70% 0.15 30 / 0.5)`, `hsl(…)`, `mix(…)`.
+    fn color_fn(&self, s: &str) -> Option<Rgba> {
+        let s = s.trim();
+        let open = s.find('(')?;
+        if !s.ends_with(')') {
+            return None;
+        }
+        let inner = &s[open + 1..s.len() - 1];
+        let args = if inner.contains(',') {
+            inner.to_string()
+        } else {
+            // CSS level 4: spaces between channels, `/ alpha`, percentages.
+            inner.replace('/', " ").split_whitespace().map(|a| a.trim_end_matches('%').to_string()).collect::<Vec<_>>().join(", ")
+        };
+        let src = format!("{}({args})", &s[..open]);
+        let theme = &self.theme;
+        let e = super::expr::ColorExpr::compile(&src, &mut |x: &str| theme.color(x).map(|c| c.0)).ok()?;
+        Some(Rgba(e.eval(&super::expr::Vars::default())))
+    }
+
     fn color(&mut self, s: &str, path: &str) -> Option<Rgba> {
         match self.theme.color(s) {
             Some(c) => Some(c),
@@ -1058,8 +1126,10 @@ impl C<'_> {
                 if let Some(t) = s.trim().strip_prefix('$') {
                     let names: Vec<&String> = self.theme.colors.keys().collect();
                     self.d.push(Diagnostic::error(path, format!("unknown colour token '${t}'")).suggest(suggest(t, &names).map(|x| format!("${x}"))));
+                } else if let Some(c) = self.color_fn(s) {
+                    return Some(c);
                 } else {
-                    self.d.push(Diagnostic::error(path, format!("invalid colour '{s}'")));
+                    self.d.push(Diagnostic::error(path, format!("invalid colour '{s}' ({COLOUR_FORMS})")));
                 }
                 None
             }
@@ -1319,7 +1389,11 @@ impl C<'_> {
         if kind == TransKind::ZoomThrough && o.layer.is_none() {
             self.d.push(Diagnostic::error(format!("{path}.layer"), "zoomThrough needs 'layer': the id of a layer in the previous scene to fly into"));
         }
-        TransC { kind, dur, ease, dir, color, origin, amount, shader, layer: o.layer.clone(), shape, count: o.count.unwrap_or(8).clamp(1, 64) }
+        let carry = o.carry.clone().unwrap_or_default();
+        if !carry.is_empty() && kind == TransKind::Cut {
+            self.d.push(Diagnostic::warning(format!("{path}.carry"), "a cut has no duration to carry layers across; give the transition a type and duration"));
+        }
+        TransC { kind, dur, ease, dir, color, origin, amount, shader, layer: o.layer.clone(), shape, count: o.count.unwrap_or(8).clamp(1, 64), carry }
     }
 
     fn scene(&mut self, s: &spec::Scene, path: &str, dur: f32, default_bg: &spec::Paint) -> Built {
@@ -1345,6 +1419,7 @@ impl C<'_> {
             self.set(&mut camera, prop::ZOOM, cam.zoom.as_ref(), &format!("{cp}.zoom"), 1.0);
             self.set(&mut camera, prop::ROT, cam.rotation.as_ref(), &format!("{cp}.rotation"), 1.0);
             self.set(&mut camera, prop::FOCUS, cam.focus.as_ref(), &format!("{cp}.focus"), 1.0);
+            self.set(&mut camera, prop::DOLLY, cam.dolly.as_ref(), &format!("{cp}.dolly"), 1.0);
             self.set(&mut camera, prop::APERTURE, cam.aperture.as_ref(), &format!("{cp}.aperture"), 1.0);
             let mut tw = Vec::new();
             if let Some(a) = &cam.animate {
@@ -1961,6 +2036,8 @@ impl C<'_> {
         }
 
         // Animation.
+        self.cur_anchor = n.anchor;
+        self.cur_text = matches!(n.kind, Kind::Text { .. });
         let refs = [pw, ph];
         let mut tw: Vec<TweenC> = Vec::new();
         let life_end = if end.is_finite() { end - start } else { self.scene_dur - start };
@@ -2134,7 +2211,7 @@ impl C<'_> {
                     m
                 }
                 Err(e) => {
-                    me.d.push(Diagnostic::error(format!("{path}.{key}"), format!("invalid SVG path: {e}")));
+                    me.d.push(Diagnostic::error(format!("{path}.{key}"), format!("invalid SVG path: {e} (SVG path data like \"M0 0 L100 0 L50 80 Z\" or \"M10 80 C40 10 65 10 95 80\")")));
                     None
                 }
             }
@@ -2281,10 +2358,13 @@ impl C<'_> {
             let p = format!("{path}.inertia");
             // (stiffness, damping, mass): damping ratio ≈ damping / (2·sqrt(stiffness·mass)).
             let preset = |name: &str| match name {
-                "soft" => Some((90.0, 9.0, 1.0)),
-                "bouncy" => Some((220.0, 9.0, 1.0)),
+                // Overshoot on a step: soft 5%, bouncy 7%, tight 3%, heavy 2% (tasteful range); springy 37%, wobbly 18% go further.
+                "soft" => Some((90.0, 13.0, 1.0)),
+                "bouncy" => Some((220.0, 19.0, 1.0)),
                 "tight" => Some((400.0, 30.0, 1.0)),
-                "heavy" => Some((120.0, 16.0, 2.2)),
+                "heavy" => Some((120.0, 25.0, 2.2)),
+                "springy" => Some((220.0, 9.0, 1.0)),
+                "wobbly" => Some((90.0, 9.0, 1.0)),
                 "" | "default" => Some((170.0, 14.0, 1.0)),
                 _ => None,
             };
@@ -2295,7 +2375,7 @@ impl C<'_> {
                 serde_json::Value::String(s) => {
                     let r = preset(s);
                     if r.is_none() {
-                        self.d.push(Diagnostic::error(&p, format!("unknown inertia preset '{s}'")).suggest(suggest(s, &["soft", "bouncy", "tight", "heavy"])));
+                        self.d.push(Diagnostic::error(&p, format!("unknown inertia preset '{s}'")).suggest(suggest(s, &["soft", "bouncy", "tight", "heavy", "springy", "wobbly"])));
                     }
                     r
                 }
@@ -2349,6 +2429,19 @@ impl C<'_> {
             } else {
                 self.d.push(Diagnostic::error(format!("{path}.posterizeTime"), "posterizeTime is poses per second (e.g. 12)"));
             }
+        }
+        if let Some(x) = &l.extrude {
+            let ang = x.angle.unwrap_or(45.0).to_radians() as f32;
+            let len = x.length.unwrap_or(60.0).clamp(0.0, 2000.0) as f32;
+            let steps = (len / 1.5).ceil().clamp(1.0, 400.0) as u32;
+            let c = match &x.color {
+                Some(c) => self.color(c, &format!("{path}.extrude.color")).unwrap_or(Rgba([0.0, 0.0, 0.0, 0.5])),
+                None => Rgba([0.0, 0.0, 0.0, 0.5]),
+            };
+            // RGB := the colour, alpha := alpha × colour alpha (unpremultiplied 4×5 matrix).
+            let m = [0.0, 0.0, 0.0, 0.0, c.0[0], 0.0, 0.0, 0.0, 0.0, c.0[1], 0.0, 0.0, 0.0, 0.0, c.0[2], 0.0, 0.0, 0.0, c.0[3], 0.0];
+            let step = len / steps as f32;
+            f.extrude = Some((ang.cos() * step, ang.sin() * step, steps, x.fade.unwrap_or(0.0).clamp(0.0, 1.0) as f32, m));
         }
         f.smear = match &l.smear {
             None | Some(serde_json::Value::Bool(false)) => None,
@@ -2564,7 +2657,28 @@ impl C<'_> {
                 let maxw = mw.unwrap_or(pc.size[0] * 0.9);
                 if given_w.is_none() && l0.width > maxw && (!pc.in_box || mw.is_some()) {
                     tspec.width = Some(maxw);
-                    self.assets.fonts.layout(&tspec)
+                    let lw = self.assets.fonts.layout(&tspec);
+                    // Balanced breaks for headlines (CSS text-wrap: balance): the narrowest
+                    // width with the same line count, so no line is a stub.
+                    let n_lines = lw.lines.len();
+                    let headline = tspec.style.size >= self.h * 0.04;
+                    if n_lines >= 2 && l.balance.unwrap_or(headline) {
+                        let (mut lo, mut hi) = (maxw / n_lines as f32 * 0.8, maxw);
+                        for _ in 0..10 {
+                            let mid = (lo + hi) * 0.5;
+                            let mut probe = tspec.clone();
+                            probe.width = Some(mid);
+                            if self.assets.fonts.layout(&probe).lines.len() > n_lines {
+                                lo = mid;
+                            } else {
+                                hi = mid;
+                            }
+                        }
+                        tspec.width = Some((hi + 1.0).min(maxw));
+                        self.assets.fonts.layout(&tspec)
+                    } else {
+                        lw
+                    }
                 } else {
                     l0
                 }
@@ -2794,6 +2908,38 @@ impl C<'_> {
         }
     }
 
+    /// The rect of a cell value in the current grid (for tweens).
+    fn cell_rect(&mut self, c: &serde_json::Value, path: &str, size: [f32; 2]) -> Option<[f32; 4]> {
+        let Some(g) = self.grid.clone() else {
+            self.d.push(Diagnostic::error(path, "'cell' needs a grid on the video, the scene or a parent group"));
+            return None;
+        };
+        let gc = self.grid_c(&g, size, path);
+        let r = match c {
+            serde_json::Value::String(s) => match g.areas.as_ref().and_then(|a| a.get(s.as_str())) {
+                Some(r) => super::graphic::parse_cell(r, gc.cols, gc.rows),
+                None => super::graphic::parse_cell(s, gc.cols, gc.rows),
+            },
+            serde_json::Value::Array(a) if (2..=4).contains(&a.len()) => {
+                let v: Vec<u32> = a.iter().map(|x| x.as_f64().unwrap_or(1.0).max(1.0) as u32).collect();
+                let (nc, nr) = (v.get(2).copied().unwrap_or(1), v.get(3).copied().unwrap_or(1));
+                if v[0] + nc - 1 > gc.cols || v[1] + nr - 1 > gc.rows {
+                    Err("runs past the grid".into())
+                } else {
+                    Ok((v[0], v[0] + nc - 1, v[1], v[1] + nr - 1))
+                }
+            }
+            _ => Err("expected an area name, a range like \"1-6/2-4\" or [col, row, cols, rows]".into()),
+        };
+        match r {
+            Ok((c0, c1, r0, r1)) => Some(gc.rect(c0, c1, r0, r1)),
+            Err(e) => {
+                self.d.push(Diagnostic::error(path, e));
+                None
+            }
+        }
+    }
+
     /// A copy of `l` placed in its grid cell.
     fn place_in_cell(&mut self, l: &Layer, c: &serde_json::Value, path: &str, size: [f32; 2]) -> Layer {
         let cp = format!("{path}.cell");
@@ -3007,6 +3153,23 @@ impl C<'_> {
 
     /// Image treatments (`duotone`, `gradientMap`, `posterize`, `halftone`) as layer filters.
     fn treatments(&mut self, l: &Layer, path: &str, n: &mut Node) {
+        let expanded;
+        let l = match l.print.as_deref() {
+            Some(p) => match print_preset(l, p) {
+                Some(x) => {
+                    if l.blend.is_none() && x.blend.as_deref() == Some("multiply") {
+                        n.blend = Blend::Multiply;
+                    }
+                    expanded = x;
+                    &expanded
+                }
+                None => {
+                    self.d.push(Diagnostic::error(format!("{path}.print"), format!("unknown print '{p}'")).suggest(suggest(p, PRINTS)));
+                    l
+                }
+            },
+            None => l,
+        };
         let mut ht_nums: Option<(Option<Num>, Option<Num>, Option<Num>)> = None;
         let mut ink_num: Option<Num> = None;
         let mut stops: Option<Vec<(f32, Rgba)>> = None;
@@ -3080,7 +3243,8 @@ impl C<'_> {
                     Some(x) => me.color(x, &format!("{hp}.{key}")).unwrap_or(Rgba([0.0, 0.0, 0.0, 1.0])),
                 }
             };
-            let ink = col(self, &hs.ink, "ink", "source");
+            let cmyk = hs.ink.as_deref() == Some("cmyk");
+            let ink = if cmyk { Rgba([0.0; 4]) } else { col(self, &hs.ink, "ink", "source") };
             let paper = col(self, &hs.paper, "paper", "none");
             let cell = match &hs.cell {
                 Some(Num::Num(c)) => *c as f32,
@@ -3089,7 +3253,7 @@ impl C<'_> {
             if cell < 3.0 {
                 self.d.push(Diagnostic::warning(format!("{hp}.cell"), "cells under 3 px alias into moiré after encoding; use 4 px or more"));
             }
-            n.treat.push(Filter::Halftone(dl::Halftone { cell: cell.max(2.0), angle: 45.0, shape, ink, paper, gain: 1.0, ox: 0.0, oy: 0.0 }));
+            n.treat.push(Filter::Halftone(dl::Halftone { cell: cell.max(2.0), angle: 45.0, shape, ink, paper, gain: 1.0, ox: 0.0, oy: 0.0, cmyk }));
             ht_nums = Some((hs.cell.clone(), hs.angle.clone(), hs.gain.clone()));
         }
         if let Some(iv) = &l.ink_texture {
@@ -3097,6 +3261,7 @@ impl C<'_> {
                 spec::InkValue::Amount(a) => (Num::Num(*a), 28.0, 1),
                 spec::InkValue::Full(o) => (o.amount.clone().unwrap_or(Num::Num(0.35)), o.scale.unwrap_or(28.0), o.seed.unwrap_or(1)),
             };
+            n.ink_follow = !matches!(iv, spec::InkValue::Full(spec::InkSpec { fixed: Some(true), .. }));
             n.treat.push(Filter::Ink { amount: 0.35, scale: scale.max(1.0) as f32, seed, ox: 0.0, oy: 0.0 });
             ink_num = Some(amount);
         }
@@ -3199,7 +3364,7 @@ impl C<'_> {
                         let mut it = s.split_whitespace();
                         let kind = it.next().unwrap_or("dots").to_string();
                         let spacing = it.next().and_then(|x| x.trim_end_matches("px").parse::<f64>().ok()).unwrap_or(40.0);
-                        Some(super::graphic::Pat { kind, spacing, mark: None, angle: 0.0, seed: l.seed.unwrap_or(1), jitter: 0.0, ramp: None, tile: None, turns: 0, stagger: false, tile_stroke: 0.0, field: None, t: 0.0 })
+                        Some(super::graphic::Pat { kind, spacing, mark: None, angle: 0.0, seed: l.seed.unwrap_or(1), jitter: 0.0, ramp: None, tile: None, turns: 0, stagger: false, tile_stroke: 0.0, field: None, t: 0.0, cover: None })
                     }
                     Some(spec::PatternValue::Full(f)) => Some(super::graphic::Pat {
                         kind: if f.kind.is_empty() && f.tile.is_some() { "tile".into() } else { f.kind.clone() },
@@ -3207,7 +3372,7 @@ impl C<'_> {
                             Some(d) => match Path::from_svg(d) {
                                 Ok(p) => Some(p),
                                 Err(e) => {
-                                    self.d.push(Diagnostic::error(format!("{pp}.tile"), format!("invalid SVG path: {e}")));
+                                    self.d.push(Diagnostic::error(format!("{pp}.tile"), format!("invalid SVG path: {e} (SVG path data like \"M0 0 L100 0 L50 80 Z\" or \"M10 80 C40 10 65 10 95 80\")")));
                                     None
                                 }
                             },
@@ -3216,6 +3381,7 @@ impl C<'_> {
                         turns: f.turns.unwrap_or(0).min(360),
                         stagger: f.stagger.unwrap_or(false),
                         tile_stroke: f.tile_stroke.unwrap_or(0.0).max(0.0),
+                        cover: None,
                         field: match &f.field {
                             Some(src) => match super::expr::Expr::compile_field(src.trim().trim_start_matches('='), self.w as f64, self.h as f64) {
                                 Ok(e) => Some(e),
@@ -3246,6 +3412,11 @@ impl C<'_> {
                         }
                         if pt.spacing < 4.0 {
                             self.d.push(Diagnostic::warning(&pp, "spacing under 4 px turns to moiré after encoding"));
+                        }
+                        // If the size animates (cell tweens, width/height, scale), cover the whole frame: marks are clipped anyway.
+                        let anim = format!("{:?} {:?}", l.animate, l.update);
+                        if ["\"cell\"", "\"width\"", "\"height\"", "\"scale", "\"zoom", "width:", "height:", "scale"].iter().any(|k| anim.contains(k)) || matches!(&l.width, Some(Num::Str(_))) || matches!(&l.height, Some(Num::Str(_))) {
+                            pt.cover = Some([self.w as f64 * 1.2, self.h as f64 * 1.2]);
                         }
                         if pt.field.as_ref().is_some_and(|e| e.dynamic) {
                             n.live_pattern = Some(Arc::new((pt.clone(), [w as f64, h as f64])));
@@ -3297,7 +3468,7 @@ impl C<'_> {
                 let bp = match Path::from_svg(d) {
                     Ok(p) => p,
                     Err(e) => {
-                        self.d.push(Diagnostic::error(format!("{path}.d"), format!("invalid SVG path: {e}")));
+                        self.d.push(Diagnostic::error(format!("{path}.d"), format!("invalid SVG path: {e} (SVG path data like \"M0 0 L100 0 L50 80 Z\" or \"M10 80 C40 10 65 10 95 80\")")));
                         Path::new()
                     }
                 };
@@ -3816,7 +3987,7 @@ impl C<'_> {
                 match Path::from_svg(d) {
                     Ok(b) => bp = b,
                     Err(e) => {
-                        self.d.push(Diagnostic::error(format!("{p}.d"), format!("invalid SVG path: {e}")));
+                        self.d.push(Diagnostic::error(format!("{p}.d"), format!("invalid SVG path: {e} (SVG path data like \"M0 0 L100 0 L50 80 Z\" or \"M10 80 C40 10 65 10 95 80\")")));
                         continue;
                     }
                 }
@@ -4318,14 +4489,31 @@ impl C<'_> {
         let mut slots = Vec::new();
         let mut fixed = Vec::new();
         let mut off = 0;
-        for u in &shader.uniforms {
+        // Animation slots go first to uniforms that need them: given as an
+        // expression, or named by the layer's keyframes/animations; the rest
+        // follow in declaration order. Static values past the slots are fixed.
+        let anim_keys = {
+            let mut v = serde_json::to_value(l).unwrap_or_default();
+            if let Some(o) = v.as_object_mut() {
+                for k in ["uniforms", "shader", "src", "buffers"] {
+                    o.remove(k);
+                }
+            }
+            v.to_string()
+        };
+        let animated = |name: &str| vals.iter().any(|(k, v)| k == name && v.is_err()) || anim_keys.contains(&format!("\"{name}\":"));
+        let mut order: Vec<&anikit_shader::DeclaredUniform> = shader.uniforms.iter().collect();
+        order.sort_by_key(|u| !animated(&u.name));
+        for u in order {
             let len = u.ty.components();
             let given = vals.iter().find(|(k, _)| *k == u.name).map(|(_, v)| v.clone());
             if off + len > UNIFORM_SLOTS {
                 if let Some(Ok(v)) = given.clone().or(u.default.clone().map(Ok)) {
                     fixed.push((u.name.clone(), v));
                 }
-                self.d.push(Diagnostic::warning(format!("{path}.uniforms.{}", u.name), format!("more than {UNIFORM_SLOTS} uniform floats: '{}' can't be animated", u.name)));
+                if animated(&u.name) {
+                    self.d.push(Diagnostic::warning(format!("{path}.uniforms.{}", u.name), format!("more than {UNIFORM_SLOTS} animated uniform floats: '{}' can't be animated (it keeps its first value)", u.name)));
+                }
                 continue;
             }
             if let Some(d) = &u.default {
@@ -4439,6 +4627,7 @@ impl C<'_> {
             alpha: l.alpha.unwrap_or(false),
             label: super::shader::label(path, l.shader.as_deref().or(l.src.as_deref())),
             audio: self.shader_audio(&text, path),
+            faithful: passes.is_none() && !text.contains("texelFetch"),
             passes,
         };
         Some((Kind::Shader(Box::new(sc)), size))
@@ -4510,9 +4699,12 @@ impl C<'_> {
             return None;
         }
         if self.music.is_none() {
-            let r = match self.beat_marks.music() {
-                None => Err("iAudio/iBeat need music: add a top-level `audio` track with a `src` (they stay 0)".to_string()),
-                Some((p, at, trim)) => super::audio_react::AudioFeatures::load(p, *at, *trim).map(Arc::new).map_err(|e| format!("iAudio/iBeat: {e}")),
+            // Generated `music` first (its exact grid, the same one expressions use),
+            // then the first music `audio` track.
+            let r = match (self.beat_marks.generated(), self.beat_marks.music()) {
+                (Some(g), _) => g.map(|(mono, rate, beats, bars, at)| Arc::new(super::audio_react::AudioFeatures::from_mono(&mono, rate, beats, bars, at))).map_err(|e| format!("iAudio/iBeat: {e}")),
+                (None, None) => Err("iAudio/iBeat need music: add generated `music` or a top-level `audio` track with a `src` (they stay 0)".to_string()),
+                (None, Some((p, at, trim))) => super::audio_react::AudioFeatures::load(p, *at, *trim).map(Arc::new).map_err(|e| format!("iAudio/iBeat: {e}")),
             };
             self.music = Some(r);
         }
@@ -4557,6 +4749,7 @@ impl C<'_> {
             label: super::shader::label(path, Some(src)),
             audio: self.shader_audio(&text, path),
             passes: None,
+            faithful: !text.contains("texelFetch"),
         })))
     }
 
@@ -4666,7 +4859,7 @@ impl C<'_> {
     }
 
     fn bad_val(&mut self, path: &str, s: &str) -> Option<ValS> {
-        self.d.push(Diagnostic::error(path, format!("invalid value {s} (use a number, a unit string, \"+40\", \"-40\" or \"*1.5\")")));
+        self.d.push(Diagnostic::error(path, format!("invalid value {s} (use a number like 120, a unit string like \"50%\" or \"10vw\", a relative change \"+40\" / \"-40\" / \"*1.5\", or a colour for fill/stroke)")));
         None
     }
 
@@ -4674,6 +4867,19 @@ impl C<'_> {
         let mut out = Vec::new();
         for (k, v) in m {
             let p = format!("{path}.{k}");
+            if k == "cell" {
+                // Tween to (or from) a grid field: x, y, width (and height, except text).
+                if let Some([x, y, w, h]) = self.cell_rect(v, &p, refs) {
+                    let a = self.cur_anchor;
+                    out.push((prop::X, 1, ValS::Abs(x + a[0] * w)));
+                    out.push((prop::Y, 1, ValS::Abs(y + a[1] * h)));
+                    out.push((prop::W, 1, ValS::Abs(w)));
+                    if !self.cur_text {
+                        out.push((prop::H, 1, ValS::Abs(h)));
+                    }
+                }
+                continue;
+            }
             if let (Some((slot, n)), Some(arr)) = (self.uniform_lookup(k), v.as_array()) {
                 // A vector uniform: one track per component.
                 for (i, x) in arr.iter().take(n).enumerate() {
@@ -4986,11 +5192,12 @@ impl C<'_> {
                 };
                 (vec![(OPACITY, 1, ValS::Abs(0.0)), (slot, 1, pd(v))], 0.7, "outExpo")
             }
-            "pop" => (vec![(SX, 2, ValS::Abs(0.0)), (OPACITY, 1, ValS::Abs(0.0))], 0.5, "outBack"),
+            // Overshoot kept in the tasteful 3–8% range (docs/video/craft/motion-design.md); `back.out(1.7)` / `springy` go further.
+            "pop" => (vec![(SX, 2, ValS::Abs(0.0)), (OPACITY, 1, ValS::Abs(0.0))], 0.5, "back.out(1.2)"),
             "scale" => (vec![(SX, 2, ValS::Mul(0.8)), (OPACITY, 1, ValS::Abs(0.0))], 0.5, "outCubic"),
             "zoom" => (vec![(SX, 2, ValS::Mul(1.4)), (OPACITY, 1, ValS::Abs(0.0)), (BLUR, 1, ValS::Abs(20.0))], 0.7, "outExpo"),
             "blur" => (vec![(BLUR, 1, ValS::Abs(30.0)), (OPACITY, 1, ValS::Abs(0.0))], 0.6, "outCubic"),
-            "rotate" => (vec![(ROT, 1, ValS::Add(-90.0)), (SX, 2, ValS::Mul(0.6)), (OPACITY, 1, ValS::Abs(0.0))], 0.6, "outBack"),
+            "rotate" => (vec![(ROT, 1, ValS::Add(-90.0)), (SX, 2, ValS::Mul(0.6)), (OPACITY, 1, ValS::Abs(0.0))], 0.6, "back.out(1.2)"),
             "flip" => (vec![(SX, 1, ValS::Abs(0.0))], 0.5, "outCubic"),
             "bounce" => (vec![(Y, 1, ValS::Add(-dist.unwrap_or(h * 0.3))), (OPACITY, 1, ValS::Abs(0.0))], 0.9, "bouncy"),
             "draw" => {
@@ -5389,4 +5596,55 @@ fn grid_show(g: &spec::GridSpec) -> u8 {
         Some(serde_json::Value::String(s)) if s == "over" => 1,
         _ => 0,
     }
+}
+
+const PRINTS: &[&str] = &["photocopy", "newsprint", "engraving", "riso", "screenprint"];
+
+/// `print` presets: starting values for the treatment keys the layer doesn't set itself.
+fn print_preset(l: &Layer, p: &str) -> Option<Layer> {
+    let mut o = l.clone();
+    let hs = |cell: f64, angle: f64, shape: &str, ink: &str, paper: &str| {
+        spec::HalftoneValue::Full(spec::HalftoneSpec {
+            cell: Some(Num::Num(cell)),
+            angle: Some(Num::Num(angle)),
+            shape: Some(shape.into()),
+            ink: Some(ink.into()),
+            paper: Some(paper.into()),
+            gain: None,
+        })
+    };
+    let ink = |a: f64, scale: f64| spec::InkValue::Full(spec::InkSpec { amount: Some(Num::Num(a)), scale: Some(scale), seed: None, fixed: None });
+    match p {
+        "photocopy" => {
+            o.duotone.get_or_insert_with(|| vec!["#161616".into(), "#efeee9".into()]);
+            o.posterize.get_or_insert(2);
+            o.tone_range.get_or_insert([0.28, 0.68]);
+            o.ink_texture.get_or_insert_with(|| ink(0.3, 10.0));
+        }
+        "newsprint" => {
+            o.tone_range.get_or_insert([0.05, 0.95]);
+            o.halftone.get_or_insert_with(|| hs(6.0, 45.0, "dot", "#1c1c1c", "#e8e4da"));
+        }
+        "engraving" => {
+            o.tone_range.get_or_insert([0.1, 1.0]);
+            o.halftone.get_or_insert_with(|| hs(5.0, 30.0, "line", "#151515", "#f2ede2"));
+        }
+        "riso" => {
+            o.duotone.get_or_insert_with(|| vec!["riso:medium-blue".into(), "#ffffff".into()]);
+            o.tone_range.get_or_insert([0.15, 0.75]);
+            o.blend.get_or_insert_with(|| "multiply".into());
+            o.ink_texture.get_or_insert_with(|| ink(0.25, 28.0));
+        }
+        "screenprint" => {
+            // Three flat inks on paper: dark, a red and a yellow (override with gradientMap).
+            if o.duotone.is_none() {
+                o.gradient_map.get_or_insert_with(|| ["#1b1a19", "#d7301f", "#f2c230", "#f4efe6"].iter().map(|c| serde_json::Value::String(c.to_string())).collect());
+            }
+            o.posterize.get_or_insert(4);
+            o.tone_range.get_or_insert([0.12, 0.85]);
+            o.ink_texture.get_or_insert_with(|| ink(0.15, 40.0));
+        }
+        _ => return None,
+    }
+    Some(o)
 }

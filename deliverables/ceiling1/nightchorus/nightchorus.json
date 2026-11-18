@@ -555,10 +555,7 @@
    "duration": 0.46875,
    "layers": [
     {
-     "shape": "rect",
-     "width": 1920,
-     "height": 1080,
-     "fill": "#EFE7DA"
+     "shader": "\nfloat mb(vec2 uv, float l){ return textureLod(iChannel0, uv, l).a; }\nfloat hash(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7)))*43758.5453); }\nvoid mainImage(out vec4 o, in vec2 f){ vec2 R=iResolution.xy; vec2 uv=f/R;  float m=0.0; float n=hash(floor(f/1.5)); float n2=hash(floor(f/7.0)+3.1); vec3 c=vec3(0.937,0.906,0.855)*(0.94+0.06*n)*(0.97+0.03*n2); float v=length(uv-0.5); c*=1.0-0.35*v*v; o=vec4(c,1.0);  }"
     },
     {
      "text": "Renata Sol\u00e9",
@@ -584,7 +581,7 @@
      "size": 40,
      "color": "#111",
      "letterSpacing": "0.18em",
-     "y": "24%",
+     "y": "8%",
      "uppercase": true
     }
    ]
@@ -766,6 +763,25 @@
       "blur": 40,
       "color": "#000a"
      }
+    },
+    {
+     "text": "*Lev Ansari*",
+     "font": "Bodoni Moda",
+     "weight": 900,
+     "size": 300,
+     "width": 1800,
+     "color": "#fff",
+     "id": "levm"
+    },
+    {
+     "shape": "rect",
+     "width": 360,
+     "height": 700,
+     "rotation": 18,
+     "fill": "linear-gradient(90deg, #FFF8E000, #FFFDF2 50%, #FFF8E000)",
+     "x": "=-200+t*5200",
+     "blend": "screen",
+     "matte": "levm"
     },
     {
      "text": "cinematography",

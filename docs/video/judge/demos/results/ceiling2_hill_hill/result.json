@@ -1,0 +1,519 @@
+{
+  "name": "ceiling2_hill_hill",
+  "tags": [
+    "illustration"
+  ],
+  "refs": [
+    "tintin-titles",
+    "nexus-smith-foulkes-honda-grrr-2004",
+    "osko-launch"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 5,
+      "composition": 6,
+      "typography": 3,
+      "colour": 5,
+      "light_texture": 5,
+      "motion": 5,
+      "craft": 5,
+      "originality": 4
+    },
+    "overall": 4.75,
+    "judged_professional": "0/3",
+    "pro_rate": 0.0,
+    "mean_rank": 3,
+    "gaps": [
+      "Find a specific visual idea for the reveal (scale, a staging surprise, a cut on action) instead of a literal eye-opens, head-rises sequence.",
+      "Give the title typographic intent and integrate it with the landscape, as B integrates its credits, instead of setting a default serif in the corner.",
+      "Widen the palette and build real material texture so each frame has its own light and graphic character, not one blue grade.",
+      "Typography needs a point of view: bespoke lettering or type that lives in the snow or the landscape, as B stages credits inside the scene.",
+      "Push the palette beyond the default blue-plus-amber night scheme to something owned and surprising.",
+      "Choreograph a turn the viewer doesn't see coming, and vary the camera (angles, scale, cuts) rather than a slow push and the same wide shot.",
+      "Replace the literal title card with typography that has a point of view and is integrated into the landscape.",
+      "Break the single indigo-plus-amber formula with an authored, unexpected palette shift at the reveal.",
+      "Resolve the creature's design and the reveal choreography so the surprise lands as a specific, memorable image rather than a predictable eye-in-the-hill beat."
+    ],
+    "tells": [
+      "The palette is a generic 'tasteful' one: a single blue-violet night with one warm amber accent (the lantern and the eye), the standard AI-storybook look.",
+      "The title 'The Hill That Woke' is set in a default editorial serif with a crudely faded last word, floating top-left like a slide caption with no relation to the image.",
+      "The twist (the hill is a sleeping creature) is literal and predictable, and the eye in the hillside is a stock fantasy trope.",
+      "The texture is a uniform brushed-streak overlay, and the snow particles are the same in every frame. The surface treatment is applied over the image, not designed into it.",
+      "The last frame mostly repeats the first wide shot with a head added, which shows little choreography.",
+      "A generic 'tasteful AI' storybook look: indigo night, moon glow, falling snow, one warm amber accent (lantern and eye).",
+      "The title 'The Hill That Woke' is set in a default editorial serif italic, floated top-left like a slide caption, with a lazy fade on the last word. There's no typographic idea.",
+      "The idea is literal and predictable. The hill is a sleeping creature, a giant eye opens, the creature rises. It's the obvious reveal, with no twist.",
+      "Frames repeat the same hill-under-moon composition at the start and end. The wanderer silhouette is a stock gnome or wizard figure, and the brush texture looks like a uniform overlay filter.",
+      "The creature in the last frame is a soft, ill-defined silhouette. The anatomy and scale don't resolve the way a designed reveal would.",
+      "It is the generic 'tasteful' storybook look: a moonlit indigo monochrome, one warm amber accent (lantern and eye), and drifting snow particles on every frame.",
+      "The title 'The Hill That Woke' is set in a default editorial serif floating top-left, and 'Woke' fades in a mismatched treatment. The type is not integrated with the image.",
+      "The idea (the hill is a sleeping creature with a giant eye) is literal and telegraphed by the title. The final creature silhouette is anatomically mushy, with the trees fused into its back.",
+      "The textures are brushy but uniform, and the composition repeats a small figure under a big mass. There is some variety of shots, but the frames lack the density of B."
+    ]
+  },
+  "refs_summary": {
+    "tintin-titles": {
+      "overall": 8.62,
+      "judged_professional": "3/3",
+      "mean_rank": 1
+    },
+    "nexus-smith-foulkes-honda-grrr-2004": {
+      "overall": 7.5,
+      "judged_professional": "3/3",
+      "mean_rank": 2
+    },
+    "osko-launch": {
+      "overall": 3.12,
+      "judged_professional": "0/3",
+      "mean_rank": 4
+    }
+  },
+  "ref_mean": 6.41,
+  "delta": -1.66,
+  "trials": [
+    {
+      "key": {
+        "A": "osko-launch",
+        "B": "tintin-titles",
+        "C": "candidate",
+        "D": "nexus-smith-foulkes-honda-grrr-2004"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "not professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 3,
+              "composition": 3,
+              "typography": 2,
+              "colour": 3,
+              "light_texture": 3,
+              "motion": 3,
+              "craft": 3,
+              "originality": 2
+            },
+            "tells": [
+              "The four frames don't share a visual world. One is a night scene with a VW camper rendered in 3D. One is a flat vector golfer on a cream ground. One is a portrait-format pink convertible floating on cream. One is a glossy 3D mint fridge with a reflective floor. Even the aspect ratio changes, which points to separate generations put side by side, not one designed film.",
+              "The pink car is clip-art: a vector-default illustration centred on an empty cream field with no setting.",
+              "The golfer is three poses repeated in a stock flat-illustration style (gradient shirt, generic face) with nothing distinctive about them.",
+              "The 'I.O.U.' note in the fridge is the only gag, and it reads as a one-line prompt joke with no setup elsewhere in the film.",
+              "There is no type system and no consistent palette, so nothing links one frame to the next."
+            ],
+            "gaps": [
+              "Commit to one world: one rendering style, one palette and one aspect ratio held for the whole film, the way B keeps its silhouette-and-flat-colour language.",
+              "Build a narrative or graphic idea that carries the cuts (a chase, a recurring motif, a match-cut) instead of unrelated vignettes.",
+              "Put the subjects in staged environments with motivated light and texture rather than isolating clip-art objects on empty grounds."
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 9,
+              "composition": 9,
+              "typography": 8,
+              "colour": 9,
+              "light_texture": 8,
+              "motion": 9,
+              "craft": 9,
+              "originality": 9
+            },
+            "tells": [
+              "The credits are built into the scene: one name is on the park gate's arch and 'ANDY SERKIS' lies in a pool of streetlight on the ground, so every credit is staged inside the world.",
+              "Silhouettes are cut against bold flat colour fields that shift dramatically between frames (dusty pink, aubergine, acid green spiral, teal), which gives a deliberate and unusual palette.",
+              "The frames clearly show a continuous chase between frames: a high overhead angle down an alley, a vortex spiral, a rooftop, with recurring characters and a little white dog as a through-line.",
+              "There's real paper-like texture and graphic shadow play, a 60s caper-title homage with a clear point of view.",
+              "The custom geometric caps have a consistent hierarchy ('A \u2026 FILM', 'EDITED BY') and are placed with care in every frame."
+            ],
+            "gaps": [
+              "The flat ochre credit type could sit a little deeper in the lighting of a few scenes, as the 'Serkis' frame already does.",
+              "The vortex frame is busy, so the credit competes slightly with the action.",
+              "This is the benchmark entry, so the remaining gaps are marginal."
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.65,
+            "scores": {
+              "idea": 5,
+              "composition": 6,
+              "typography": 3,
+              "colour": 5,
+              "light_texture": 5,
+              "motion": 5,
+              "craft": 5,
+              "originality": 4
+            },
+            "tells": [
+              "The palette is a generic 'tasteful' one: a single blue-violet night with one warm amber accent (the lantern and the eye), the standard AI-storybook look.",
+              "The title 'The Hill That Woke' is set in a default editorial serif with a crudely faded last word, floating top-left like a slide caption with no relation to the image.",
+              "The twist (the hill is a sleeping creature) is literal and predictable, and the eye in the hillside is a stock fantasy trope.",
+              "The texture is a uniform brushed-streak overlay, and the snow particles are the same in every frame. The surface treatment is applied over the image, not designed into it.",
+              "The last frame mostly repeats the first wide shot with a head added, which shows little choreography."
+            ],
+            "gaps": [
+              "Find a specific visual idea for the reveal (scale, a staging surprise, a cut on action) instead of a literal eye-opens, head-rises sequence.",
+              "Give the title typographic intent and integrate it with the landscape, as B integrates its credits, instead of setting a default serif in the corner.",
+              "Widen the palette and build real material texture so each frame has its own light and graphic character, not one blue grade."
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 9,
+              "composition": 7,
+              "typography": 7,
+              "colour": 8,
+              "light_texture": 7,
+              "motion": 8,
+              "craft": 8,
+              "originality": 9
+            },
+            "tells": [
+              "The concept is irreverent and specific: old, grimy diesel engines are expelled from a saccharine rainbow paradise. The contrast between sweet and gritty is the idea itself.",
+              "The type is part of the world: 'HATE' is spelled in topiary and peacock-feather eyes, and 'CHANGE' is spelled on balloons balanced by seals. The lettering is staged as props, not overlaid.",
+              "Characters act and things change between frames: a flamingo with a bat swats an engine, a rabbit cheers as engines fly off trailing smoke. There is clear choreography and comic timing.",
+              "The deliberately over-saturated palette is used ironically. It's a hyperreal storybook look that matches the tone.",
+              "The engines are rendered with dense detail and grime against clean CG nature, a deliberate clash of materials."
+            ],
+            "gaps": [
+              "The CG environment lighting is fairly even and dated next to B's graphic control of light.",
+              "Compositions are busy and centre-weighted in places (the 'CHANGE' frame), so they lack B's poster-like clarity.",
+              "The look is maximalist on purpose, but a tighter edit of the elements in each frame would sharpen the jokes."
+            ]
+          }
+        },
+        "ranking": [
+          "B",
+          "D",
+          "C",
+          "A"
+        ]
+      },
+      "meta": {
+        "seconds": 30.5,
+        "cost_usd": 0.1444624,
+        "tokens": 70276,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "osko-launch",
+        "B": "tintin-titles",
+        "C": "nexus-smith-foulkes-honda-grrr-2004",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "not professional",
+            "confidence": 0.7,
+            "scores": {
+              "idea": 3,
+              "composition": 4,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 4,
+              "motion": 3,
+              "craft": 4,
+              "originality": 3
+            },
+            "tells": [
+              "The four frames don't share a world. One is a 3D-ish VW van on dark hills, one is a flat vector golfer on a cream ground, one is a centred pink convertible on cream and one is a glossy rendered fridge. That reads as separate generations, not a designed system.",
+              "Every subject is an isolated object centred on an empty plain or black ground. There is no environment and no layering.",
+              "The golfer is a three-pose strip with a default gradient shirt. It looks like clip art, and the pose-to-pose sequencing shows no motion craft.",
+              "The fridge 'I.O.U.' note is the only idea in the piece, and it's a stock gag with no build-up from the earlier frames.",
+              "The only type is a scrawled sticky note. Nothing typographic carries the film."
+            ],
+            "gaps": [
+              "Commit to a single visual language and world across the whole film, the way B's flat-silhouette Herg\u00e9 pastiche holds every frame together.",
+              "Build each frame as a staged scene with foreground, midground and background and motivated light, instead of a centred object on a void.",
+              "Thread one idea through the sequence so that frames hand off to each other (match cuts, transformations) instead of reading as unrelated vignettes."
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 9,
+              "composition": 9,
+              "typography": 8,
+              "colour": 9,
+              "light_texture": 8,
+              "motion": 9,
+              "craft": 9,
+              "originality": 8
+            },
+            "tells": [
+              "A specific idea: silhouette chase vignettes that give an affectionate graphic nod to the source comics, with credits staged inside the action.",
+              "Type is integrated into the world. 'ANDY SERKIS' is painted onto the ground in a pool of lamplight, and the director credit sits on an ornate park-gate sign.",
+              "The palette shifts deliberately each sequence: dusty pink, bruised purple and green, acid chartreuse spiral, teal night. Each is unusual and controlled.",
+              "Extreme camera angles (a top-down alley, a vortex spiral, a low horizon) and the shadow play imply strong choreography and variety between shots.",
+              "Paper texture, pooled light and cast shadows give it real material depth despite the flat silhouettes."
+            ],
+            "gaps": [
+              "The credit typeface is a fairly conventional bold caps sans. A more bespoke lettering treatment could match the image-making.",
+              "Some credits, such as 'TOBY JONES', just sit on the frame rather than being staged in the world like the Serkis credit.",
+              "The reference to its source is strong but leans on a known genre (Saul Bass-style silhouette titles), so it is less surprising than it is masterful."
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 9,
+              "composition": 7,
+              "typography": 7,
+              "colour": 7,
+              "light_texture": 6,
+              "motion": 8,
+              "craft": 7,
+              "originality": 9
+            },
+            "tells": [
+              "A memorable, specific idea: a saccharine rainbow paradise where cute creatures attack and banish clunky old diesel engines. It has a sharp brand point and a twist on the cute genre.",
+              "The type is built from the world: topiary letters, a peacock fan spelling 'HATE' and seals balancing 'CHANGE' balloons. Lettering comes out of the scene, not slapped on top.",
+              "Escalating narrative across frames: idyll, intrusion, mustering, then the engines blasted off by a rainbow. That's real choreography and a payoff.",
+              "Deliberately over-sweet palette used ironically, with grimy realistic engines as the counterpoint material."
+            ],
+            "gaps": [
+              "Early-2000s CG rendering: the lighting and materials on the creatures and terrain are plasticky and flat next to B's crafted texture.",
+              "Compositions are busy and fairly centred. Frames work as story beats more than as posters.",
+              "The irony depends on clich\u00e9 imagery (rainbows, swans, seals). Tighter art direction could push it from pastiche to a signature look."
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.65,
+            "scores": {
+              "idea": 5,
+              "composition": 6,
+              "typography": 3,
+              "colour": 5,
+              "light_texture": 6,
+              "motion": 4,
+              "craft": 5,
+              "originality": 4
+            },
+            "tells": [
+              "A generic 'tasteful AI' storybook look: indigo night, moon glow, falling snow, one warm amber accent (lantern and eye).",
+              "The title 'The Hill That Woke' is set in a default editorial serif italic, floated top-left like a slide caption, with a lazy fade on the last word. There's no typographic idea.",
+              "The idea is literal and predictable. The hill is a sleeping creature, a giant eye opens, the creature rises. It's the obvious reveal, with no twist.",
+              "Frames repeat the same hill-under-moon composition at the start and end. The wanderer silhouette is a stock gnome or wizard figure, and the brush texture looks like a uniform overlay filter.",
+              "The creature in the last frame is a soft, ill-defined silhouette. The anatomy and scale don't resolve the way a designed reveal would."
+            ],
+            "gaps": [
+              "Typography needs a point of view: bespoke lettering or type that lives in the snow or the landscape, as B stages credits inside the scene.",
+              "Push the palette beyond the default blue-plus-amber night scheme to something owned and surprising.",
+              "Choreograph a turn the viewer doesn't see coming, and vary the camera (angles, scale, cuts) rather than a slow push and the same wide shot."
+            ]
+          }
+        },
+        "ranking": [
+          "B",
+          "C",
+          "D",
+          "A"
+        ]
+      },
+      "meta": {
+        "seconds": 33.7,
+        "cost_usd": 0.1496554,
+        "tokens": 70546,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "nexus-smith-foulkes-honda-grrr-2004",
+        "B": "tintin-titles",
+        "C": "osko-launch",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.75,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 7,
+              "colour": 6,
+              "light_texture": 6,
+              "motion": 7,
+              "craft": 7,
+              "originality": 7
+            },
+            "tells": [
+              "The letters are built into the world rather than laid over it: topiary hedges, a peacock's tail feathers, and balls balanced on the noses of seals on plinths spelling CHANGE. That is a typographic idea with choreography behind it.",
+              "The tone is ironic and maximalist: rusty engines barrelling through a candy-coloured Arcadia, and a flamingo with a baseball bat. That clash is a deliberate concept, not a style left on default.",
+              "The four frames are completely different setups (wide landscape, mid-air gag, a staged lettering tableau, mass destruction), so the piece clearly has a narrative arc.",
+              "The CG is of its era and slightly plasticky, with simple GI lighting. The kitsch is on purpose, but the finish is TV-commercial grade, not award grade."
+            ],
+            "gaps": [
+              "The rendering is generic saccharine CG. Push the material contrast between the oily, rusted engines and the sugary world so the satire reads in the texture too.",
+              "The palette is the default rainbow-pastel. A more authored, restricted kitsch palette would make every frame read as a poster.",
+              "The letterform gags are clever but sit centred at mid-scale. Integrate the type with more scale contrast and better camera framing, the way B's credits are built into each composition."
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 9,
+              "composition": 9,
+              "typography": 8,
+              "colour": 9,
+              "light_texture": 8,
+              "motion": 9,
+              "craft": 9,
+              "originality": 8
+            },
+            "tells": [
+              "The credits live inside the world: a park-gate sign, a name lying in a pool of street-lamp light, a name in a hypnotic vortex, a credit on a blue skyline. Each credit gets its own staging.",
+              "Every frame uses a different, deliberate palette (dusty pink, poison violet, acid green-yellow, teal-indigo), so the colour carries the beats of the chase.",
+              "Silhouetted characters, a strong graphic shadow play and a high-angle noir camera with a pool of light. This is evident choreography and cinematic staging.",
+              "It has a paper-grain texture, period-appropriate letterforms with real spacing, and a white dog motif threaded through every frame."
+            ],
+            "gaps": [
+              "Some name cards use a fairly uniform bold sans. More variation in the type's scale would add punch.",
+              "The silhouette-chase vocabulary sits in a well-trodden lineage (Saul Bass, Catch Me If You Can), so its originality ceiling is limited.",
+              "The texture is subtle. More print-like registration and grain would deepen the material quality."
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.75,
+            "scores": {
+              "idea": 4,
+              "composition": 3,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 3,
+              "motion": 3,
+              "craft": 3,
+              "originality": 3
+            },
+            "tells": [
+              "There is no visual system. A glossy 3D van on black, a flat-vector golfer on cream, an isolated pink car on a cream portrait card and a photoreal retro fridge share no common style, and the aspect ratios are inconsistent. It reads as unrelated outputs stitched together.",
+              "The golfer is default corporate flat illustration (gradient shirt, generic proportions), and the subjects are centred on empty grounds with nothing else in the frame.",
+              "The fridge's 'I.O.U.' sticky note is the only idea, and it is a literal visual pun. The handwriting looks like a default marker font.",
+              "The light is a generic product-shot glow with a mirror floor reflection, and there is no texture or atmosphere."
+            ],
+            "gaps": [
+              "Commit to one authored world and graphic language across every shot, as B does.",
+              "Build the gags into choreographed scenes with layered compositions instead of isolated objects on empty grounds.",
+              "Make the type and the palette a deliberate part of the concept, not a default sticky note on mint and cream."
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.6,
+            "scores": {
+              "idea": 5,
+              "composition": 6,
+              "typography": 3,
+              "colour": 5,
+              "light_texture": 5,
+              "motion": 5,
+              "craft": 4,
+              "originality": 4
+            },
+            "tells": [
+              "It is the generic 'tasteful' storybook look: a moonlit indigo monochrome, one warm amber accent (lantern and eye), and drifting snow particles on every frame.",
+              "The title 'The Hill That Woke' is set in a default editorial serif floating top-left, and 'Woke' fades in a mismatched treatment. The type is not integrated with the image.",
+              "The idea (the hill is a sleeping creature with a giant eye) is literal and telegraphed by the title. The final creature silhouette is anatomically mushy, with the trees fused into its back.",
+              "The textures are brushy but uniform, and the composition repeats a small figure under a big mass. There is some variety of shots, but the frames lack the density of B."
+            ],
+            "gaps": [
+              "Replace the literal title card with typography that has a point of view and is integrated into the landscape.",
+              "Break the single indigo-plus-amber formula with an authored, unexpected palette shift at the reveal.",
+              "Resolve the creature's design and the reveal choreography so the surprise lands as a specific, memorable image rather than a predictable eye-in-the-hill beat."
+            ]
+          }
+        },
+        "ranking": [
+          "B",
+          "A",
+          "D",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 32.8,
+        "cost_usd": 0.1472636,
+        "tokens": 70428,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "critic": {
+    "answer": {
+      "scores": {
+        "motion": 4,
+        "sound": 3,
+        "craft": 5
+      },
+      "checks": {
+        "idea": true,
+        "invariant": true,
+        "arc": false,
+        "type_meaning": false,
+        "freeze_frame": false,
+        "ending": true,
+        "restraint": true,
+        "material": true,
+        "sync": false
+      },
+      "defects": [
+        "The two forest frames (2 and 3) are almost the same image. The traveller barely moves across the frame, a near-static walk cycle with only a pole drifting through the foreground over roughly 3 s, which reads as dead air.",
+        "The lantern beam is a hard-edged, flat-filled triangle. Its long sides have no falloff, so the light looks pasted on rather than cast. Only the far end and the inside have soft, grainy texture.",
+        "The eye opens as a thin horizontal sliver: a flat shape-layer scale on the Y axis with no lid, skin or squash, so the creature has no organic quality.",
+        "The opening and closing wides use nearly the same layout and the same 'hill + moon' lockoff. The camera does little more than hold, and the moon jumps in size and position between shots without any motivation.",
+        "The title type is a generic script serif. 'Woke' is set in a dimmer tint, which is a fade and not a mapped property. The title sits top-left with no relationship to the head reveal.",
+        "The snow particles are uniform white dots with soft blobs on top, at a single scale and speed. There is no depth layering, so they flatten the parallax.",
+        "The creature's head reveal on the final wide is a cutout silhouette that slides up. It has no anticipation, no weight in the hill mass and no follow-through in the trees.",
+        "Audio: evenly spaced click transients (about 0.3 s apart) with pure sine tones under them, then a static noise bed and a broadband wash from 10.2 s. This is thin synthetic material that doesn't line up with the cuts; the clicks keep going through the forest shot without matching the footfalls."
+      ],
+      "gaps": [
+        "Motion has no energy curve. Three long, nearly static holds (wide, walk, wide) and a single reveal at the very end leave no build at 60\u201380%. The hill waking should be animated with anticipation, a rumble, the trees shedding snow, overlap in the mass and a settle, not a cutout that rises.",
+        "Sound is placeholder-level. Uniform synthetic ticks and sine pads, with no Foley for footsteps in snow, no wind, no low-end rumble or breath for the hill, and no hit when the eye opens or the head rises. Nothing in the soundtrack is cut to picture.",
+        "The finish relies on flat vector silhouettes and noise grain. Light lacks real falloff (hard-edged beam, flat moon glow), the snow has a single depth layer, and the character has no rim light or interaction with the lantern. Top studios would light the volume, add atmospheric depth and sell scale."
+      ]
+    },
+    "meta": {
+      "seconds": 23.9,
+      "cost_usd": 0.1620512,
+      "tokens": 72114,
+      "models": [
+        "claude-opus-5-5"
+      ]
+    },
+    "pace": "hill.mp4: 11.9s, 4 shots, median 2.94s, longest 3.40s\nper-second change: [6.9, 7.2, 35.7, 26.3, 32.4, 43.3, 11.9, 8.4, 41.8, 15.3, 7.3]\nPACE: FAIL \u2014 longest shot 3.4s > 2.5s; median shot 2.9s > 1.5s"
+  },
+  "full_scores": {
+    "idea": 5,
+    "composition": 6,
+    "typography": 3,
+    "colour": 5,
+    "light_texture": 5,
+    "motion": 4.5,
+    "craft": 5.0,
+    "originality": 4,
+    "sound": 3
+  },
+  "full_overall": 4.5,
+  "cost_usd": 0.603,
+  "judge_seconds": 120.9,
+  "verdict": "FAIL"
+}

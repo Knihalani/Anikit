@@ -104,3 +104,66 @@ Median per-dimension score:
 - Some references are famous, so the jury may recognise them. That only makes the bar harder.
 - The critic stage for these runs predates the yes/no TASTE checks, which were added at 22:00.
 - Cost: about $0.47–0.66 per piece (3 trials, plus the critic for MP4s); about 2–3 min wall time per piece.
+
+## Motion stages (validated 2026-11-18 00:45–01:05, both kept OFF)
+
+The parent asked for a motion-aware stage, because the jury sees only about 6 stills and motion barely registers. Two stages were built (`scripts/judge.py`) and validated the same way as the stills judge. **Neither discriminates well enough to gate on. Both are off by default** (`JUDGE_MOTION=1` and `JUDGE_STRIPS=1` enable them), and the stills verdict remains the gate.
+
+**Reference clips.** The environment refused to download the references' YouTube or Vimeo videos, so only lawful direct files were usable (REFS's `clips.json`): three Blender Studio open movies (CC BY 4.0) and one NASA SVS visualisation (public domain). Each was cut to a 20 s excerpt into `.cache/judge-clips/`. None of the motion-design or kinetic-type references is lawfully downloadable.
+
+**1. Blind motion compare.** Two strips per film, each 10 consecutive frames 1/10 s apart around the busiest moments, compared blind with 3 of the clips. 3 trials.
+
+| Candidate | Motion | Judged pro | Refs mean |
+|---|---|---|---|
+| div-c (rejected) | 4 | 0/3 | 6.33 |
+| div-f (rejected) | 6 | **2/3** | 6.33 |
+| div-g (rejected) | 6 | **3/3** | 6.67 |
+| r1 a-social | 4 | 0/3 | 6.67 |
+| r1 g-titles | 4 | 0/3 | 6.33 |
+| r1 k-sports | 5 | 0/3 | 6.33 |
+| control: Charge | 8 | 3/3 | 5.67 |
+| control: Spring | 7 | 3/3 | 6.0 |
+| control: Sprite Fright | 8 | 3/3 | 6.0 |
+| control: NASA CO₂ | 2 | **0/3** | 8.0 |
+
+Two false accepts (div-g, div-f) and one false reject (NASA, a slow continuous field). The available clips are narrative 3D films, a poor reference for motion-design choreography, and NASA's near-static field drags the reference mean down.
+
+**2. Critic with strips.** The candidate alone: three 10-frame strips plus frame pairs.
+
+| Film | Motion | Craft |
+|---|---|---|
+| div-g (rejected) | 6 | 7 |
+| div-f (rejected) | 6 | 6 |
+| r1 k-sports | 5 | 6 |
+| Charge | 7 | 8 |
+| Sprite Fright | 8 | 8 |
+| NASA CO₂ | 4 | 5 |
+
+The separation is 1–2 points. Strips also nudged div-f's motion up from 5 (without strips) to 6. That is too weak to gate on, and it would inflate the "full" score compared with r1.
+
+**What would fix it:** lawful clips of real motion-design and kinetic-type work. That means owner permission or press files, or the user approving clip downloads for evaluation only. Until then, motion is judged inside the stills stage (median 3 for rejected and r1 work, 7 for controls) and in the critic's frame pairs and pace check.
+
+### Motion compare v2: real motion-design clips (01:20)
+
+REFS then added lawful motion-design clips: 3 VPRO ident and type pieces by Simon François (CC BY 3.0), NASA's "How Far Away Is Voyager 1?" (PD), Blender's 2D "Hero" (CC BY) and Charge. These 6 became the motion reference pool (`.cache/judge-clips-md`; `judge.py sync-bench` rebuilds it).
+
+| Candidate | Motion | Judged pro | Refs mean |
+|---|---|---|---|
+| div-a (rejected) | 3 | 0/3 | 7.0 |
+| div-c (rejected) | 3 | 0/3 | 8.0 |
+| div-f (rejected) | 7 | **3/3** | 7.0 |
+| div-g (rejected) | 6 | **3/3** | 7.33 |
+| r1 g-titles | 3 | 1/3 | 7.33 |
+| r1 h-ident | 3 | 0/3 | 7.67 |
+| r1 k-sports | 4 | 0/3 | 7.0 |
+| control: VPRO idents | 7 | 3/3 | 6.33 |
+| control: VPRO leader | 7 | 3/3 | 8.0 |
+| control: Voyager | 6 | 3/3 | 8.0 |
+| control: Hero | 8 | 3/3 | 5.67 |
+| control: VPRO launch reel | 4 | **0/3** | 7.67 |
+
+This is better than v1: weak motion separates clearly, with 5 of 7 of our pieces scoring 3–4 against refs at 7–8. Two problems remain:
+- div-f and div-g read as professional motion. The user rejected them as boring and for "AI slop typography", not for their motion, so this may be a fair motion verdict. But it can't be validated against the user's words.
+- One false reject: the launch-reel excerpt. It is also rated 0–1/3 when used as a reference, so the excerpt itself may be weak.
+
+**Decision:** off by default (`JUDGE_MOTION=1` enables it as an informational column, never part of the verdict). The parent will ask the user at 07:00 whether to download the real reference clips for evaluation. With those, this stage can be validated properly.

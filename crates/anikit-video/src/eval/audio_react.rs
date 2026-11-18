@@ -31,8 +31,13 @@ impl AudioFeatures {
     pub fn load(path: &Path, at: f64, trim: f64) -> Result<AudioFeatures, String> {
         let pcm = decode_file(path)?;
         let beats = super::beat_markers::refine(&analyze_pcm(&pcm));
-        let mono = pcm.mono();
-        let rate = pcm.rate.max(1) as f64;
+        Ok(Self::from_mono(&pcm.mono(), pcm.rate, beats.beats, beats.downbeats, at - trim))
+    }
+
+    /// From mono samples at `rate`, with a known beat grid (in file time) and
+    /// `offset` = timeline time of the first sample: generated `music`.
+    pub fn from_mono(mono: &[f32], rate: u32, beats: Vec<f64>, downbeats: Vec<f64>, offset: f64) -> AudioFeatures {
+        let rate = rate.max(1) as f64;
         let hop = ((HOP * rate) as usize).max(1);
         // Split with two one-pole low-passes: bass < 200 Hz, mid 200 Hz–3 kHz, treble above.
         let (a1, a2) = (lp(200.0, rate), lp(3000.0, rate));
@@ -66,7 +71,7 @@ impl AudioFeatures {
                 bands[i][k] = env;
             }
         }
-        Ok(AudioFeatures { bands, beats: beats.beats, downbeats: beats.downbeats, offset: at - trim })
+        AudioFeatures { bands, beats, downbeats, offset }
     }
 
     /// (`iAudio`, `iBeat`) at timeline time `t`.

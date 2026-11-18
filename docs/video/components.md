@@ -108,6 +108,8 @@ Charts build on with springs.
 | `dashed` | `false` | Dashed gridlines instead of hairlines. |
 | `notes` | `[]` | Pinned value pills: `[{ "index": 5, "text": "+38%" }]`. |
 | `motion` | `smooth` | Bar growth: `smooth`, `snappy`, `soft`, `bouncy`. |
+| `look` | default | `"editorial"`: ranked rows with flat bars. The `highlight` (default the first) is in the accent and the rest are grey. Category labels sit on the left, values at the bar ends in tabular figures, and a baseline replaces the grid. |
+| `compare`, `compareLabels` | | Editorial: earlier values as ticks on each row (`[61, 19, 16, 4]`), and the two state names shown once (`["2016", "2026"]`). |
 | `delay`, `duration`, `stagger` | | |
 
 ### `lineChart` and `areaChart`
@@ -128,6 +130,8 @@ Charts build on with springs.
 | `dashed` | `false` | Dashed gridlines. |
 | `notes` | `[]` | `[{ "index": 4, "text": "Launch", "series": 0 }]`: a ring and a pill appear when the line reaches the point. |
 | `crosshair` | `false` | A vertical guide follows the drawing head. |
+| `look` | default | `"editorial"` (FT/Bloomberg style): one `highlight` series in the accent and the rest as grey context drawn first. Direct labels sit at the line ends, with name and value for the story line and no legend or pills. The grid is hairlines with the unit only on the top line, and `notes` become leader lines. |
+| `highlight` | `0` | Editorial: the series that tells the story. |
 | `motion` | `soft` | Draw-on curve. |
 | `format`, `fontSize`, `delay`, `duration`, `stagger` | | |
 

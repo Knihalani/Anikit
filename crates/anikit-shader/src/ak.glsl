@@ -148,6 +148,117 @@ vec3 ak_ray(vec3 ro, vec3 ta, vec2 uv, float zoom) {
     return normalize(uv.x * u + uv.y * v + zoom * w);
 }
 
+// ---- drawn and painted (coverage 0..1: mix your pigment or ink in by it)
+// Paper height 0..1: fine tooth plus long fibres. p in pixels at 1080p
+// (ak_px), or in an object's own coordinates to lock the paper to it.
+float ak_paper(vec2 p) {
+    float tooth = ak_noise(p * 0.45) * 0.6 + ak_noise(p * 1.3 + 7.0) * 0.4;
+    vec2 q = mat2(0.88, -0.48, 0.48, 0.88) * p;
+    float fib = ak_noise(vec2(q.x * 0.04, q.y * 0.8));
+    return clamp(tooth * 0.8 + fib * 0.35 - 0.08, 0.0, 1.0);
+}
+// fragCoord in pixels of a 1080-high frame, at any render size.
+vec2 ak_px(vec2 fragCoord) { return fragCoord * (1080.0 / iResolution.y); }
+// Shade a colour by the paper's tooth (amount 0.3 is subtle, 1 strong).
+vec3 ak_paper_shade(vec3 c, vec2 p, float amount) { return c * (1.0 - amount * 0.22 * (1.0 - ak_paper(p))); }
+// Dry-brush edge: coverage of a signed distance d (negative inside) whose
+// edge breaks up on the paper (ak_paper value); `rough` is how far, in d's
+// units, the dryness reaches into the shape (0 = clean edge).
+float ak_dry(float d, float paper, float rough) {
+    float e = d + rough * (0.55 - paper) * 2.0;
+    return clamp(0.5 - e / max(fwidth(d), 1e-6), 0.0, 1.0);
+}
+// One brush stroke from a to b, radius r (p's units): pressure taper,
+// a wobbling edge, bristle streaks along the stroke and a tail that runs
+// dry. seed varies it. Overlap strokes (max or mix) to paint.
+float ak_brush(vec2 p, vec2 a, vec2 b, float r, float seed) {
+    vec2 ba = b - a;
+    float L = max(length(ba), 1e-6);
+    vec2 dir = ba / L;
+    vec2 pa = p - a;
+    float t = dot(pa, dir) / L;
+    float s = dot(pa, vec2(-dir.y, dir.x)) / r;
+    float tc = clamp(t, 0.0, 1.0);
+    float press = pow(sin(3.14159 * (tc * 0.84 + 0.08)), 0.4);
+    float wob = (ak_noise(vec2(tc * L / r * 0.6, seed * 3.7)) - 0.5) * 0.35;
+    float along = max(-t, t - 1.0) * L / r;
+    float d = length(vec2(max(along, 0.0), s - wob * 0.6)) - press * (1.0 + wob);
+    float px = length(fwidth(p)) / r;
+    float edge = clamp(0.5 - d / max(px, 1e-6), 0.0, 1.0);
+    float br = mix(ak_noise(vec2(s * 6.0 + seed * 13.1, tc * 1.2)), ak_noise(vec2(s * 21.0 + seed * 5.3, tc * 2.5)), 0.45);
+    float dry = smoothstep(0.45, 1.05, tc);
+    float ink = smoothstep(dry * 0.8 - 0.08, dry * 0.8 + 0.12, br);
+    return edge * mix(0.82 + 0.18 * br, ink, dry);
+}
+// Stipple: dots on a jittered grid of cell `size` (p's units) whose inked
+// area follows tone (0 = bare paper, 1 = nearly solid).
+float ak_stipple(vec2 p, float tone, float size) {
+    vec2 q = p / size, i = floor(q);
+    float px = max(length(fwidth(q)), 1e-6);
+    float cov = 0.0;
+    float r0 = 0.62 * sqrt(clamp(tone, 0.0, 1.0));
+    for (int y = -1; y <= 1; y++) {
+        for (int x = -1; x <= 1; x++) {
+            vec2 c = i + vec2(float(x), float(y));
+            vec2 h = ak_hash2(c);
+            float r = r0 * (0.75 + 0.5 * h.y);
+            cov = max(cov, clamp(0.5 - (length(q - c - 0.2 - 0.6 * h) - r) / px, 0.0, 1.0));
+        }
+    }
+    return cov;
+}
+// One layer of hatch strokes: a short stroke per cell of a fixed grid (so a
+// turning dir never compresses the lines), each laid along dir, half-width w
+// in cells, jittered and of varying length like hand hatching.
+float ak_hatch_layer(vec2 p, vec2 dir, float w, float cell, float seed) {
+    vec2 n = vec2(-dir.y, dir.x);
+    vec2 q = p / cell, i = floor(q);
+    float px = max(length(fwidth(q)), 1e-6);
+    float cov = 0.0;
+    for (int y = -1; y <= 1; y++) {
+        for (int x = -1; x <= 1; x++) {
+            vec2 c = i + vec2(float(x), float(y));
+            vec2 h = ak_hash2(c + seed);
+            vec2 d = q - c - h;
+            float along = dot(d, dir), across = dot(d, n);
+            float len = 0.9 + 0.7 * ak_hash(c + seed + 3.1);
+            float bow = 0.06 * (h.x - 0.5) * along * along;   // a slight hand curve
+            float dist = length(vec2(max(abs(along) - len, 0.0), across - bow));
+            float taper = 1.0 - 0.6 * smoothstep(len * 0.4, len, abs(along));
+            cov = max(cov, clamp((w * taper - dist) / px + 0.5, 0.0, 1.0));
+        }
+    }
+    return cov;
+}
+// Hatching that follows form: short strokes along dir (a surface tangent,
+// or perpendicular to a gradient), about `spacing` apart in p's units;
+// tone 0..1 sets their weight, and above ~0.45 a crossing layer comes in.
+float ak_hatch(vec2 p, vec2 dir, float tone, float spacing) {
+    dir = normalize(dir + vec2(1e-6, 0.0));
+    float t = clamp(tone, 0.0, 1.0);
+    float a = ak_hatch_layer(p, dir, 0.04 + min(t, 0.5) * 0.3, spacing, 0.0);
+    vec2 d2 = normalize(vec2(dir.x * 0.5 + dir.y * 0.87, dir.y * 0.5 - dir.x * 0.87));
+    float b = t > 0.45 ? ak_hatch_layer(p, d2, (t - 0.45) * 0.4, spacing * 1.1, 17.0) : 0.0;
+    return max(a * smoothstep(0.0, 0.08, t), b);
+}
+// A designed light shape: a wedge from o along dir with half-angle `spread`
+// (radians), soft at its edges (soft 0..1) and fading over `len`. Use it as
+// light (× a colour) or as tone for ak_stipple / ak_hatch: a drawn beam.
+float ak_wedge(vec2 p, vec2 o, vec2 dir, float spread, float len, float soft) {
+    vec2 d = p - o;
+    float r = length(d);
+    float c = dot(d, normalize(dir)) / max(r, 1e-6);
+    float edge = smoothstep(cos(spread), cos(spread * (1.0 - 0.9 * soft)), c);
+    float fall = 1.0 - smoothstep(0.0, len, r);
+    return edge * fall * fall;
+}
+// Line boil: an offset (p's units, up to `amount`) that is redrawn `rate`
+// times a second (12 = on twos at 24 fps). Add it to p before drawing.
+vec2 ak_boil(vec2 p, float amount, float rate) {
+    float k = floor(iTime * rate);
+    return (vec2(ak_noise(p * 0.02 + k * 17.3), ak_noise(p * 0.02 + k * 17.3 + 41.0)) - 0.5) * 2.0 * amount;
+}
+
 // ---- finishing
 // Film grain: zero-mean, animated, strongest in the midtones.
 vec3 ak_grain(vec3 c, vec2 fragCoord, float amount) {

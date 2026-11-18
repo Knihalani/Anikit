@@ -13,13 +13,13 @@ Three verdicts, from 3 shuffled trials:
 
 | Verdict | Rule | Meaning |
 |---|---|---|
-| **PASS** | called professional in ≥ 2 of 3 trials **and** median score within 1.0 of the refs' mean (Δ ≥ −1.0) | indistinguishable from the style-matched studio work |
-| **PRO** | called professional in ≥ 2 of 3 **and** score ≥ 5.0 | passes as real studio work, but below the best of its style |
+| **PASS** | called professional in ≥ 2 of 3 trials **and** median score within 1.0 of the refs' mean (Δ ≥ −1.0) **and** median motion ≥ 4 | indistinguishable from the style-matched studio work |
+| **PRO** | called professional in ≥ 2 of 3 **and** score ≥ 5.0 **and** median motion ≥ 4 | passes as real studio work, but below the best of its style |
 | **FAIL** | anything else | the jury can tell |
 
 The thresholds were set from the controls (held-out professional refs in the candidate's seat), before the rejected work was
 scored: all 6 controls were called professional in 17 of 18 trials, 4 PASS, and the two below the refs scored 5.38 (Calm, Coinbase).
-The goal for the user's bar is PASS. Anything that FAILs never reaches the user.
+Motion floor (added 01:45): a beautifully made but near-static loop (illo-portrait, motion 2) was judged professional on its stills. A film must move, so PASS/PRO also need the jury's median motion ≥ 4; all 10 controls score 5–8. The goal for the user's bar is PASS. Anything that FAILs never reaches the user.
 
 ## Procedure (`scripts/judge.py`)
 

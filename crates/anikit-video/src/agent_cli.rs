@@ -408,7 +408,16 @@ fn cmd_preview(args: &[String]) -> Result<(), String> {
         if let Some(r) = report {
             out!("{}", r.to_text_detail(a.has("detail")));
         }
-        outln!("final render: roughly {} at full quality{}", if est < 90.0 { format!("{est:.0} s") } else { format!("{:.0} min", est / 60.0) }, if est < 90.0 { "" } else { " (start it in the background and keep working)" });
+        // How to run the final, by its estimated length: agents' tool calls
+        // time out at about 10 minutes, and a turn that ends mid-render ships nothing.
+        let how = if est < 90.0 {
+            String::new()
+        } else if est < 480.0 {
+            "; run it in the foreground with a 10-minute timeout".to_string()
+        } else {
+            "; longer than one tool call: run it in the background and wait for that process to exit in the same turn (don't end your turn first), or lower the cost of the heaviest shader/3D layer".to_string()
+        };
+        outln!("final render: roughly {} at full quality{how}", if est < 90.0 { format!("{est:.0} s") } else { format!("{:.0} min", est / 60.0) });
         outln!("[preview took {:.1} s] next: look at the sheet, fix what matters, preview again; then ONE `render {src} -o out.mp4`", t0.elapsed().as_secs_f32());
         return Ok(());
     }
