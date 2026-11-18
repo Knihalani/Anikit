@@ -90,9 +90,10 @@ Every judged output, best first within each category. Score = median blind score
 |---|---|---|---|---|---|---|---|---|---|
 | 1 | 5.25 | FAIL | 3/3 | 6.29 | 5.31 | Anikit | demo | illustration_illo-portrait | `docs/video/judge/demos/results/illustration_illo-portrait` |
 | 2 | 4.75 | FAIL | 0/3 | 6.41 | 4.5 | Anikit | demo | ceiling2_hill_hill | `docs/video/judge/demos/results/ceiling2_hill_hill` |
-| 3 | 4.38 | FAIL | 0/3 | 7.33 | 4.72 | Anikit | r2 | d-illustration | `docs/video/judge/rounds/r2/results/d-illustration` |
-| 4 | 3.62 | FAIL | 0/3 | 7.83 | 4.06 | Anikit | demo | graphic_pieces_tempest-collage | `docs/video/judge/demos/results/graphic_pieces_tempest-collage` |
-| 5 | 3.38 | FAIL | 0/3 | 7.16 | 3.67 | Anikit | r1 | d-illustration | `docs/video/judge/rounds/r1/results/d-illustration` |
+| 3 | 4.62 | FAIL | 1/6 | 6.94 | 4.89 | Anikit | demo | d-illustration-demo | `docs/video/judge/demos/rebuilds/d-illustration-demo` |
+| 4 | 4.38 | FAIL | 0/3 | 7.33 | 4.72 | Anikit | r2 | d-illustration | `docs/video/judge/rounds/r2/results/d-illustration` |
+| 5 | 3.62 | FAIL | 0/3 | 7.83 | 4.06 | Anikit | demo | graphic_pieces_tempest-collage | `docs/video/judge/demos/results/graphic_pieces_tempest-collage` |
+| 6 | 3.38 | FAIL | 0/3 | 7.16 | 3.67 | Anikit | r1 | d-illustration | `docs/video/judge/rounds/r1/results/d-illustration` |
 
 ## kinetic type / titles
 
