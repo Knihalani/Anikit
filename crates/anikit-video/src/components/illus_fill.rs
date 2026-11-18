@@ -60,7 +60,7 @@ fn shape_path(shape: &str, d: Option<&Path>, w: f32, h: f32, seed: u32) -> Path 
 }
 
 /// Flatten a path into closed polylines resampled every `step` pixels.
-fn rings(path: &Path, step: f32) -> Vec<Vec<(f32, f32)>> {
+pub(super) fn rings(path: &Path, step: f32) -> Vec<Vec<(f32, f32)>> {
     let mut raw: Vec<Vec<(f32, f32)>> = Vec::new();
     kurbo::flatten(path.iter(), 0.25, |el| match el {
         PathEl::MoveTo(p) => raw.push(vec![(p.x as f32, p.y as f32)]),
@@ -216,6 +216,15 @@ impl Prepare for Hatch {
         self.path = parse_d(&self.d)?;
         Ok(())
     }
+}
+
+/// Hatch, cross-hatch, stipple or scribble lines filling `path` (any coordinates; the
+/// lines come back in the same space), with tone running `tone.0` (lit) → `tone.1`
+/// (shadow) along `light`. Returns `(path, width, alpha)` per line, and the stipple dots.
+pub(super) fn hatch_lines(path: Path, style: &str, angle: f32, spacing: f32, light: f32, tone: (f32, f32), width: f32, jitter: f32, seed: u32) -> (Vec<(Path, f32, f32)>, Path) {
+    let h = Hatch { style: style.into(), angle, spacing: spacing.max(0.6), tone: tone.1, tone_from: Some(tone.0), tone_to: Some(tone.1), light, width, jitter, seed, path: Some(path), ..Default::default() };
+    let (_, s) = h.strokes(0.0, 0.0, seed);
+    (s.lines, s.dots)
 }
 
 /// One hand-drawn stroke from `a` to `b`: slight bow, wobble and uneven ends.

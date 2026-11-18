@@ -68,6 +68,9 @@ pub struct SectionObj {
     pub energy: Option<f32>,
     /// Chords for this section only.
     pub chords: Option<String>,
+    /// Beats of silence right before this section: every part stops (ringing
+    /// notes are cut, the reverb tails ring on), then the section lands.
+    pub stop: Option<f64>,
 }
 
 /// A sound effect on the timeline, aligned by its hit point.
@@ -167,7 +170,8 @@ pub struct TrackSpec {
     pub name: Option<String>,
     /// Instrument name (`piano`, `strings`, `nylon-guitar`, `pad-warm`, `bass-808`, `drums:808`, `gm:24`, `file.sf2#0`, `file.sfz`).
     pub inst: String,
-    /// Clips (or put one clip's fields directly on the track).
+    /// Clips (or put one clip's fields directly on the track). With `clips`,
+    /// track-level `transpose`/`octave`/`vel`/`steps` apply to every clip.
     pub clips: Vec<ClipSpec>,
     #[serde(flatten)]
     pub clip: ClipSpec,
@@ -257,7 +261,8 @@ pub struct MusicSpec {
     /// voice-over get it automatically unless this is `false`.
     pub underscore: Option<bool>,
     /// Picture cuts (seconds on the music timeline): sections start on them where the form allows, and
-    /// each gets a cymbal accent on the nearest beat. Filled from the video's scene cuts automatically.
+    /// each gets a cymbal accent on the nearest beat; a cut that opens a bigger section gets a reverse
+    /// cymbal swelling into it. Filled from the video's scene cuts automatically.
     pub cuts: Vec<f64>,
     /// Score to the video's cuts (default true).
     pub follow_cuts: Option<bool>,
@@ -433,9 +438,26 @@ pub fn compile_tracks(spec: &MusicSpec, grid: &Grid, key: &Key, song_chords: Opt
             return Err(format!("{ctxname}: missing \"inst\" (e.g. \"piano\", \"drums:808\", \"strings\")"));
         }
         let is_drums = t.inst.starts_with("drums") || t.inst.contains("kit");
-        let mut clips: Vec<&ClipSpec> = t.clips.iter().collect();
-        if clips.is_empty() || t.clip != ClipSpec::default() {
-            clips.insert(0, &t.clip);
+        // Fields on the track itself are either one more clip (when they carry
+        // content) or defaults for every clip (`transpose`, `octave`, `vel`, `steps`…).
+        let tc = &t.clip;
+        let has_content = tc.notes.is_some() || tc.drums.is_some() || tc.chords.is_some() || tc.play.is_some() || tc.bass.is_some() || tc.melody.is_some();
+        let mut clips: Vec<ClipSpec> = t
+            .clips
+            .iter()
+            .map(|c| {
+                let mut c = c.clone();
+                if !has_content {
+                    c.octave = c.octave.or(tc.octave);
+                    c.vel = c.vel.or(tc.vel);
+                    c.transpose = Some(c.transpose.unwrap_or(0) + tc.transpose.unwrap_or(0)).filter(|&x| x != 0 || c.transpose.is_some());
+                    c.steps = c.steps.or(tc.steps);
+                }
+                c
+            })
+            .collect();
+        if clips.is_empty() || has_content {
+            clips.insert(0, tc.clone());
         }
         let mut notes = Vec::new();
         for (ci, c) in clips.iter().enumerate() {
@@ -571,6 +593,22 @@ pub fn length_secs(spec: &MusicSpec, grid: &Grid) -> Result<Option<f64>, String>
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn track_level_settings_apply_to_clips() {
+        let mk = |j: &str| {
+            let spec = MusicSpec::from_json(j).unwrap();
+            let grid = Grid { bpm: 120.0, beats_per_bar: 4.0, swing: 0.0, swing_unit: 0.25, offset: 0.0 };
+            compile_tracks(&spec, &grid, &Key::parse("C").unwrap(), None, None).unwrap()
+        };
+        let a = mk(r#"{"tracks":[{"inst":"piano","transpose":2,"vel":0.5,"clips":[{"at":"@bar1","notes":"C4 E4"},{"at":"@bar2","notes":"G4","transpose":1}]}]}"#);
+        let keys: Vec<f32> = a[0].notes.iter().map(|n| n.key).collect();
+        assert_eq!(keys, vec![62.0, 66.0, 70.0], "track transpose adds to the clip's own");
+        assert!(a[0].notes.iter().all(|n| (n.vel - 0.5).abs() < 1e-6));
+        // A track with content on itself still counts as a clip.
+        let b = mk(r#"{"tracks":[{"inst":"piano","notes":"C4","clips":[{"at":"@bar2","notes":"D4"}]}]}"#);
+        assert_eq!(b[0].notes.len(), 2);
+    }
 
     #[test]
     fn time_refs() {

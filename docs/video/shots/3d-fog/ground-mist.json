@@ -1,0 +1,61 @@
+{
+ "size": [
+  1920,
+  1080
+ ],
+ "fps": 30,
+ "scenes": [
+  {
+   "duration": 2,
+   "scene3d": {
+    "env": "studio",
+    "rig": {
+     "preset": "rim",
+     "ratio": 6
+    },
+    "set": {
+     "preset": "field",
+     "color": "#6A6E78"
+    },
+    "camera": {
+     "shake": "breath",
+     "keys": [
+      {
+       "t": 0,
+       "pos": [
+        2.2,
+        2.0,
+        6.2
+       ],
+       "target": [
+        0,
+        0.4,
+        0
+       ],
+       "focal": 35,
+       "fstop": 4
+      }
+     ]
+    },
+    "objects": [
+     {
+      "type": "sphere",
+      "radius": 0.45,
+      "pos": [
+       0,
+       0.45,
+       0
+      ],
+      "material": "chrome"
+     }
+    ],
+    "fog": {
+     "density": 0.9,
+     "height": 0.25,
+     "color": "#8A8F99"
+    }
+   },
+   "layers": []
+  }
+ ]
+}

@@ -151,3 +151,20 @@ fn stroke_gradient_along_follows_trim() {
     let half = strokes(0.5);
     assert!(half < full * 2 / 3 && half > full / 3, "{half} of {full}");
 }
+
+#[test]
+fn carried_layer_travels_between_layouts() {
+    let e = ev(r##"{ "scenes": [
+        { "duration": 1, "layers": [ { "id": "m", "shape": "rect", "x": 100, "y": 100, "width": 100, "height": 100, "fill": "#f00" } ] },
+        { "duration": 1, "transition": { "type": "crossfade", "duration": 0.5, "ease": "linear", "carry": ["m"] },
+          "layers": [ { "id": "m", "shape": "rect", "x": 1100, "y": 100, "width": 300, "height": 300, "fill": "#f00" } ] } ] }"##);
+    // Halfway through the transition (0.5..1.0), copies sit halfway between the two layouts at the mean size.
+    let rects: Vec<[f32; 6]> = e.eval(0.75).ops.iter().filter_map(|o| if let Op::RoundRect { transform, w, .. } = o { if *w == 100.0 || *w == 300.0 { Some(*transform) } else { None } } else { None }).collect();
+    assert!(!rects.is_empty());
+    for t in &rects {
+        // Centre of the drawn box in frame space.
+        let w = if (t[0] - 2.0).abs() < 0.05 { 100.0 } else { 300.0 };
+        let cx = t[0] * w * 0.5 + t[4];
+        assert!((cx - 600.0).abs() < 5.0, "centre {cx} ({t:?})");
+    }
+}

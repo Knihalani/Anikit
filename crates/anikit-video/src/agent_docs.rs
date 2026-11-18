@@ -19,12 +19,15 @@ pub const PAGES: &[(&str, &str)] = &[
     ("particles", include_str!("../docs-cli/particles.md")),
     ("physics", include_str!("../docs-cli/physics.md")),
     ("fluid", include_str!("../docs-cli/fluid.md")),
+    ("physarum", include_str!("../docs-cli/physarum.md")),
     ("post", include_str!("../docs-cli/post.md")),
     ("pacing", include_str!("../docs-cli/pacing.md")),
+    ("rhythm", include_str!("../docs-cli/rhythm.md")),
     ("critique", include_str!("../docs-cli/critique.md")),
     ("make-anything", include_str!("../docs-cli/make-anything.md")),
     ("expressions", include_str!("../docs-cli/expressions.md")),
     ("script", include_str!("../docs-cli/script.md")),
+    ("reuse", include_str!("../docs-cli/reuse.md")),
     ("draw", include_str!("../docs-cli/draw.md")),
     ("mograph", include_str!("../docs-cli/mograph.md")),
     ("type", include_str!("../docs-cli/type.md")),
@@ -34,6 +37,7 @@ pub const PAGES: &[(&str, &str)] = &[
     ("analyze", include_str!("../docs-cli/analyze.md")),
     ("board", include_str!("../docs-cli/board.md")),
     ("assets", include_str!("../docs-cli/assets.md")),
+    ("sound", include_str!("../docs-cli/sound.md")),
 ];
 
 /// Hand-built shots: `(name, {"about", "spec"})`.
@@ -54,9 +58,9 @@ pub const RECIPES: &[(&str, &str)] = &[
 ];
 
 const ALIASES: &[(&str, &str)] = &[
-    ("scene3d", "3d"), ("ink", "fluid"), ("smoke", "fluid"), ("fire", "fluid"), ("scene-3d", "3d"), ("three", "3d"), ("shaders", "shader"), ("glsl", "shader"), ("audio", "music"),
+    ("scene3d", "3d"), ("ink", "fluid"), ("slime", "physarum"), ("slime-mould", "physarum"), ("network", "physarum"), ("smoke", "fluid"), ("fire", "fluid"), ("scene-3d", "3d"), ("three", "3d"), ("shaders", "shader"), ("glsl", "shader"), ("audio", "music"),
     ("sound", "music"), ("sfx", "music"), ("keyframes", "animation"), ("expression", "expressions"), ("scripts", "script"), ("rhai", "script"), ("drawing", "draw"), ("motion-graphics", "mograph"), ("typography", "type"), ("knockout", "type-craft"), ("type-as-window", "type-craft"), ("pairing", "type-craft"), ("fonts", "type"), ("font", "type"), ("axes", "type"), ("variable", "type"), ("features", "type"), ("opentype", "type"), ("repeater", "mograph"), ("trails", "mograph"), ("echo", "mograph"), ("grid", "graphic"), ("pattern", "graphic"), ("patterns", "graphic"), ("halftone", "graphic"), ("duotone", "graphic"), ("print", "graphic"), ("graphic-design", "graphic"), ("layout", "graphic"), ("text", "primitives"),
-    ("shapes", "primitives"), ("paths", "primitives"), ("grade", "post"), ("motion-blur", "camera"), ("composition", "compositions"),
+    ("shapes", "primitives"), ("paths", "primitives"), ("grade", "post"), ("motion-blur", "camera"), ("composition", "compositions"), ("defs", "reuse"), ("use", "reuse"), ("repeat", "reuse"), ("generator", "reuse"),
     ("review", "critique"), ("pace", "pacing"), ("index", "start"), ("anything", "make-anything"),
     ("launch-video", "launch"), ("product", "launch"), ("announcement", "launch"),
     ("analyse", "analyze"), ("design", "taste"), ("style", "taste"), ("quality", "taste"), ("canon", "taste"), ("reverse", "analyze"), ("reference", "analyze"), ("moodboard", "board"), ("mood-board", "board"), ("references", "board"), ("asset", "assets"), ("hdri", "assets"), ("hdris", "assets"), ("materials", "assets"), ("textures", "assets"), ("models", "assets"), ("lut", "assets"), ("luts", "assets"), ("library", "assets"),
@@ -70,6 +74,11 @@ pub fn docs(topic: Option<&str>) -> Result<String, String> {
     }
     if let Some(kind) = t.strip_prefix("component ") {
         return crate::components::docs::doc(kind.trim()).ok_or_else(|| format!("unknown component '{kind}'; `anikit-video docs components` lists them"));
+    }
+    // Sound-design topics (kept apart from ALIASES so the two lists merge cleanly).
+    const SOUND: &[&str] = &["sound", "audio", "sfx", "sound-design", "foley", "ambience"];
+    if SOUND.contains(&t.as_str()) {
+        return Ok(include_str!("../docs-cli/sound.md").to_string());
     }
     let t = ALIASES.iter().find(|(a, _)| *a == t).map(|(_, b)| b.to_string()).unwrap_or(t);
     if t == "music" {
@@ -334,6 +343,9 @@ mod tests {
 
     #[test]
     fn lookups_aliases_and_suggestions() {
+        for t in ["sound", "sfx", "audio", "foley", "ambience"] {
+            assert!(docs(Some(t)).unwrap().contains("Sound design"), "{t}");
+        }
         assert!(docs(None).unwrap().contains("docs 3d") && docs(None).unwrap().contains("docs taste"));
         assert!(docs(Some("taste")).unwrap().contains("striking as a still") && docs(Some("design")).unwrap().contains("What tends to land"));
         assert!(docs(Some("scene3d")).unwrap().contains("scene3d"));

@@ -128,6 +128,8 @@ That is 1920×1080, 30 fps, 3 seconds, dark background, white Inter text in the 
 | `label` | `$body` | `1.8vh` | 600 | `$muted` (uppercase, letterSpacing 0.08em) |
 | `code` | `$mono` | `2.6vh` | 400 | `$text` |
 
+
+`"palette": "#e4572e split"` (schemes `mono analogous complement split triad`, plus `dark`) generates `ink paper mid accent accent2 tint` and the roles `bg text primary secondary muted surface` from one seed in OKLCH. Explicit `colors` win. Preview it with `anikit-video palette "<seed> <scheme>"`. Any colour can be a riso ink: `"riso:fluorescent-pink"` (`anikit-video palette riso` lists 19).
 ## Grid
 
 `"grid": { "columns": 12, "rows": 8, "margin": 96, "gutter": 24, "baseline": 12, "areas": { "head": "1-8/1-3" }, "show": false }` on the video, a scene (replaces it) or a group (for its children). Layers snap to it with `cell`. `margin` takes 1, 2 (`[v, h]`) or 4 lengths (default 5% of the short side); `gutter` 1 or 2 (default 2%). With `baseline`, text in a cell gets leading in whole baseline units. `show: true` tints the fields and baselines over the scene; `show: "under"` draws the field edges as hairlines beneath the layers (`color` sets them). Guide: `anikit-video docs graphic`.
@@ -166,6 +168,7 @@ That is 1920×1080, 30 fps, 3 seconds, dark background, white Inter text in the 
 | `reveal` | The new scene grows out of a shape | `shape`: `circle` `diamond` `square` `star` `blob`; `amount` (spin °); `origin` |
 | `blinds` | Staggered bars open onto the new scene | `count` (8), `direction` |
 | `split` | The old frame splits in two and the halves part | `direction`: `left`/`right` part sideways, `up`/`down` vertically |
+| *(any)* + `carry: ["id", …]` | Shared elements: each layer with that `id` in both scenes travels from its old place and size to its new one during the transition (a match move between layouts) | needs a duration |
 | `whip` | Whip pan: both scenes travel a frame, blurred and stretched by speed | `direction`, `amount` (extra blur). 0.35 s |
 
 Defaults: duration 0.5 s (glitch 0.3 s), ease `inOutCubic` (`reveal`, `blinds`, `split`, `whip`: `inOutExpo`).
@@ -269,6 +272,7 @@ Every layer has a `type`. You may leave it out when it is obvious: a layer with 
 | `d` | SVG path string | | `path` data (`"M0 0 C 50 -40 …"`), local px. |
 | `headSize` | px | `4 × strokeWidth` | `arrow` head size. |
 | `trimStart`, `trimEnd` | 0..1 | `0`, `1` | Draw part of the outline (animate for draw-on; see the `drawOn` preset). |
+| `brush` | `true` or `{taper, pressure, dry, seed}` | none | Paint the stroke as a brush: tapered, pressure-varied, dry bristles; paints on with `trimEnd`. |
 
 ### `image` and `video`
 

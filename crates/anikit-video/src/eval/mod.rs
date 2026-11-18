@@ -363,6 +363,8 @@ pub(crate) struct Node {
     pub glow: Option<Filter>,
     /// Image treatments (tone map, halftone), applied first.
     pub treat: Vec<Filter>,
+    /// Brush stroke: the outline drawn as a variable-width ribbon.
+    pub brush: Option<Arc<graphic::Brush>>,
     /// A pattern whose `field` reads `t`: regenerated every frame (pattern, box size).
     pub live_pattern: Option<Arc<(graphic::Pat, [f64; 2])>>,
     /// First of 5 animatable slots for the treatments (toneAmount, halftone cell/angle/gain, ink amount); 0 = none.
@@ -418,6 +420,8 @@ pub(crate) struct TransC {
     /// `reveal` shape (0 circle, 1 diamond, 2 square, 3 star, 4 blob); `blinds` bar count.
     pub shape: u8,
     pub count: u32,
+    /// Shared elements: layer ids carried from the old scene's layout to the new one's.
+    pub carry: Vec<String>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -479,6 +483,11 @@ pub(crate) fn collecting_scales() -> bool {
 }
 
 thread_local! {
+    /// Layer ids to leave out while emitting scenes (shared elements during a transition).
+    static SKIP: std::cell::RefCell<Vec<String>> = const { std::cell::RefCell::new(Vec::new()) };
+}
+
+thread_local! {
     static TAGS: std::cell::RefCell<Option<Vec<OpTag>>> = const { std::cell::RefCell::new(None) };
 }
 
@@ -502,6 +511,8 @@ pub struct Evaluator {
     pub audio: Vec<crate::audio::Track>,
     /// Generated music (the spec's `music`), rendered when the audio is mixed.
     pub music: Option<Arc<crate::music::MusicCue>>,
+    /// Sound design (the spec's `sound` and layers' `sfx`), mixed with the audio.
+    pub sound: Option<Arc<crate::audio::design::spec::SoundPlan>>,
     /// Fonts and images, shared with the renderers.
     pub assets: Arc<SharedAssets>,
     pub(crate) easings: Vec<Easing>,
@@ -675,6 +686,32 @@ impl Evaluator {
         }
     }
 
+    /// Collisions reported by component layers (physics in `scene3d`), as
+    /// `(layer tag, video seconds, impact)`; `aspect(tag)` is the layer box's
+    /// width / height on screen.
+    pub(crate) fn component_impacts(&self, aspect: &dyn Fn(u32) -> f32) -> Vec<(u32, f32, crate::components::Impact)> {
+        fn walk(nodes: &[Node], t0: f32, until: f32, aspect: &dyn Fn(u32) -> f32, out: &mut Vec<(u32, f32, crate::components::Impact)>) {
+            for n in nodes {
+                let start = t0 + n.start;
+                match &n.kind {
+                    Kind::Component(c, _) => {
+                        let local = (until.min(t0 + n.end) - start).max(0.0);
+                        for i in c.impacts(local, aspect(n.tag)) {
+                            out.push((n.tag, start + i.t, i));
+                        }
+                    }
+                    Kind::Group { children } | Kind::Box { children, .. } => walk(children, start, until, aspect, out),
+                    _ => {}
+                }
+            }
+        }
+        let mut out = Vec::new();
+        for s in &self.scenes {
+            walk(&s.layers, s.start, s.start + s.dur, aspect, &mut out);
+        }
+        out
+    }
+
     /// The display list at time `t` (seconds).
     pub fn eval(&self, t: f32) -> DisplayList {
         let mut dl = DisplayList::default();
@@ -801,7 +838,11 @@ impl Evaluator {
         let (cam, v, panning) = self.scene_cam(s, t, xf);
         let (cxp, cyp, rot, zoom) = (v[0], v[1], v[2], v[3]);
         let (focus, aperture) = (v[4], v[5]);
+        let skip = SKIP.with(|s| !s.borrow().is_empty());
         for (li, n) in s.layers.iter().enumerate() {
+            if skip && n.id.as_deref().is_some_and(|id| SKIP.with(|s| s.borrow().iter().any(|x| x == id))) {
+                continue;
+            }
             let is_bg = li < s.bg_layers;
             if (is_bg && part & PART_BG == 0) || (!is_bg && part & PART_FG == 0) {
                 continue;
@@ -867,6 +908,58 @@ impl Evaluator {
     }
 
     fn emit_transition(&self, a: &SceneC, b: &SceneC, t: f32, p: f32, e: f32, out: &mut Vec<Op>) {
+        if b.trans.carry.is_empty() {
+            return self.emit_transition_inner(a, b, t, p, e, out);
+        }
+        SKIP.with(|s| *s.borrow_mut() = b.trans.carry.clone());
+        self.emit_transition_inner(a, b, t, p, e, out);
+        SKIP.with(|s| s.borrow_mut().clear());
+        for id in &b.trans.carry {
+            self.emit_carried(a, b, id, t, e, out);
+        }
+    }
+
+    /// Frame-space centre and size of a top-level layer of `s` at time `t`.
+    fn layer_frame(&self, s: &SceneC, n: &Node, t: f32) -> ([f32; 2], f32) {
+        let (cam, _, _) = self.scene_cam(s, t, &dl::IDENTITY);
+        let cx = Cx { ev: self, scene_t: t - s.start, gt: t, dof: 0.0, amul: 1.0 };
+        let mut v = [0.0f32; prop::N];
+        self.props(n, &cx, (t - s.start - n.start).max(0.0), &mut v);
+        let (w, h) = (v[prop::W].max(1.0), v[prop::H].max(1.0));
+        let f = dl::mul(&cam, &local_xf(&v, n.anchor, w, h));
+        let c = [f[0] * w * 0.5 + f[2] * h * 0.5 + f[4], f[1] * w * 0.5 + f[3] * h * 0.5 + f[5]];
+        (c, (f[0] * f[3] - f[1] * f[2]).abs().sqrt() * (w * w + h * h).sqrt())
+    }
+
+    /// A shared element: the old scene's copy travels to the new layout while fading out, the new
+    /// scene's copy travels from the old layout while fading in.
+    fn emit_carried(&self, a: &SceneC, b: &SceneC, id: &str, t: f32, e: f32, out: &mut Vec<Op>) {
+        fn find<'a>(s: &'a SceneC, id: &str) -> Option<&'a Node> {
+            s.layers.iter().find(|n| n.id.as_deref() == Some(id))
+        }
+        let (Some(na), Some(nb)) = (find(a, id), find(b, id)) else { return };
+        let (ca, sa) = self.layer_frame(a, na, t);
+        let (cb, sb) = self.layer_frame(b, nb, t);
+        let c = [ca[0] + (cb[0] - ca[0]) * e, ca[1] + (cb[1] - ca[1]) * e];
+        let sz = sa + (sb - sa) * e;
+        // Move a scene's copy (centre `c0`, size `s0`) to the interpolated centre and size.
+        let to = |c0: [f32; 2], s0: f32| {
+            let k = sz / s0.max(1e-3);
+            dl::mul(&translate(c[0], c[1]), &dl::mul(&scale(k, k), &translate(-c0[0], -c0[1])))
+        };
+        // The old copy stays solid until halfway while the new one fades in on top: the element never goes see-through.
+        let (aa, ab) = ((2.0 - 2.0 * e).clamp(0.0, 1.0), (2.0 * e).clamp(0.0, 1.0));
+        for (s, n, c0, s0, alpha) in [(a, na, ca, sa, aa), (b, nb, cb, sb, ab)] {
+            if alpha <= 0.002 {
+                continue;
+            }
+            let (cam, _, _) = self.scene_cam(s, t, &to(c0, s0));
+            let cx = Cx { ev: self, scene_t: t - s.start, gt: t, dof: 0.0, amul: alpha };
+            self.emit_node(n, &cx, &cam, [self.width as f32, self.height as f32], 1.0, out);
+        }
+    }
+
+    fn emit_transition_inner(&self, a: &SceneC, b: &SceneC, t: f32, p: f32, e: f32, out: &mut Vec<Op>) {
         let (w, h) = (self.width as f32, self.height as f32);
         let tr = &b.trans;
         let id = dl::IDENTITY;
@@ -1487,7 +1580,14 @@ impl Evaluator {
                     }
                 }
                 let along = n.fx.as_deref().and_then(|f| f.along.as_ref());
-                if let (Some(_), Some(al)) = (stroke, along) {
+                if let (Some(s), Some(b)) = (stroke, n.brush.as_deref()) {
+                    if sw > 0.0 && v[prop::TRIM1] > v[prop::TRIM0] {
+                        let paint = self.paint(&s.paint, &v, prop::STROKE, [w, h], alpha);
+                        let mut p = take_path();
+                        b.build(sw, v[prop::TRIM0], v[prop::TRIM1], &mut p);
+                        out.push(Op::Fill { path: p, paint, rule: dl::FillRule::NonZero, transform: xf });
+                    }
+                } else if let (Some(_), Some(al)) = (stroke, along) {
                     // Gradient along the path: each chunk carries its slice of the colours (and of the trim).
                     let (t0, t1) = (v[prop::TRIM0].clamp(0.0, 1.0), v[prop::TRIM1].clamp(0.0, 1.0));
                     if sw > 0.0 && t1 > t0 {

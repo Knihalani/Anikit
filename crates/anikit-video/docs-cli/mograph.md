@@ -33,7 +33,7 @@
 - **Smear** `"smear": true` (or a strength): fast moves stretch along their travel, volume kept; still layers are untouched.
 - **Idea transitions** (on the incoming scene): `{"type": "zoomThrough", "layer": "logo"}` flies into a layer of the outgoing
   scene and the new scene shows through its shape (a letter, a window, a logo); `{"type": "reveal", "shape": "circle|diamond|square|star|blob",
-  "amount": 90 (spin°), "origin": [x, y]}`; `{"type": "blinds", "count": 8, "direction"}`; `{"type": "split", "direction": "up"}`; `"whip"` (speed-blurred pan).
+  "amount": 90 (spin°), "origin": [x, y]}`; `"carry": ["logo"]` on any transition moves layers with the same id from the old layout to the new one (a match move); `{"type": "blinds", "count": 8, "direction"}`; `{"type": "split", "direction": "up"}`; `"whip"` (speed-blurred pan).
 - **Posterize time** `"posterizeTime": 12` on a layer or group: its motion steps at 12 poses/s (on twos; with `wigglePath` → boiling, handmade lines).
 - **Named curves**: `glide` (expo out 0.16,1,0.3,1), `snap` (0.87,0,0.13,1), `land` (long settle), `launch` (expo in, exits), `material`,
   `emphasizedDecelerate`/`emphasizedAccelerate`, `productive`, `expressive`, `expressiveEntrance`/`expressiveExit`. Why and when: docs/video/craft/motion-design.md.

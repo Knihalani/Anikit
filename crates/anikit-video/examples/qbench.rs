@@ -17,10 +17,12 @@
 //!    the error, which catches flicker, stepping and popping).
 //! 4. **Delivered fidelity**: the decoded MP4 vs the reference (encoder loss
 //!    included), checked against the committed baseline.
+//! 5. **Render cache**: timed runs render with `ANIKIT_RENDER_CACHE=0`; a cold
+//!    and a warm cached render must equal the uncached MP4 byte for byte.
 //!
 //! Options: `--only a,b` · `--runs N` (default 3) · `--gate` (exit 1 on any
 //! failure) · `--update-baseline` · `--out DIR` (default `target/qbench`) ·
-//! `--json`.
+//! `--no-cache-check` · `--json`.
 //!
 //! See `docs/video/perf.md` for thresholds and how to read the table.
 
@@ -692,6 +694,8 @@ fn main() {
     let get = |k: &str| args.iter().position(|a| a == k).and_then(|i| args.get(i + 1)).cloned();
     let has = |k: &str| args.iter().any(|a| a == k);
     let gate = has("--gate");
+    // Timed renders must do all the work: the chunk cache would serve runs 2+.
+    std::env::set_var("ANIKIT_RENDER_CACHE", "0");
     let runs: usize = get("--runs").and_then(|v| v.parse().ok()).unwrap_or(3).max(1);
     let only: Option<Vec<String>> = get("--only").map(|s| s.split(',').map(|x| x.trim().to_string()).collect());
     // Repo root: two levels up from this crate.
@@ -705,6 +709,9 @@ fn main() {
     let lab = Lab::new();
     let mut rows = Vec::new();
     for e in &corpus.entries {
+        // The previous entry's frames are dropped: return them to the OS, so the
+        // RSS column starts from what this process really needs.
+        anikit_video::memstat::trim();
         if only.as_ref().is_some_and(|o| !o.contains(&e.name)) {
             continue;
         }
@@ -776,6 +783,36 @@ fn main() {
             }
         }
         eprintln!("   default: {:.3} s, {:.0} fps", row.wall_s, row.fps);
+        // Render cache: a cold and a warm cached render of the clip must both equal
+        // the uncached render byte for byte (skipped for single-run heavy entries).
+        if e.runs.is_none() && !has("--no-cache-check") {
+            let dir = out_dir.join(format!("{}.rcache", e.name));
+            let _ = std::fs::remove_dir_all(&dir);
+            std::env::set_var("ANIKIT_CACHE_DIR", &dir);
+            std::env::remove_var("ANIKIT_RENDER_CACHE");
+            let want = std::fs::read(&mp4).unwrap_or_default();
+            let mut bad = Vec::new();
+            for pass in ["cold", "warm"] {
+                let ev = build(&spec_path).unwrap();
+                let out = out_dir.join(format!("{}.cache-{pass}.mp4", e.name));
+                let audio = pipeline::mix_audio(&ev, t_audio0, dur, &wav).unwrap_or(None);
+                pipeline::render_ak264(&ev, &options(e, false), &out, audio.as_deref()).expect("cached render");
+                if audio.is_some() {
+                    let _ = std::fs::remove_file(&wav);
+                }
+                if std::fs::read(&out).unwrap_or_default() != want {
+                    bad.push(pass);
+                }
+                let _ = std::fs::remove_file(&out);
+            }
+            std::env::set_var("ANIKIT_RENDER_CACHE", "0");
+            std::env::remove_var("ANIKIT_CACHE_DIR");
+            let _ = std::fs::remove_dir_all(&dir);
+            if !bad.is_empty() {
+                row.nondeterministic = Some(format!("render cache ({}) differs from a full render", bad.join(", ")));
+                eprintln!("   RENDER CACHE MISMATCH: {}", bad.join(", "));
+            }
+        }
         anikit_video::components::set_reference(false);
         // 2. Reference.
         let t = Instant::now();
@@ -892,11 +929,11 @@ fn main() {
 }
 
 fn print_table(rows: &[Row]) {
-    println!("\n| spec | content | frames (timed) | wall s | fps | ms/frame: eval · render · copy · encode · idle | startup ms · 1st frame ms | render SSIM min | PSNR-Y min | ΔE p99.9 / max | raw ΔE p99.9 | flicker p99.9 | delivered SSIM min / PSNR-Y | result |");
-    println!("|---|---|---:|---:|---:|---|---|---:|---:|---:|---:|---:|---|---|");
+    println!("\n| spec | content | frames (timed) | wall s | fps | ms/frame: eval · render · copy · encode · idle | startup ms · 1st frame ms | RSS MiB: start · peak | render SSIM min | PSNR-Y min | ΔE p99.9 / max | raw ΔE p99.9 | flicker p99.9 | delivered SSIM min / PSNR-Y | result |");
+    println!("|---|---|---:|---:|---:|---|---|---|---:|---:|---:|---:|---:|---|---|");
     for r in rows {
         if let Some(s) = &r.skipped {
-            println!("| {} | {} | – | – | – | – | – | – | – | – | – | – | – | skipped: {} |", r.name, r.kind, s.replace('|', "/"));
+            println!("| {} | {} | – | – | – | – | – | – | – | – | – | – | – | – | skipped: {} |", r.name, r.kind, s.replace('|', "/"));
             continue;
         }
         let p = r.profile.clone().unwrap_or_default();
@@ -905,7 +942,7 @@ fn print_table(rows: &[Row]) {
         } else if r.pass { "PASS".to_string() } else { format!("**FAIL** ({} frames{})", r.render.failing.len(), if r.delivered_regressed { ", delivered regressed" } else { "" }) };
         let flags = if r.flags.is_empty() { String::new() } else { format!(" ⚑ {}", r.flags.join("; ")) };
         println!(
-            "| {} | {} | {} ({}) | {:.2} | {:.0} | {:.2} · {:.2} · {:.2} · {:.2} · {:.2} | {:.0} · {:.0} | {:.5} | {:.2} | {:.2} / {:.1} | {:.1} | {:.1} | {:.4} / {:.2} | {}{} |",
+            "| {} | {} | {} ({}) | {:.2} | {:.0} | {:.2} · {:.2} · {:.2} · {:.2} · {:.2} | {:.0} · {:.0} | {:.0} · {:.0} | {:.5} | {:.2} | {:.2} / {:.1} | {:.1} | {:.1} | {:.4} / {:.2} | {}{} |",
             r.name,
             r.kind,
             r.frames,
@@ -919,6 +956,8 @@ fn print_table(rows: &[Row]) {
             p.idle_ms,
             r.startup_ms,
             r.first_frame_ms,
+            p.mem_start_mb,
+            p.mem_render_peak_mb,
             r.render.ssim_min,
             r.render.psnr_y_min,
             r.render.de_p999_max,

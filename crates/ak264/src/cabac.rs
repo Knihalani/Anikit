@@ -223,6 +223,61 @@ impl Cabac {
         self.decision(w, 85 + CBF_OFF[cat as usize] + cbf_inc, 0);
     }
 
+    /// An 8×8 luma block (cat 5, frame scan; coefficients in scan order). No
+    /// coded_block_flag: the block is coded when its cbp bit is set.
+    pub fn residual8(&mut self, w: &mut BitWriter, coeffs: &[i32; 64]) {
+        const SIG8: [u8; 63] = [
+            0, 1, 2, 3, 4, 5, 5, 4, 4, 3, 3, 4, 4, 4, 5, 5, 4, 4, 4, 4, 3, 3, 6, 7, 7, 7, 8, 9, 10, 9, 8, 7, 7, 6, 11, 12, 13, 11, 6, 7, 8, 9, 14, 10,
+            9, 8, 6, 11, 12, 13, 11, 6, 9, 14, 10, 9, 11, 12, 13, 11, 14, 10, 12,
+        ];
+        const LAST8: [u8; 63] = [
+            0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4,
+            4, 4, 5, 5, 5, 5, 6, 6, 6, 6, 7, 7, 7, 7, 8, 8, 8,
+        ];
+        let mask = coeffs.iter().enumerate().fold(0u64, |m, (i, &v)| m | (((v != 0) as u64) << i));
+        debug_assert!(mask != 0);
+        let last = 63 - mask.leading_zeros() as usize;
+        for i in 0..last.min(63) {
+            let nz = ((mask >> i) & 1) as u32;
+            self.decision(w, 402 + SIG8[i] as usize, nz);
+            if nz != 0 {
+                self.decision(w, 417 + LAST8[i] as usize, 0);
+            }
+        }
+        if last < 63 {
+            self.decision(w, 402 + SIG8[last] as usize, 1);
+            self.decision(w, 417 + LAST8[last] as usize, 1);
+        }
+        let base = 426;
+        let (mut gt1, mut eq1) = (0usize, 0usize);
+        let mut m = mask;
+        while m != 0 {
+            let i = 63 - m.leading_zeros() as usize;
+            m &= !(1u64 << i);
+            let v = coeffs[i];
+            let a = v.unsigned_abs() - 1;
+            let inc0 = if gt1 != 0 { 0 } else { (1 + eq1).min(4) };
+            if a == 0 {
+                self.decision(w, base + inc0, 0);
+                eq1 += 1;
+            } else {
+                self.decision(w, base + inc0, 1);
+                let ctx = base + 5 + gt1.min(4);
+                let pre = a.min(14);
+                for _ in 1..pre {
+                    self.decision(w, ctx, 1);
+                }
+                if a < 14 {
+                    self.decision(w, ctx, 0);
+                } else {
+                    self.eg_bypass(w, a - 14, 0);
+                }
+                gt1 += 1;
+            }
+            self.bypass(w, (v < 0) as u32);
+        }
+    }
+
     pub fn residual(&mut self, w: &mut BitWriter, coeffs: &[i32], cat: Cat, cbf_inc: usize) {
         let c = cat as usize;
         let n = coeffs.len();

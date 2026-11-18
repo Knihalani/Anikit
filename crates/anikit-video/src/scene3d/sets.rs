@@ -26,7 +26,8 @@ pub struct Built {
     pub no_floor: bool,
 }
 
-pub fn build(v: &Value, path: &str) -> Res<Built> {
+/// `fit`: the subject's footprint half-width (m), so stands and clearings fit it.
+pub fn build(v: &Value, path: &str, fit: Option<f32>) -> Res<Built> {
     let mut out = Built { objects: Vec::new(), floor_y: None, no_floor: false };
     let list: Vec<(usize, &Value)> = match v {
         Value::Array(a) => a.iter().enumerate().collect(),
@@ -54,7 +55,12 @@ pub fn build(v: &Value, path: &str) -> Res<Built> {
         match name.as_str() {
             "plinth" | "podium" => {
                 let square = name == "podium" || m.get("shape").and_then(|s| s.as_str()) == Some("square");
-                let (r, h) = (0.62 * size, 0.32 * size);
+                // Fit the subject with a 15% margin, unless `size` is given.
+                let r = match (m.contains_key("size"), fit) {
+                    (false, Some(w)) => (w * 1.15).max(0.3),
+                    _ => 0.62 * size,
+                };
+                let h = (0.32 * size).min(r * 0.24);
                 let (r2, h2) = (r * 1.32, h * 0.38);
                 let top = mat("#D8D4CD", 0.5);
                 if square {
@@ -101,7 +107,8 @@ pub fn build(v: &Value, path: &str) -> Res<Built> {
                 // so it frames the subject instead of hiding it.
                 let z = format!("(floor(i/{cols})-{half})*{sp}-{}", (half * sp - 1.0 * size).max(0.0));
                 let hgt = format!("({}+{}*max(0,noise2({x}*0.55,{z}*0.55)+0.35)*(0.25+0.75*clamp(-({z})/{},0,1)))", 0.05 * size, 1.8 * size, 6.0 * size);
-                let clear = format!("smoothstep({},{},hypot({x},{z}))", 1.3 * size, 1.9 * size);
+                let c0 = (1.3 * size).max(fit.unwrap_or(0.0) * 1.3);
+                let clear = format!("smoothstep({},{},hypot({x},{z}))", c0, c0 + 0.6 * size);
                 out.objects.push(json!({
                     "type": "box",
                     "count": cols * cols,
