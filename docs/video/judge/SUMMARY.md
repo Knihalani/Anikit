@@ -52,7 +52,7 @@ Best per brief:
 | i-explainer | ~4.0 | SOUND / r3 |
 | c-event | ~3.9 | CEILING-1 / r3 |
 | a-social | 3.94 | r3 |
-| f-3d | 3.62 | r2 |
+| f-3d | 3.62 | r2 (3D rebuild ties at 3.62 / 6 trials, typography 2) |
 | l-generative | 3.62 | r2 |
 | h-ident | ~3.4 | TASTE |
 
