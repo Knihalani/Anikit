@@ -48,3 +48,7 @@
   (0..1, or animate `rangeStart`/`rangeEnd`/`rangeOffset`): `"offset": "=sin(t*2)"` makes a travelling wave.
 
 Full pieces: `examples/video/mograph/` (pulse-ident, kinetic-poster, night-line).
+
+Craft (blind-judge evidence, docs/video/craft/motion-design.md): effects alone don't read as studio work. What raised scores: a structure where every shot is
+a different composition joined by a transition that carries something (zoomThrough, carry, a match move), a colour arc across shots, and one idea
+built from the subject. What held them down: the same centred lockup repeated, tracked mono-caps labels as decoration, near-black + one accent throughout.
