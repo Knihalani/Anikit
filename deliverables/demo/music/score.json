@@ -1,0 +1,295 @@
+{
+ "title": "Low Tide",
+ "artist": "Harbour Lights",
+ "bpm": 84,
+ "key": "D major",
+ "meter": "4/4",
+ "seconds": 20.0,
+ "form": "intro bar (lamps switch on per piano eighth) \u00b7 line 1 (Bm\u2192G) \u00b7 line 2 (G\u2192A) \u00b7 line 3 (Bm G \u2192 Gm, the borrowed iv on 'stay') \u00b7 a half-beat breath \u00b7 line 4 resolves to D; 'on' rings",
+ "melody": "cello section, one note per syllable; piano (Splendid) broken chords; string sections, contrabass, a soft kick, a crash on the arrival, celesta for the lights, and a synthesised sea that drains with the tide and surges back",
+ "lyric": [
+  {
+   "syllable": "Hold",
+   "beat": 4,
+   "seconds": 2.857
+  },
+  {
+   "syllable": "me",
+   "beat": 5,
+   "seconds": 3.571
+  },
+  {
+   "syllable": "at",
+   "beat": 5.5,
+   "seconds": 3.929
+  },
+  {
+   "syllable": "low",
+   "beat": 6,
+   "seconds": 4.286
+  },
+  {
+   "syllable": "tide",
+   "beat": 7,
+   "seconds": 5.0
+  },
+  {
+   "syllable": "when",
+   "beat": 10,
+   "seconds": 7.143
+  },
+  {
+   "syllable": "the",
+   "beat": 10.5,
+   "seconds": 7.5
+  },
+  {
+   "syllable": "har-",
+   "beat": 11,
+   "seconds": 7.857
+  },
+  {
+   "syllable": "-bour",
+   "beat": 11.5,
+   "seconds": 8.214
+  },
+  {
+   "syllable": "lights",
+   "beat": 12,
+   "seconds": 8.571
+  },
+  {
+   "syllable": "are",
+   "beat": 13,
+   "seconds": 9.286
+  },
+  {
+   "syllable": "gone",
+   "beat": 13.5,
+   "seconds": 9.643
+  },
+  {
+   "syllable": "we",
+   "beat": 16.5,
+   "seconds": 11.786
+  },
+  {
+   "syllable": "were",
+   "beat": 17,
+   "seconds": 12.143
+  },
+  {
+   "syllable": "ne-",
+   "beat": 17.5,
+   "seconds": 12.5
+  },
+  {
+   "syllable": "-ver",
+   "beat": 18,
+   "seconds": 12.857
+  },
+  {
+   "syllable": "meant",
+   "beat": 18.5,
+   "seconds": 13.214
+  },
+  {
+   "syllable": "to",
+   "beat": 19.5,
+   "seconds": 13.929
+  },
+  {
+   "syllable": "stay",
+   "beat": 20,
+   "seconds": 14.286
+  },
+  {
+   "syllable": "but",
+   "beat": 22.5,
+   "seconds": 16.071
+  },
+  {
+   "syllable": "we",
+   "beat": 23,
+   "seconds": 16.429
+  },
+  {
+   "syllable": "stayed",
+   "beat": 24,
+   "seconds": 17.143
+  },
+  {
+   "syllable": "on",
+   "beat": 25,
+   "seconds": 17.857
+  }
+ ],
+ "spec": {
+  "bpm": 84,
+  "key": "D",
+  "length": "20s",
+  "seed": 7,
+  "end": "ring",
+  "master": {
+   "reverb": "hall"
+  },
+  "tracks": [
+   {
+    "name": "melody",
+    "inst": "cello",
+    "gain": 2,
+    "reverb": 0.35,
+    "pan": 0.05,
+    "notes": "r:4 A4:1~ F#4:0.5 E4:0.5 F#4:1~ D4:2.5 r:0.5 B3:0.5 D4:0.5 E4:0.5 F#4:0.5 A4:1! G4:0.5 E4:2.5 r:0.5 F#4:0.5 F#4:0.5 A4:0.5 B4:0.5 A4:1~ G4:0.5 G4:2 r:0.5 E4:0.5 F#4:1 F#4:1 A4:3!"
+   },
+   {
+    "name": "piano",
+    "inst": "piano",
+    "gain": -3,
+    "reverb": 0.4,
+    "pan": -0.2,
+    "notes": "v70 D3:0.5 A3:0.5 E4:0.5 F#4:0.5 A4:0.5 F#4:0.5 E4:0.5 A3:0.5 | B2:0.5 F#3:0.5 D4:0.5 F#4:0.5 B3:0.5 D4:0.5 F#4:0.5 D4:0.5 | G2:0.5 D3:0.5 B3:0.5 D4:0.5 A4:0.5 D4:0.5 B3:0.5 D3:0.5 | A2:0.5 E3:0.5 C#4:0.5 E4:0.5 A3:0.5 E4:0.5 C#4:0.5 E3:0.5 | B2:0.5 F#3:0.5 D4:0.5 F#4:0.5 G2:0.5 D3:0.5 B3:0.5 D4:0.5 | G2:0.5 D3:0.5 Bb3:0.5 D4:0.5 r:0.5 A2:0.5 E3:0.5 C#4:0.5 | [D2 A2 F#3 A3 D4 E4]:4"
+   },
+   {
+    "name": "strings",
+    "inst": "strings",
+    "gain": -7,
+    "reverb": 0.5,
+    "notes": "r:8 [D3 G3 B3]:4 | [C#3 E3 A3]:4 | [D3 F#3 B3]:2 [D3 G3 B3]:2 | [D3 G3 Bb3]:2 r:2 | [D3 F#3 A3 E4]:4",
+    "automate": {
+     "volume": [
+      [
+       8,
+       -10
+      ],
+      [
+       16,
+       -2
+      ],
+      [
+       21.5,
+       0
+      ],
+      [
+       22,
+       -30
+      ],
+      [
+       24,
+       0
+      ],
+      [
+       28,
+       -4
+      ]
+     ]
+    }
+   },
+   {
+    "name": "bass",
+    "inst": "contrabass",
+    "gain": -4,
+    "reverb": 0.35,
+    "notes": "r:8 G1:4 | A1:4 | B1:2 G1:2 | G1:2 r:0.5 A1:1.5 | D1:4"
+   },
+   {
+    "name": "drums",
+    "inst": "drums",
+    "gain": -9,
+    "reverb": 0.3,
+    "notes": "@5 C2:1? @6 C2:1? C2:1? @7 [C2 C#3]:4",
+    "humanize": 0.1
+   },
+   {
+    "name": "lights",
+    "inst": "celesta",
+    "gain": -10,
+    "reverb": 0.7,
+    "pan": 0.35,
+    "notes": "r:12 A6:0.5 E6:0.5 C#6:1 r:2 | r:4 | r:4 | r:1 A6:3"
+   },
+   {
+    "name": "sea",
+    "inst": "sea",
+    "gain": -10,
+    "pan": 0,
+    "notes": "C3:28",
+    "fx": [
+     {
+      "type": "widener",
+      "width": 1.6
+     }
+    ],
+    "automate": {
+     "lp": "=250 + 1100 * pow(0.5 + 0.5 * sin(t * 1.05), 3)",
+     "volume": [
+      [
+       0,
+       -2
+      ],
+      [
+       9,
+       -2
+      ],
+      [
+       12,
+       -14
+      ],
+      [
+       18,
+       -12
+      ],
+      [
+       19.5,
+       0
+      ],
+      [
+       21.8,
+       2
+      ],
+      [
+       22,
+       -10
+      ],
+      [
+       22.5,
+       -12
+      ],
+      [
+       26,
+       -8
+      ],
+      [
+       28,
+       -12
+      ]
+     ]
+    }
+   }
+  ],
+  "define": {
+   "sea": {
+    "synth": {
+     "osc": [
+      {
+       "wave": "sine",
+       "level": 0.0
+      }
+     ],
+     "noise": 1.0,
+     "filter": {
+      "type": "lp",
+      "cutoff": 900,
+      "res": 0.1
+     },
+     "amp": [
+      1.5,
+      0.0,
+      1.0,
+      2.0
+     ]
+    }
+   }
+  }
+ }
+}

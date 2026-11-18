@@ -461,6 +461,60 @@ pub struct TriHit {
     pub v: f32,
 }
 
+/// How many nearest hits [`Near`] keeps.
+pub const NEAR_K: usize = 4;
+
+/// The nearest few hits along a ray, ascending by distance; hits at exactly
+/// the same distance are kept once (a triangle referenced by two leaves, or
+/// two triangles meeting at an edge, where a sequential trace sees one).
+#[derive(Clone, Copy)]
+pub struct Near<T: Copy> {
+    pub n: usize,
+    pub h: [(f32, T); NEAR_K],
+}
+
+impl<T: Copy> Near<T> {
+    pub fn new(fill: T) -> Near<T> {
+        Near { n: 0, h: [(f32::MAX, fill); NEAR_K] }
+    }
+    /// Hits beyond this can't enter the list.
+    #[inline(always)]
+    pub fn far(&self, tmax: f32) -> f32 {
+        if self.n == NEAR_K {
+            self.h[NEAR_K - 1].0.min(tmax)
+        } else {
+            tmax
+        }
+    }
+    #[inline]
+    pub fn insert(&mut self, t: f32, x: T) {
+        if self.n == NEAR_K && t >= self.h[NEAR_K - 1].0 {
+            return;
+        }
+        let mut i = self.n.min(NEAR_K - 1);
+        // Find the slot: shift farther hits right.
+        let mut pos = self.n;
+        for (j, e) in self.h[..self.n].iter().enumerate() {
+            if e.0 == t {
+                return;
+            }
+            if e.0 > t {
+                pos = j;
+                break;
+            }
+        }
+        if pos >= NEAR_K {
+            return;
+        }
+        while i > pos {
+            self.h[i] = self.h[i - 1];
+            i -= 1;
+        }
+        self.h[pos] = (t, x);
+        self.n = (self.n + 1).min(NEAR_K);
+    }
+}
+
 impl Mesh8 {
     /// From a binary tree over `tris` (vertex, edge 1, edge 2), whose leaves
     /// index runs of `tris` (already in leaf order).
@@ -560,6 +614,41 @@ impl Mesh8 {
     #[target_feature(enable = "avx2,fma")]
     unsafe fn occluded_avx2(&self, o: V3, d: V3, tmin: f32, tmax: f32) -> bool {
         self.occluded_impl::<true>(o, d, tmin, tmax)
+    }
+
+    #[inline(always)]
+    fn nearest_impl<const AVX: bool>(&self, o: V3, d: V3, tmin: f32, tmax: f32, near: &mut Near<TriHit>) {
+        traverse::<AVX>(&self.nodes, o, d, tmin, near.far(tmax), |b0, nb, _| {
+            for b in b0..b0 + nb {
+                // SAFETY: leaf ranges come from `new`.
+                let blk = unsafe { self.blocks.get_unchecked(b as usize) };
+                let (ts, us, vs, mut m) = blk.hit(o, d, tmin, near.far(tmax));
+                while m != 0 {
+                    let l = m.trailing_zeros() as usize;
+                    m &= m - 1;
+                    near.insert(ts[l], TriHit { t: ts[l], tri: self.ids[b as usize][l], u: us[l], v: vs[l] });
+                }
+            }
+            near.far(tmax)
+        });
+    }
+
+    /// Merge the nearest [`NEAR_K`] hits in `(tmin, tmax)` into `near`
+    /// (each with the same distance and barycentrics [`Mesh8::closest`] gives).
+    #[inline(never)]
+    pub fn nearest(&self, o: V3, d: V3, tmin: f32, tmax: f32, near: &mut Near<TriHit>) {
+        #[cfg(target_arch = "x86_64")]
+        if avx2() {
+            // SAFETY: the CPU has AVX2 and FMA.
+            return unsafe { self.nearest_avx2(o, d, tmin, tmax, near) };
+        }
+        self.nearest_impl::<false>(o, d, tmin, tmax, near)
+    }
+
+    #[cfg(target_arch = "x86_64")]
+    #[target_feature(enable = "avx2,fma")]
+    unsafe fn nearest_avx2(&self, o: V3, d: V3, tmin: f32, tmax: f32, near: &mut Near<TriHit>) {
+        self.nearest_impl::<true>(o, d, tmin, tmax, near)
     }
 }
 

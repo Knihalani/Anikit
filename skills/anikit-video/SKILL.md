@@ -47,7 +47,7 @@ Everything here is a starting point, never a ceiling: anything the spec keys don
 
 ## Second pair of eyes (before the final render)
 
-Before the final render, get a second pair of eyes. Spawn a subagent as an independent art director. Give it only the brief, your contact sheet and the output of `anikit-video critique s.json --render`. Ask it for the 3 weakest things, with frame references, judged against professional work in this genre, and for the one change that would most lift the piece. Then make those changes (restructure if it says so) and preview again before rendering. With no subagent tool, `critique --render` is the fallback.
+Before the final render, get a second pair of eyes. Spawn a subagent as an independent art director. Give it only the brief, your contact sheet and the text output of `anikit-video critique s.json --render` (no stills: cheaper). Ask it to answer, with frame references and judged against professional work in this genre: (1) Is there ONE device specific to this subject, and does it escalate? (2) Is the type inside the image rather than captioning it? (3) Does each frame change composition? Then ask it to name the single weakest thing and the change that would most lift the piece. Make those changes (restructure if it says so) and preview again before rendering. With no subagent tool, `critique --render` is the fallback.
 
 ## Ship gate (before the one final render)
 

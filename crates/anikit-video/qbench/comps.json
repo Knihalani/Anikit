@@ -1,0 +1,21 @@
+{
+  "size": [1920, 1080], "fps": 30, "background": "#0d1017",
+  "compositions": {
+    "card": { "size": [640, 400], "duration": 3, "background": "#1b2233", "layers": [
+      { "shape": "rect", "width": 560, "height": 120, "radius": 24, "fill": "linear-gradient(90deg, #6a3df0, #ff5f8f)", "y": 120, "animate": [ { "to": { "rotation": 8 }, "duration": 3, "ease": "inOutSine" } ] },
+      { "text": "Nested", "style": "heading", "y": 280, "enter": "rise" }
+    ] },
+    "wall": { "size": [1200, 700], "duration": 3, "background": "#121620", "layers": [
+      { "composition": "card", "x": 330, "y": 350, "width": 600, "height": 375 },
+      { "composition": "card", "x": 900, "y": 350, "width": 480, "height": 300, "speed": 1.5, "loop": true }
+    ] }
+  },
+  "scenes": [
+    { "duration": 2, "transition": "cut", "layers": [
+      { "composition": "wall", "x": 960, "y": 540, "width": 1500, "height": 875, "animate": [ { "to": { "scale": 1.08 }, "duration": 2, "ease": "inOutCubic" } ] },
+      { "shader": "film", "filter": true, "uniforms": { "grain": 0.5 } },
+      { "text": "compositions in compositions", "style": "body", "y": 1000, "color": "#c9cbd6" }
+    ] }
+  ],
+  "post": "cinematic"
+}

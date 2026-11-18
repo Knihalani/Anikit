@@ -1,0 +1,12 @@
+{
+ "start_utc": "2026-11-18T03:26:44Z",
+ "end_utc": "2026-11-18T03:46:25Z",
+ "renders": [
+  {
+   "cmd": "anikit-video render spec.json -o final.mp4 --sheet contact.png",
+   "exit": 0,
+   "wall_s": 649.77,
+   "peak_rss_mb": 524.4
+  }
+ ]
+}

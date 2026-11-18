@@ -1,0 +1,106 @@
+{
+ "about": "A kinetic reveal with weight: a text animator sweeps the headline in by character, a group of supporting lines lands with drag (each line a little later), the rule smears in at speed and settles with inertia. Taste decision: one lead move, overlapping followers 2\u20134 frames apart, fast attack with a long settle; nothing starts on the same frame.",
+ "cost": "~0.5 s, draft or final (1080p, 4 cores)",
+ "spec": {
+  "size": "16:9",
+  "fps": 30,
+  "scenes": [
+   {
+    "duration": 2.6,
+    "background": "#0d0f14",
+    "camera": {
+     "zoom": "=1 + 0.03*t"
+    },
+    "layers": [
+     {
+      "text": "Make it move",
+      "size": 230,
+      "weight": 900,
+      "letterSpacing": -10,
+      "color": "#f4f1ea",
+      "x": 120,
+      "y": 420,
+      "anchor": "left",
+      "animator": {
+       "by": "char",
+       "y": 170,
+       "rotation": 12,
+       "opacity": 0,
+       "duration": 0.55,
+       "smooth": 0.35,
+       "ease": "glide"
+      }
+     },
+     {
+      "shape": "rect",
+      "x": 2400,
+      "y": 560,
+      "width": 980,
+      "height": 14,
+      "anchor": [
+       0,
+       0.5
+      ],
+      "fill": "#ff5a1f",
+      "smear": 1.2,
+      "inertia": "tight",
+      "animate": {
+       "to": {
+        "x": 128
+       },
+       "at": 0.3,
+       "duration": 0.35,
+       "ease": "glide"
+      }
+     },
+     {
+      "type": "group",
+      "drag": 0.06,
+      "x": 960,
+      "y": 540,
+      "width": 1920,
+      "height": 1080,
+      "animate": {
+       "from": {
+        "y": "+80",
+        "opacity": 0
+       },
+       "at": 0.45,
+       "duration": 0.45,
+       "ease": "glide"
+      },
+      "layers": [
+       {
+        "text": "follow-through on every move",
+        "size": 46,
+        "weight": 500,
+        "color": "#c9c4ba",
+        "x": 128,
+        "y": 640,
+        "anchor": "left"
+       },
+       {
+        "text": "overlap instead of unison",
+        "size": 46,
+        "weight": 500,
+        "color": "#c9c4ba",
+        "x": 128,
+        "y": 705,
+        "anchor": "left"
+       },
+       {
+        "text": "a long settle after a fast attack",
+        "size": 46,
+        "weight": 500,
+        "color": "#c9c4ba",
+        "x": 128,
+        "y": 770,
+        "anchor": "left"
+       }
+      ]
+     }
+    ]
+   }
+  ]
+ }
+}

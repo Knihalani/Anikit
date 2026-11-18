@@ -1,0 +1,139 @@
+{
+ "about": "A match move between layouts: the same mark (`id: mark`) and title travel from one composition to the next across each transition with `carry`, so every shot is a different layout but the eye never loses the subject. Taste decision: vary scale and placement shot to shot, and let continuity come from the carried element rather than from repeating one centred lockup.",
+ "cost": "~1 s, draft or final (1080p, 4 cores)",
+ "spec": {
+  "size": "16:9",
+  "fps": 30,
+  "scenes": [
+   {
+    "duration": 1.1,
+    "background": "#f2efe8",
+    "layers": [
+     {
+      "id": "mark",
+      "shape": "circle",
+      "x": 240,
+      "y": 220,
+      "width": 120,
+      "height": 120,
+      "fill": "#1230e6",
+      "inertia": "bouncy",
+      "animate": {
+       "from": {
+        "scale": 0
+       },
+       "duration": 0.25,
+       "ease": "glide"
+      }
+     },
+     {
+      "id": "title",
+      "text": "Field Notes",
+      "size": 120,
+      "weight": 800,
+      "letterSpacing": -4,
+      "color": "#141414",
+      "x": 330,
+      "y": 220,
+      "anchor": "left",
+      "animator": {
+       "by": "char",
+       "x": 40,
+       "opacity": 0,
+       "duration": 0.4,
+       "smooth": 0.3,
+       "ease": "glide"
+      }
+     }
+    ]
+   },
+   {
+    "duration": 1.2,
+    "background": "#1230e6",
+    "transition": {
+     "type": "crossfade",
+     "duration": 0.5,
+     "carry": [
+      "mark",
+      "title"
+     ]
+    },
+    "layers": [
+     {
+      "id": "mark",
+      "shape": "circle",
+      "x": 1380,
+      "y": 540,
+      "width": 640,
+      "height": 640,
+      "fill": "#f2efe8"
+     },
+     {
+      "id": "title",
+      "text": "Field Notes",
+      "size": 220,
+      "weight": 800,
+      "letterSpacing": -8,
+      "color": "#f2efe8",
+      "x": 120,
+      "y": 900,
+      "anchor": "left"
+     }
+    ]
+   },
+   {
+    "duration": 1.4,
+    "background": "#141414",
+    "camera": {
+     "zoom": "=1 + 0.04*t"
+    },
+    "transition": {
+     "type": "crossfade",
+     "duration": 0.5,
+     "carry": [
+      "mark",
+      "title"
+     ]
+    },
+    "layers": [
+     {
+      "id": "mark",
+      "shape": "circle",
+      "x": 960,
+      "y": 420,
+      "width": 200,
+      "height": 200,
+      "fill": "#1230e6"
+     },
+     {
+      "id": "title",
+      "text": "Field Notes",
+      "size": 150,
+      "weight": 800,
+      "letterSpacing": -5,
+      "color": "#f2efe8",
+      "x": 960,
+      "y": 640
+     },
+     {
+      "text": "issue 12, out Thursday",
+      "size": 40,
+      "weight": 500,
+      "color": "#9a9a9a",
+      "x": 960,
+      "y": 760,
+      "start": 0.5,
+      "animator": {
+       "by": "word",
+       "y": 20,
+       "opacity": 0,
+       "duration": 0.4,
+       "smooth": 0.3,
+       "ease": "glide"
+      }
+     }
+    ]
+   }
+  ]
+ }
+}

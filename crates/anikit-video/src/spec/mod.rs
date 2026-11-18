@@ -1324,6 +1324,9 @@ pub struct PresetObj {
     pub amount: Option<f64>,
     /// Loop period in seconds.
     pub period: Option<f64>,
+    /// Loops: seconds the amplitude takes to grow in after the layer starts and to die away before it ends
+    /// (an envelope, so the oscillation never starts or stops dead).
+    pub ramp: Option<f64>,
     /// Typewriter characters per second.
     pub cps: Option<f64>,
 }

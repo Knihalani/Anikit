@@ -242,6 +242,7 @@ Cost per 1080p frame on this VM: about 0 ms for `clean` (identity on 8-bit frame
 - **Where.** Changes are clustered into at most 8 macroblock-aligned boxes. Outside them the frame is the centre render. Static frames render once.
 - **How many samples.** Each box takes as many sub-frames as its fastest content needs: steps ≤ 1.25 px, 2–32 samples, 16 for discrete changes. Streaks longer than 40 px (at 1080p) are clamped by shortening the effective shutter, so very fast moves never strobe.
 - **Slides.** When everything moving in a box translates together over a smooth, still backdrop, it takes samples δ ≤ 8 px apart, then applies a δ box filter along the motion: the continuous streak, exactly, at a fraction of the samples. δ shrinks with acceleration, keeping slot error ≤ ¼ px. Axis-aligned filters use prefix sums.
+- **Clip wipes.** In a box where only one layer's clip changes (an iris, a wipe) and everything else is still, the shutter average is the layer shown in proportion to the time each pixel spends inside the clip. It takes two renders (without the layer, and with it unclipped) plus a coverage mask of the clip per sample, mixed in linear light. On the showcase iris, frame 170 went from 100 ms to under 6 ms, within the reference's error.
 - **Cheap samples.**
   - Blurred layers (glows, shadows) sample only every σ/2.
   - Sub-pixel drift in scale (< 0.05 px of movement) or layer opacity (< 1%) is held at the centre value, so cached glyph runs and filtered layers are reused.

@@ -192,6 +192,9 @@ pub struct Renderer {
     /// Motion-blur accumulator (linear RGB).
     motion_acc: Vec<f32>,
     motion_tmp: Vec<f32>,
+    /// Clip coverage masks for motion-blurred wipes.
+    mask_ctx: Option<RenderContext>,
+    mask_pix: Pixmap,
     grain: Vec<grain::Grain>,
     /// The background colour as a 2×2 backdrop (RGBA8), reused while it stays.
     bg_pix: Option<([u8; 4], Arc<Pixmap>)>,
@@ -232,6 +235,8 @@ impl Renderer {
             pp: Default::default(),
             motion_acc: Vec::new(),
             motion_tmp: Vec::new(),
+            mask_ctx: None,
+            mask_pix: Pixmap::new(1, 1),
             grain: Vec::new(),
             bg_pix: None,
             motion_brute: false,
