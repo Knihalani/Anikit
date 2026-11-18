@@ -156,6 +156,8 @@ def cmd_table(a):
         gaps_by[name] = c.get("gaps", [])[:3] + (r.get("critic", {}).get("answer", {}).get("gaps", [])[:1])
     if scores:
         lines += ["", f"Mean blind score (Anikit rows) {statistics.mean(scores):.2f}. hf-* rows are HyperFrames on the same brief, same refs and seed. Pass = judged professional in ≥ half the trials and Δ ≥ −1.0 (RUBRIC.md)."]
+    if (rd / "CRITIQUES.md").exists():
+        lines += ["", f"Recurring critiques by domain: [`rounds/{a.round}/CRITIQUES.md`](rounds/{a.round}/CRITIQUES.md)."]
     lines += ["", "Top gaps per brief:", ""]
     for k, g in gaps_by.items():
         lines.append(f"- **{k}**: " + " · ".join(g))
