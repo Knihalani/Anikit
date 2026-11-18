@@ -179,6 +179,7 @@ Open items, with their owners (all messaged with numbers):
 
 - `examples/post_cost.rs`: one frame's cost by stage (render, post, motion blur). `OPS=1` gives the cost of each top-level op (or layer subtree) by cumulative prefixes. `FIELD=1` gives the share of the gradient field.
 - `anikit-video render … --profile`: stage profile of a real render, with a memory line: resident MiB at start, peak while rendering and encoding, the encoded stream's size, and peak while muxing.
+- `cargo run --release -p anikit-shader --example file_cost -- shader.glsl [time] [frames] [name=value …]`: one GLSL file at 1080p with one sample, adaptive AA (the default) and full 2×2. Uniforms default to their `// = v` comment.
 - `examples/mem_probe.rs spec.json [runs] [from] [to]`: renders a spec repeatedly in one process and prints resident memory after build, after render and after dropping the evaluator, plus the process peak. Use it to catch memory that a long-lived process (MCP server, preview) keeps between renders.
 - `cargo test -p anikit-video --lib upscale_timing -- --ignored --nocapture` and `blur_timing`: kernel timings.
 
@@ -215,3 +216,4 @@ Measured with `mem_probe` (2 s of each spec, 4 renders in one process, 4 vCPU, 1
 Two causes:
 - **glibc arenas.** Each rayon thread frees its frame buffers into its own malloc arena, and glibc keeps them. The pipeline now calls `memstat::trim()` (`malloc_trim(0)`) once, when the frames are done. That took a few milliseconds, too little to show in timing. mimalloc was tried as the global allocator: it was ~3% faster but kept more (peak +15–20%), so it was not adopted.
 - **The per-frame image ring.** Component fields, rays and particle text live in a 96-slot ring of full-frame pixmaps (`SharedAssets` volatile ring), which stayed alive with the evaluator: about 250 MiB for backdrop. `SharedAssets::release_frame_images()` drops it when a render finishes. It resets the sequence too, so a later render uses the same ids as a fresh evaluator. Output is byte-identical: every qbench MP4 matched main's.
+- **scene3d's frame-buffer pool** (`scene3d::kernel::pool`) keeps up to 2 GiB of frame planes warm between frames, to avoid first-touch page faults. Nothing emptied it, so a process that had rendered a scene3d or particle scene kept it all. `pool::release()` now runs when a render's frames are done. On the swell deliverable's 80k-particle scene (7.8–8.3 s), memory kept after the render went from 1481 MiB to 277 MiB, with the same time (7.5 s vs 7.8 s) and byte-identical output.

@@ -1,0 +1,44 @@
+{
+  "answer": {
+    "scores": {
+      "motion": 5,
+      "sound": 4,
+      "craft": 6
+    },
+    "checks": {
+      "idea": false,
+      "invariant": false,
+      "arc": false,
+      "type_meaning": false,
+      "freeze_frame": false,
+      "ending": true,
+      "restraint": true,
+      "material": true,
+      "sync": true
+    },
+    "defects": [
+      "Most transitions are soft cross-dissolves. Ghosted double exposures sit mid-blend (the lighthouse over NORTHBRIDGE, HARBOUR fading over KICK-OFF), and they read as muddy rather than designed",
+      "The HARBOUR ATHLETIC card holds about 1 s with only a faint wave drift. Its type is fully static, so this is dead air",
+      "The opening floodlight shot runs past 3 s with only rain and the bulbs switching on, which is why it fails the pace check",
+      "The team-name lock-ups enter with heavy directional blur and a generic slide. The type does no work of its own",
+      "The rotating shadow X under the ball is reused in three shots and nothing develops it",
+      "Sound is noise risers, clicks and synthetic whooshes, with no musical bed, no low-end weight and no crowd or ambience texture",
+      "The final lock-up is assembled from fades and builds no tension. Energy peaks at about 45% of the running time (per-second change peaks between 4 and 5 s), not at 60\u201380%",
+      "The early floodlight frames are mostly dark negative space and weak as posters"
+    ],
+    "gaps": [
+      "Choreography: the piece is linked by dissolves and slides instead of match cuts driven by the objects. The floodlight dots become the scoreboard dots and the ball becomes the centre spot, but these are crossfaded instead of transformed, so the strongest device in the piece never fully happens",
+      "Arc and timing: a slow 3 s opening, a flat middle of equal-weight team cards, and an end that fades in rather than lands. Top work builds to a hit at 70% and settles hard on a sting",
+      "Sound: thin generated noise sweeps and isolated clicks, with no score, rhythm, dynamics or layered matchday Foley (crowd, whistle, ball impact). The visual palette has richness that the soundtrack does not match"
+    ]
+  },
+  "meta": {
+    "seconds": 27.3,
+    "cost_usd": 0.1818756,
+    "tokens": 74501,
+    "models": [
+      "claude-opus-5-5"
+    ]
+  },
+  "pace": "r1-k-sports.mp4: 10.0s, 6 shots, median 1.23s, longest 3.23s\nper-second change: [36.7, 27.7, 42.1, 78.0, 101.2, 66.2, 6.3, 27.3, 10.8]\nPACE: FAIL \u2014 longest shot 3.2s > 2.5s"
+}

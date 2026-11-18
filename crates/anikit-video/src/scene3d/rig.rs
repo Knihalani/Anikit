@@ -56,9 +56,10 @@ impl Gobo {
                 m(x) * m(y) * edge
             }
             _ => {
-                // Dappled foliage: two octaves of blobs.
-                let n = vn2(a * 3.0, b * 3.0) * 0.65 + vn2(a * 7.3 + 11.0, b * 7.3) * 0.35;
-                smoothstep(0.52 - s * 0.3, 0.52 + s * 0.3, n)
+                // Dappled foliage: leaf clusters with small sun-flecks between them.
+                let n = vn2(a * 5.0, b * 5.0) * 0.5 + vn2(a * 11.0 + 11.0, b * 11.0) * 0.3 + vn2(a * 23.0 + 5.0, b * 23.0) * 0.2;
+                // Mostly light, with soft clusters of shade.
+                smoothstep(0.36 - s * 0.35, 0.36 + s * 0.35, n)
             }
         }
     }
@@ -211,7 +212,7 @@ pub fn parse(v: &Value, path: &str) -> Res<Rig> {
         warmth: g("warmth", 0.0)?.clamp(-1.0, 1.0),
         gobo,
         gobo_scale: g("gobo_scale", 0.6)?.max(0.01),
-        gobo_soft: g("softness", 0.15)?.clamp(0.0, 1.0),
+        gobo_soft: g("softness", if gobo == 3 { 0.35 } else { 0.15 })?.clamp(0.0, 1.0),
         beam: m.get("beam").and_then(|b| b.as_bool()).unwrap_or(false),
         anim: match m.get("animate").and_then(|a| a.as_str()) {
             None => 0,

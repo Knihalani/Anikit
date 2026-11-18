@@ -68,6 +68,16 @@ impl Theme {
         styles.insert("code".into(), style("$mono", "2.6vh", 400.0, "$text"));
         let mut radius = 20.0;
         if let Some(t) = t {
+            if let Some(p) = &t.palette {
+                match palette(p) {
+                    Ok(toks) => {
+                        for (k, v) in toks {
+                            colors.insert(k, v);
+                        }
+                    }
+                    Err(e) => bad.push(("palette".into(), e)),
+                }
+            }
             if let Some(c) = &t.colors {
                 // Two passes so tokens may reference each other.
                 for _ in 0..2 {
@@ -138,6 +148,9 @@ pub fn merge_style(base: &TextStyle, over: &TextStyle) -> TextStyle {
 
 /// Parse a CSS colour into straight-alpha sRGB 0..1.
 pub fn parse_css_color(s: &str) -> Option<Rgba> {
+    if let Some(n) = s.trim().strip_prefix("riso:") {
+        return riso(n);
+    }
     let c = anikit_core::color::parse(s.trim())?;
     Some(Rgba([(c.r / 255.0) as f32, (c.g / 255.0) as f32, (c.b / 255.0) as f32, c.a as f32]))
 }
@@ -158,5 +171,145 @@ pub fn weight_value(w: &Weight) -> Option<f32> {
             "black" | "heavy" => 900.0,
             _ => return s.parse().ok(),
         }),
+    }
+}
+
+/// Risograph inks (Matt DesLauriers' `riso-colors`, from stencil.wiki): use as `riso:fluorescent-pink`.
+pub const RISO_INKS: &[(&str, &str)] = &[
+    ("fluorescent-pink", "#FF48B0"),
+    ("medium-blue", "#3255A4"),
+    ("blue", "#0078BF"),
+    ("federal-blue", "#3D5588"),
+    ("yellow", "#FFE800"),
+    ("teal", "#00838A"),
+    ("aqua", "#5EC8E5"),
+    ("green", "#00A95C"),
+    ("hunter-green", "#407060"),
+    ("bright-red", "#F15060"),
+    ("scarlet", "#F65058"),
+    ("orange", "#FF6C2F"),
+    ("fluorescent-orange", "#FF7477"),
+    ("sunflower", "#FFB511"),
+    ("purple", "#765BA7"),
+    ("burgundy", "#914E72"),
+    ("flat-gold", "#BB8B41"),
+    ("light-gray", "#88898A"),
+    ("black", "#2A2A2A"),
+];
+
+fn riso(name: &str) -> Option<Rgba> {
+    let n = name.trim().to_ascii_lowercase().replace([' ', '_'], "-");
+    RISO_INKS.iter().find(|(k, _)| *k == n).and_then(|(_, v)| parse_css_color(v))
+}
+
+/// OKLCH → sRGB, reducing chroma until the colour is in gamut (keeps lightness and hue).
+pub fn oklch(l: f32, c: f32, h_deg: f32) -> Rgba {
+    use anikit_core::color::{linear_to_srgb, oklab_to_linear};
+    let h = h_deg.to_radians();
+    let inside = |c: f32| {
+        let v = oklab_to_linear(l as f64, (c * h.cos()) as f64, (c * h.sin()) as f64);
+        v.iter().all(|x| (-1e-4..=1.0001).contains(x))
+    };
+    let (mut lo, mut hi) = (0.0f32, c.max(0.0));
+    if !inside(hi) {
+        for _ in 0..20 {
+            let m = 0.5 * (lo + hi);
+            if inside(m) {
+                lo = m
+            } else {
+                hi = m
+            }
+        }
+        hi = lo;
+    }
+    let v = oklab_to_linear(l as f64, (hi * h.cos()) as f64, (hi * h.sin()) as f64);
+    let f = |x: f64| (linear_to_srgb(x.clamp(0.0, 1.0)) as f32).clamp(0.0, 1.0);
+    Rgba([f(v[0]), f(v[1]), f(v[2]), 1.0])
+}
+
+/// Palette schemes for [`palette`].
+pub const SCHEMES: &[&str] = &["mono", "analogous", "complement", "split", "triad"];
+
+/// A value-structured palette from a seed colour: `ink` (L ≈ 0.18), `paper` (≈ 0.96), `mid` (0.62),
+/// `accent` (the seed), `accent2` (by scheme), `tint` (a pale accent), plus the theme roles
+/// (`bg`, `text`, `primary`, `secondary`, `muted`, `surface`). `dark` swaps ink and paper.
+pub fn palette(spec: &str) -> Result<Vec<(String, Rgba)>, String> {
+    let mut words = spec.split_whitespace();
+    let seed_s = words.next().ok_or("palette needs a seed colour, e.g. \"#e4572e split\"")?;
+    let seed = parse_css_color(seed_s).ok_or_else(|| format!("palette: invalid seed colour '{seed_s}'"))?;
+    let mut scheme = "complement";
+    let mut dark = false;
+    for w in words {
+        match w {
+            "dark" => dark = true,
+            "light" => dark = false,
+            s if SCHEMES.contains(&s) => scheme = SCHEMES.iter().find(|x| **x == s).unwrap(),
+            s => return Err(format!("palette: unknown word '{s}' (schemes: {}; or dark/light)", SCHEMES.join(", "))),
+        }
+    }
+    let lab = super::rgba_to_oklab(seed);
+    let (l, c) = (lab[0], (lab[1] * lab[1] + lab[2] * lab[2]).sqrt());
+    let h = lab[2].atan2(lab[1]).to_degrees();
+    let h2 = match scheme {
+        "analogous" => h + 38.0,
+        "complement" => h + 180.0,
+        "split" => h + 150.0,
+        "triad" => h + 120.0,
+        _ => h,
+    };
+    // Neutrals carry a trace of the seed's hue, so the palette reads as one family.
+    let ink = oklch(0.19, (c * 0.18).min(0.035), h);
+    // Near-neutral paper: a tinted cream from a warm seed is a cliché (BAR.md), so only a trace of hue.
+    let paper = oklch(0.97, (c * 0.04).min(0.006), h + 20.0);
+    let mid = oklch(0.62, c * 0.35, h);
+    let accent2 = if scheme == "mono" { oklch((l + 0.32).min(0.9), c * 0.6, h) } else { oklch(l.clamp(0.45, 0.8), c * 0.9, h2) };
+    let tint = oklch(0.9, c * 0.25, h);
+    let (bg, text) = if dark { (ink, paper) } else { (paper, ink) };
+    let muted = oklch(if dark { 0.72 } else { 0.45 }, (c * 0.12).min(0.03), h);
+    let surface = if dark { oklch(0.25, (c * 0.18).min(0.035), h) } else { oklch(0.93, (c * 0.04).min(0.008), h + 20.0) };
+    Ok(vec![
+        ("ink".into(), ink),
+        ("paper".into(), paper),
+        ("mid".into(), mid),
+        ("accent".into(), seed),
+        ("accent2".into(), accent2),
+        ("tint".into(), tint),
+        ("bg".into(), bg),
+        ("text".into(), text),
+        ("primary".into(), seed),
+        ("secondary".into(), accent2),
+        ("muted".into(), muted),
+        ("surface".into(), surface),
+    ])
+}
+
+/// WCAG contrast ratio of two colours.
+pub fn contrast(a: Rgba, b: Rgba) -> f32 {
+    let lum = |c: Rgba| {
+        let f = |v: f32| if v <= 0.04045 { v / 12.92 } else { ((v + 0.055) / 1.055).powf(2.4) };
+        0.2126 * f(c.0[0]) + 0.7152 * f(c.0[1]) + 0.0722 * f(c.0[2])
+    };
+    let (x, y) = (lum(a), lum(b));
+    (x.max(y) + 0.05) / (x.min(y) + 0.05)
+}
+
+#[cfg(test)]
+mod palette_tests {
+    use super::*;
+
+    #[test]
+    fn riso_inks_and_palettes() {
+        assert_eq!(parse_css_color("riso:Fluorescent Pink"), parse_css_color("#FF48B0"));
+        assert!(parse_css_color("riso:nope").is_none());
+        for s in SCHEMES {
+            let p = palette(&format!("#e4572e {s}")).unwrap();
+            let get = |k: &str| p.iter().find(|(n, _)| n == k).unwrap().1;
+            // Value structure: text on bg is AAA, the accent is not lost on the paper.
+            assert!(contrast(get("text"), get("bg")) >= 12.0, "{s}");
+            assert!(contrast(get("accent"), get("bg")) >= 2.5, "{s}");
+        }
+        let d = palette("#3255a4 split dark").unwrap();
+        assert!(contrast(d[6].1, d[7].1) >= 12.0);
+        assert!(palette("#zz").is_err() && palette("#e4572e wobbly").is_err());
     }
 }

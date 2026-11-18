@@ -26,6 +26,7 @@ A spec is JSON: `{ "size": "16:9", "scenes": [ { "duration": 2, "layers": [ ... 
 | `docs particles` | millions of particles: emit from text/images, flow, attractors |
 | `docs physics` | rigid bodies: piles, dominoes, impulses, speed ramps |
 | `docs music` | generated music and `@beatN` cuts; sfx; voice-over ducking |
+| `docs sound` | `"sound": "auto"`: whooshes, landings, ticks from the picture; foley, ambience; mastered −14 LUFS |
 | `docs post` | grades, bloom, halation, grain, motion blur |
 | `docs pacing` | intent, beat-cut timing, holds that stay alive |
 | `docs critique` | the reviewer and the review pack |

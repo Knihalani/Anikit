@@ -1,0 +1,107 @@
+{
+ "a-social": {
+  "tokens": 2722247,
+  "output_tokens": 21073,
+  "uncached_in": 129265,
+  "cost_usd": 1.97,
+  "session_wall_min": 9.4
+ },
+ "b-launch": {
+  "tokens": 7126232,
+  "output_tokens": 36463,
+  "uncached_in": 119797,
+  "cost_usd": 3.081,
+  "session_wall_min": 12.1
+ },
+ "c-event": {
+  "tokens": 2262617,
+  "output_tokens": 21102,
+  "uncached_in": 115055,
+  "cost_usd": 1.768,
+  "session_wall_min": 12.3
+ },
+ "d-illustration": {
+  "tokens": 4916728,
+  "output_tokens": 36241,
+  "uncached_in": 122120,
+  "cost_usd": 2.653,
+  "session_wall_min": 14.0
+ },
+ "e-data": {
+  "tokens": 2556262,
+  "output_tokens": 25275,
+  "uncached_in": 80485,
+  "cost_usd": 1.639,
+  "session_wall_min": 12.2
+ },
+ "f-3d": {
+  "tokens": 3639889,
+  "output_tokens": 33428,
+  "uncached_in": 93395,
+  "cost_usd": 2.119,
+  "session_wall_min": 16.0
+ },
+ "g-titles": {
+  "tokens": 3039761,
+  "output_tokens": 22236,
+  "uncached_in": 80077,
+  "cost_usd": 1.673,
+  "session_wall_min": 11.2
+ },
+ "h-ident": {
+  "tokens": 1894429,
+  "output_tokens": 13805,
+  "uncached_in": 62518,
+  "cost_usd": 1.14,
+  "session_wall_min": 8.7
+ },
+ "i-explainer": {
+  "tokens": 4206632,
+  "output_tokens": 36318,
+  "uncached_in": 96531,
+  "cost_usd": 2.314,
+  "session_wall_min": 17.0
+ },
+ "j-music": {
+  "tokens": 6908299,
+  "output_tokens": 42765,
+  "uncached_in": 117746,
+  "cost_usd": 3.147,
+  "session_wall_min": 14.0
+ },
+ "k-sports": {
+  "tokens": 2734514,
+  "output_tokens": 22170,
+  "uncached_in": 72746,
+  "cost_usd": 1.553,
+  "session_wall_min": 10.6
+ },
+ "l-generative": {
+  "tokens": 3355361,
+  "output_tokens": 18563,
+  "uncached_in": 69841,
+  "cost_usd": 1.584,
+  "session_wall_min": 32.5
+ },
+ "hf-b-launch": {
+  "tokens": 5415593,
+  "output_tokens": 41450,
+  "uncached_in": 127604,
+  "cost_usd": 2.899,
+  "session_wall_min": 10.8
+ },
+ "hf-e-data": {
+  "tokens": 5579094,
+  "output_tokens": 46426,
+  "uncached_in": 119660,
+  "cost_usd": 2.968,
+  "session_wall_min": 13.5
+ },
+ "hf-g-titles": {
+  "tokens": 4889349,
+  "output_tokens": 37739,
+  "uncached_in": 117618,
+  "cost_usd": 2.643,
+  "session_wall_min": 10.1
+ }
+}
