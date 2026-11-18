@@ -930,6 +930,7 @@ pub fn render_ak264_job_tap(ev: &Evaluator, opts: &RenderOptions, out: &std::pat
     // The frames are done: drop the per-frame images and give the workers' freed
     // buffers back to the OS before muxing (long-lived processes otherwise keep them).
     ev.assets.release_frame_images();
+    crate::scene3d::kernel::pool::release();
     crate::memstat::trim();
     let mem_stream = annexb.len() as u64;
     let peaks = crate::memstat::reset_peak();
